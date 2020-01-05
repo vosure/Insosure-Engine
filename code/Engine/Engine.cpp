@@ -2,12 +2,12 @@
 
 #include "glad.c"
 
-#include "D:\dev\InsosureEngine\code\glfw\include\GLFW\glfw3.h"
+#include "..\..\dependencies\glfw\include\glfw3.h"
 
 
 int Start()
 {
-    printf("Testing the entry point to the engine!");
+    printf("Testing the entry point to the engine!!!!!!");
 
     GLFWwindow *window;
 
@@ -17,7 +17,7 @@ int Start()
         return -1;
     }
 
-    window = glfwCreateWindow(1200, 600, "Hello", NULL, NULL);
+    window = glfwCreateWindow(1600, 1000, "Insosure Engine!!", NULL, NULL);
     if (!window)
     {
         printf("Failed to create a window");
