@@ -6,7 +6,7 @@ typedef int (*Start)();
 
 int main()
 {
-    HINSTANCE dll = LoadLibraryA("../build/Engine.dll");
+    HINSTANCE dll = LoadLibrary("../build/Engine.dll");
     if (!dll)
     {
         printf ("Can't load a DLL!");
