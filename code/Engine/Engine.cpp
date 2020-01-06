@@ -2,8 +2,11 @@
 
 #include <stdio.h>
 
-#include "glad.c"
+#include "..\..\dependencies\glad\src\glad.c"
 #include "..\..\dependencies\glfw\include\glfw3.h"
+
+#include "renderer/renderer.cpp"
+
 
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height);
 
@@ -19,7 +22,7 @@ SetUpWindow(GLFWwindow **Window, int Width, int Height, char* Name)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    *Window = glfwCreateWindow(1280, 720, "Insosure Engine", NULL, NULL);
+    *Window = glfwCreateWindow(Width, Height, Name, NULL, NULL);
     if (!*Window)
     {
         printf("Failed to create a window");
@@ -43,12 +46,6 @@ LoadGlad()
         return SUCCESS;
     }
 }
-
-// NOTE: Temp for testing
-struct color
-{
-    float r, g, b;
-};
 
 void processInput(GLFWwindow *Window, color *Color)
 {
@@ -79,6 +76,8 @@ void UpdateAndRender(GLFWwindow *Window)
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(Color.r, Color.g, Color.b, 1.f);
 
+        DrawRectangle(-0.5f, -0.5f, 0.5f, 0.5f, {0.1f, 0.8f, 1.f});
+
         glfwSwapBuffers(Window);
         glfwPollEvents();
     }
@@ -87,13 +86,14 @@ void UpdateAndRender(GLFWwindow *Window)
 int 
 Start()
 {
-    printf("The Engine has started!!");
+    printf("The Engine has started!");
 
     int WINDOW_WIDTH = 1280;
     int WINDOW_HEIGHT = 720;
+    char* WindowName = "Insosure Engine";
 
-    GLFWwindow *Window;
-    if (!SetUpWindow(&Window, WINDOW_WIDTH, WINDOW_HEIGHT, "Insosure Engine"))
+    GLFWwindow* Window;
+    if (!SetUpWindow(&Window, WINDOW_WIDTH, WINDOW_HEIGHT, WindowName))
     {
         return BAD_RESULT;
     }

@@ -13,15 +13,15 @@ main()
         printf ("Can't load a DLL!");
         return -1;
     }
-
     Start EngineStartFunc = (Start)GetProcAddress(dll, "Start");
     if (!EngineStartFunc)
     {
         printf("Failed to load a func from DLL!");
         return -1;
     }
-
     EngineStartFunc();
+
+    system("pause");
 
     return 0;
 }
