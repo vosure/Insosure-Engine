@@ -4,7 +4,8 @@
 
 typedef int (*Start)();
 
-int main()
+int 
+main()
 {
     HINSTANCE dll = LoadLibrary("../build/engine.dll");
     if (!dll)
