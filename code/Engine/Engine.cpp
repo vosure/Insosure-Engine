@@ -7,7 +7,6 @@
 
 #include "renderer/renderer.cpp"
 
-
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height);
 
 internal int

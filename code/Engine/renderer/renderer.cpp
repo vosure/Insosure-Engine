@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "../utils/file_utils.h"
 
 // TODO: Write a normal file reading function
 internal void
@@ -16,6 +17,11 @@ static int ShaderProgram = 0;
 internal void
 CreateShaderProgram()
 {
+
+    //NOTE(vosure) Relative path doesn't work, magic?
+    //NOTE(vosure) free this pointer after you read it, otherwise we get a memory leak
+    char *test_file_data = read_file("W:/Insosure-Engine/code/Engine/utils/test_file.txt");
+    printf(test_file_data);
     // const char* VertexSrc = (const char*)malloc(sizeof(char) * 400);
     // const char* FragSrc = (const char*)malloc(sizeof(char) * 400);
     // LoadShaderCode("D:/dev/InsosureEngine/code/Engine/assets/shaders/basic.vert", VertexSrc);
