@@ -1,11 +1,7 @@
 #include "renderer.h"
-<<<<<<< HEAD
 #include "texture.h"
-=======
 #include "../utils/file_utils.h"
->>>>>>> 442e3c63ce1f6c1d7c741b17ce67c6fa05665c59
 
-// TODO: Write a normal file reading function
 internal void
 LoadShaderCode(const char* ShaderSrc, const char* ShaderCode)
 {
@@ -20,16 +16,6 @@ LoadShaderCode(const char* ShaderSrc, const char* ShaderCode)
 internal int
 CreateShaderProgram(const char *VertexSrc, const char *FragSrc)
 {
-
-    //NOTE(vosure) Relative path doesn't work, magic?
-    //NOTE(vosure) free this pointer after you read it, otherwise we get a memory leak
-    char *test_file_data = read_file("W:/Insosure-Engine/code/Engine/utils/test_file.txt");
-    printf(test_file_data);
-    // const char* VertexSrc = (const char*)malloc(sizeof(char) * 400);
-    // const char* FragSrc = (const char*)malloc(sizeof(char) * 400);
-    // LoadShaderCode("D:/dev/InsosureEngine/code/Engine/assets/shaders/basic.vert", VertexSrc);
-    // LoadShaderCode("D:/dev/InsosureEngine/code/Engine/assets/shaders/basic.frag", FragSrc);
-
     int VertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(VertexShader, 1, &VertexSrc, NULL);
     glCompileShader(VertexShader);
@@ -39,7 +25,7 @@ CreateShaderProgram(const char *VertexSrc, const char *FragSrc)
     if (!Success)
     {
         glGetShaderInfoLog(VertexShader, 512, NULL, InfoLog);
-        printf("Vertex shader compilation failed!");    
+        printf(InfoLog);    
     }
 
     int FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -49,7 +35,7 @@ CreateShaderProgram(const char *VertexSrc, const char *FragSrc)
     if (!Success)
     {
         glGetShaderInfoLog(FragmentShader, 512, NULL, InfoLog);
-        printf("Fragment shader compilation failed!");
+        printf(InfoLog);
     }
 
     int ShaderProgram = glCreateProgram();
@@ -97,22 +83,15 @@ DrawRectangle(float FromX, float FromY, float ToX, float ToY, color Color)
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
-        const char* VertexSrc = "#version 330 core\n"
-        "layout (location = 0) in vec2 Position;\n"
-        "void main()\n"
-        "{\n"
-            "gl_Position = vec4(Position, 0.0, 1.0);\n"
-        "}\0";
+        //NOTE(vosure) Relative path doesn't work, magic?
+        //NOTE(vosure) free this pointer after you read it, otherwise we get a memory leak
+        const char* VertexSrc = (const char *)read_file("W:/Insosure-Engine/assets/shaders/basic.vert");
 
-        const char* FragSrc = "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "uniform vec3 Color;\n"
-        "void main()\n"
-        "{\n"
-            "FragColor = vec4(Color, 1.0);\n"
-        "}\0";
+        const char* FragSrc = (const char *)read_file("W:/Insosure-Engine/assets/shaders/basic.frag");
 
         ShaderProgram = CreateShaderProgram(VertexSrc, FragSrc);
+        free((void *)VertexSrc);
+        free((void *)FragSrc);
     }
 
     glBindVertexArray(VAO);
@@ -153,26 +132,13 @@ DrawRectangleTextured(float FromX, float FromY, float ToX, float ToY, texture Te
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
 
-        const char* VertexSrc = "#version 330 core\n"
-        "layout (location = 0) in vec2 aPosition;\n"
-        "layout (location = 1) in vec2 aTexCoord;\n"
-        "out vec2 TexCoord;\n"
-        "void main()\n"
-        "{\n"
-            "gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-            "TexCoord = vec2(aTexCoord.x, aTexCoord.y);\n"
-        "}\0";
+        const char *VertexSrc = (const char *)read_file("W:/Insosure-Engine/assets/shaders/texture.vert");
 
-        const char* FragSrc = "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "in vec2 TexCoord;\n"
-        "uniform sampler2D ourTexture;\n"
-        "void main()\n"
-        "{\n"
-            "FragColor = texture(ourTexture, TexCoord);\n"
-        "}\0";
+        const char *FragSrc = (const char *)read_file("W:/Insosure-Engine/assets/shaders/texture.frag");
 
         TexturedShaderProgram = CreateShaderProgram(VertexSrc, FragSrc);
+        free((void *)VertexSrc);
+        free((void *)FragSrc);
     }
 
     glBindVertexArray(TexturedVAO);

@@ -78,13 +78,13 @@ void UpdateAndRender(GLFWwindow *Window)
         DrawRectangle(-0.5f, -0.5f, 0.5f, 0.5f, {0.1f, 0.8f, 1.f});
 
         float TexCoords[] = {
-            -1.f, -1.f, 
+            -1.f, -1.f,
              1.f,  1.f
         };
-        texture Texture = CreateTexture("D:/dev/InsosureEngine/code/Engine/assets/textures/test.jpg", GL_NEAREST, GL_REPEAT); // TODO(insolence): change path to relative
+        texture Texture = CreateTexture("W:/Insosure-Engine/assets/textures/test.jpg", GL_NEAREST, GL_REPEAT); // TODO(insolence): change path to relative
         Texture.TexCoords = TexCoords;
 
-        DrawRectangleTextured(-0.0f, -0.0f, 0.5f, 0.5f, Texture);
+        DrawRectangleTextured(-1.0f, -1.0f, 0.5f, 0.5f, Texture);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();

@@ -1,5 +1,5 @@
 #version 330 core
-location (position = 0) vec2 Position;
+layout (location = 0) in vec2 Position;
 
 void main()
 {
