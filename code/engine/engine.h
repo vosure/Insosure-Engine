@@ -1,3 +1,6 @@
+#pragma once
+
+
 #define SUCCESS 1
 #define BAD_RESULT -1
 
