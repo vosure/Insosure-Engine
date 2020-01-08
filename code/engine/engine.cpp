@@ -6,7 +6,8 @@
 #include "..\..\dependencies\glfw\include\glfw3.h"
 
 #include "renderer/renderer.cpp"
-#include "orthographic_camera.h"
+#include "renderer/orthographic_camera.h"
+#include "physics/physics.h"
 
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height);
 
@@ -64,6 +65,7 @@ void processInput(GLFWwindow *Window, color *Color)
     }
 }
 
+
 void UpdateAndRender(GLFWwindow *Window)
 {
     color Color = { 0.4f, 0.3f, 0.35f };
@@ -71,6 +73,8 @@ void UpdateAndRender(GLFWwindow *Window)
     float TexCoords[] = { -1.f, -1.f, 1.f,  1.f };
     texture Texture = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT); // TODO(insolence): change path to relative
     Texture.TexCoords = TexCoords;
+
+    TestCollisions();
 
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
