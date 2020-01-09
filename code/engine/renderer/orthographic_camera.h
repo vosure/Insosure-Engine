@@ -2,6 +2,7 @@
 
 #include "../math/linear_math.h"
 
+// TODO(insolence): Implement rotations of camera
 struct orthographic_camera
 {
     mat4 ProjectionMatrix;
@@ -17,16 +18,14 @@ void
 RecalculateViewMatrix(orthographic_camera *Camera)
 {
     Camera->ViewMatrix = Identity();
-    mat4 Transform = Translate(Camera->Position); // * Rotate();
-    Camera->ViewMatrix = Transform;
+    Camera->ViewMatrix = Translate(Camera->Position); // * Rotate();
+
     Camera->ViewProjection = Camera->ProjectionMatrix * Camera->ViewMatrix;
 }
 
 void
-SetProjection(orthographic_camera *Camera, float Left, float Right, float Bot, float Top)
+SetViewProjection(orthographic_camera *Camera, float Left, float Right, float Bot, float Top)
 {
     Camera->ProjectionMatrix = Ortho(Bot, Top, Left, Right, -1.f, 1.f);
-
     RecalculateViewMatrix(Camera);
-    Camera->ViewProjection = Camera->ProjectionMatrix * Camera->ViewMatrix;
 }

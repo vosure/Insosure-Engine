@@ -1,21 +1,19 @@
 #include "../utils/file_utils.h"
-#include "renderer.h"
-#include "texture.h"
-#include "shader.h"
 
-#include "orthographic_camera.h"
+#include "renderer.h"
+
 
 void 
-DrawRectangle(orthographic_camera *Camera, float FromX, float FromY, float ToX, float ToY, color Color)
+DrawRectangle(orthographic_camera *Camera, vec2 From, vec2 To, color Color)
 {
     static unsigned int VAO = 0, VBO = 0, ShaderProgram = 0;
     if (!VAO)
     {
         float vertices[] = {
-            FromX, FromY,
-            FromX, ToY,
-            ToX,   FromY,
-            ToX,   ToY, 
+            From.X, From.Y,
+            From.X, To.Y,
+            To.X,   From.Y,
+            To.X,   To.Y, 
         };
 
         glGenVertexArrays(1, &VAO);
@@ -42,7 +40,7 @@ DrawRectangle(orthographic_camera *Camera, float FromX, float FromY, float ToX, 
 
     glUseProgram(ShaderProgram);
     SetColor("CustomColor", ShaderProgram, Color);
-    SetMat4("ViewProjection", ShaderProgram, Camera->ProjectionMatrix);
+    SetMat4("ViewProjection", ShaderProgram, Camera->ViewProjection);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -51,7 +49,7 @@ DrawRectangle(orthographic_camera *Camera, float FromX, float FromY, float ToX, 
 }
 
 void 
-DrawRectangleTextured(orthographic_camera *Camera, float FromX, float FromY, float ToX, float ToY, texture Texture, color Color = {0.f, 0.f, 0.f})
+DrawRectangleTextured(orthographic_camera *Camera, vec2 From, vec2 To, texture Texture, color Color = {0.f, 0.f, 0.f})
 {
     static unsigned int TexturedVAO = 0, TexturedVBO = 0, TexturedShaderProgram = 0;
     if (!TexturedVAO)
@@ -59,10 +57,10 @@ DrawRectangleTextured(orthographic_camera *Camera, float FromX, float FromY, flo
         // TODO(Insolence): too hard to understand, maybe change with subdata
         float Vertices[] = {
             // Vertices    // TexCoords
-            FromX, FromY,  Texture.TexCoords[0], Texture.TexCoords[1],
-            FromX, ToY,    Texture.TexCoords[0], Texture.TexCoords[3],
-            ToX,   FromY,  Texture.TexCoords[2], Texture.TexCoords[1],
-            ToX,   ToY,    Texture.TexCoords[2], Texture.TexCoords[3],
+            From.X, From.Y,  Texture.TexCoords[0], Texture.TexCoords[1],
+            From.X, To.Y,    Texture.TexCoords[0], Texture.TexCoords[3],
+            To.X,   From.Y,  Texture.TexCoords[2], Texture.TexCoords[1],
+            To.X,   To.Y,    Texture.TexCoords[2], Texture.TexCoords[3],
         };
 
         glGenVertexArrays(1, &TexturedVAO);
@@ -90,8 +88,7 @@ DrawRectangleTextured(orthographic_camera *Camera, float FromX, float FromY, flo
     glUseProgram(TexturedShaderProgram);
     glBindTexture(GL_TEXTURE_2D, Texture.ID);
     SetColor("CustomColor", TexturedShaderProgram, Color);
-    SetMat4("ViewProjection", TexturedShaderProgram, Camera->ProjectionMatrix);
-    //SetMat4("ViewProjection", TexturedShaderProgram, Camera->ViewProjection);
+    SetMat4("ViewProjection", TexturedShaderProgram, Camera->ViewProjection);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

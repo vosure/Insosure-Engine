@@ -1,4 +1,5 @@
 #pragma once
+
 #include "math.h"
 //TODO(vosure):
 //vec2/vec3/vec4 - dot,cross,normalize,length, lerp(+, -. *, /, +=, -=),
@@ -440,26 +441,44 @@ Identity(float Diagonal = 1.0f)
     return Result;
 }
 
+// inline mat4
+// operator*(mat4 A, mat4 B)
+// {
+//     float Data[16];
+//     for (int X = 0; X < 4; X++)
+//     {
+//         for (int Y = 0; Y < 4; Y++)
+//         {
+//             float Result = 0.0f;
+//             for (int K = 0; K < 4; K++)
+//             {
+//                 Result += A.Elements[X * 4 + K] * B.Elements[K * 4 + Y];
+//             }
+//             Data[X * 4 + Y] = Result;
+//         }
+//     }
+
+//     memcpy(A.Elements, Data, 16 * sizeof(float));
+
+//     return A;
+// }
+
 inline mat4
 operator*(mat4 A, mat4 B)
 {
-    float Data[16];
-    for (int X = 0; X < 4; X++)
+    mat4 Result;
+
+    for (int i = 0; i < 4; i++)
     {
-        for (int Y = 0; Y < 4; Y++)
+        for (int j = 0; j < 4; j++)
         {
-            float Result = 0.0f;
-            for (int K = 0; K < 4; K++)
-            {
-                Result += A.Elements[X + K * 4] * B.Elements[K + X * 4];
-            }
-            Data[X + Y * 4] = Result;
+            Result.Elements[i * 4 + j] = A.Elements[i * 4 + 0] * B.Elements[0 * 4 + j] +
+                                         A.Elements[i * 4 + 1] * B.Elements[1 * 4 + j] +
+                                         A.Elements[i * 4 + 2] * B.Elements[2 * 4 + j] +
+                                         A.Elements[i * 4 + 3] * B.Elements[3 * 4 + j];
         }
     }
-
-    memcpy(A.Elements, Data, 16 * sizeof(float));
-
-    return A;
+    return Result;
 }
 
 inline vec3

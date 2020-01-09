@@ -48,72 +48,64 @@ LoadGlad()
     }
 }
 
-void processInput(GLFWwindow *Window, color *Color, orthographic_camera *Camera)
+void processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
 {
     if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(Window, true);
     }
 
-    if (glfwGetKey(Window, GLFW_KEY_UP))
-    {
-        Color->R += 0.05f;
-    }
-    if (glfwGetKey(Window, GLFW_KEY_DOWN))
-    {
-        Color->R -= 0.05f;
-    }
-
     // Camera
     if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        Camera->Position.Y += 0.5f;
+        Camera->Position.Y += 1.f * Dt;
     }
     if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        Camera->Position.Y -= 0.5f;
+        Camera->Position.Y -= 1.f * Dt;
     }
     if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
     {
-        Camera->Position.X -= 0.5f;
+        Camera->Position.X -= 1.f * Dt;
     }
     if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
     {
-        Camera->Position.X += 0.5f;
+        Camera->Position.X += 1.f * Dt;
     }
 }
 
-
 void UpdateAndRender(GLFWwindow *Window)
 {
+    float DeltaTime = 0.f;
+    float LastFrame = 0.f;
+
     color Color = { 0.4f, 0.3f, 0.35f };
 
     float TexCoords[] = { -1.f, -1.f, 1.f,  1.f };
     texture Texture = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT); // TODO(insolence): change path to relative
     Texture.TexCoords = TexCoords;
 
-    TestCollisions();
-
     orthographic_camera Camera;
-    SetProjection(&Camera, -5.f, -5.f, 5.f, 5.f);
-    RecalculateViewMatrix(&Camera);
+    SetViewProjection(&Camera, -1.f, 1.f, -1.f, 1.f);
     
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
     {
-        processInput(Window, &Color, &Camera);
+        float CurrentFrame = glfwGetTime();
+        DeltaTime = CurrentFrame - LastFrame;
+        LastFrame = CurrentFrame;
+
+        processInput(Window, &Camera, DeltaTime);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(Color.R, Color.G, Color.B, 1.f);
 
         RecalculateViewMatrix(&Camera);
 
-        PrintVec3(Camera.Position);
-
         // NOTE(insolence): Actual drawing
-        DrawRectangle(&Camera, 0.0f, 0.0f, 0.5f, 0.5f, {0.1f, 0.3f, 0.7f});
+        DrawRectangle(&Camera, {0.0f, 0.0f}, {0.5f, 0.5f}, {0.1f, 0.3f, 0.7f});
 
-        DrawRectangleTextured(&Camera, -1.f, -1.f, 0.f, 0.f, Texture);
+        DrawRectangleTextured(&Camera, {-1.f, -1.f}, {0.f, 0.f}, Texture);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
