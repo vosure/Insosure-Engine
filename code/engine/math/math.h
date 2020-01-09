@@ -1,88 +1,39 @@
 #pragma once
 
-//TODO(vosure):
-//vec2/vec3/vec4 - dot,cross,normalize,length, lerp(+, -. *, /, +=, -=),
-//mat3/mat4 - identity, rotation, scale, ortho, transform
+// TODO(insolence): Delete and replace with intrinsics?
+#include <math.h>
 
-union vec2 {
-    struct
-    {
-        float X, Y;
-    };
-    float E[2];
-};
+#define PI 3.14159265358979323846f
+#define DEG2RAD(Deg) ((Deg) / 180.0f * PI)
+#define RAD2DEG(Rad) ((Rad) / PI * 180.0f)
 
-inline vec2
-operator+(vec2 A, vec2 B)
+inline float 
+Max(float Left, float Right)
 {
-    A.X = A.X + B.X;
-    A.Y = A.Y + B.Y;
-    return A;
+    return (Left > Right ? Left : Right);
 }
 
-inline vec2
-operator-(vec2 A, vec2 B)
+inline float 
+Min(float Left, float Right)
 {
-    A.X = A.X - B.X;
-    A.Y = A.Y - B.Y;
-    return A;
+    return (Left < Right ? Left : Right);
 }
 
-inline vec2
-operator*(vec2 A, float B)
+inline float 
+Clamp(float value, float min, float max)
 {
-    A.X = A.X * B;
-    A.Y = A.Y * B;
-    return A;
-}
-
-inline vec2
-operator*(float B, vec2 A)
-{
-    A = A * B;
-    return A;
-}
-
-inline vec2 &
-operator+=(vec2 &A, vec2 B)
-{
-    A = A + B;
-    return A;
-}
-
-inline vec2 &
-operator-=(vec2 &A, vec2 B)
-{
-    A = A - B;
-    return (A);
-}
-
-inline vec2 &
-operator*=(vec2 &A, float B)
-{
-    A = A * B;
-    return (A);
-}
-
-inline vec2
-operator-(vec2 A)
-{
-    A.X = -A.X;
-    A.Y = -A.Y;
-    return (A);
+    return Max(min, Min(max, value));
 }
 
 inline float
-Dot(vec2 A, vec2 B)
+Abs(float Value)
 {
-    float Result = A.X * B.X + A.Y * B.Y;
-    return (Result);
+    return (Value < 0 ? -Value : Value);
 }
 
-//TODO(vosure): SquareRoot function
-
 //NOTE(vosure):Sqrt, check it before you use
-float Root(float Value)
+float 
+Root(float Value)
 {
     float Low = 0;
     float High = Value;
@@ -107,27 +58,25 @@ Square(float A)
     return A * A;
 }
 
-inline float
-Length(vec2 A)
+// NOTE(insolence): Check this
+inline float 
+Power(float Value, int Pow)
 {
-    return Root(Square(A.X) + Square(A.Y));
+    float Result = Value;
+    for (int i = 0; i < Pow; i++)
+        Result = Square(Value);
+
+    return Result;
 }
 
-inline vec2
-Normalize(vec2 A)
+inline int
+TruncateFloatToInt(float Value)
 {
-    return (A * (1.0f / Length(A)));
+    return (int)Value;
 }
 
-inline vec2
-Lerp(vec2 A, vec2 B, float t)
+inline int
+RoundFloatToInt(float Value)
 {
-    return (A + (B - A) * t);
-}
-
-//TODO(vosure):Custom String
-inline
-void PrintVec2(vec2 Vector)
-{
-    printf("Vec2: X = %.2f, Y = %.2f", Vector.X, Vector.Y);
+    return (int)(Value + 0.5f);
 }

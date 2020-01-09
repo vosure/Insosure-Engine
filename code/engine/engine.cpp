@@ -48,7 +48,7 @@ LoadGlad()
     }
 }
 
-void processInput(GLFWwindow *Window, color *Color)
+void processInput(GLFWwindow *Window, color *Color, orthographic_camera *Camera)
 {
     if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
@@ -63,6 +63,24 @@ void processInput(GLFWwindow *Window, color *Color)
     {
         Color->R -= 0.05f;
     }
+
+    // Camera
+    if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
+    {
+        Camera->Position.Y += 0.5f;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
+    {
+        Camera->Position.Y -= 0.5f;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
+    {
+        Camera->Position.X -= 0.5f;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
+    {
+        Camera->Position.X += 0.5f;
+    }
 }
 
 
@@ -76,18 +94,26 @@ void UpdateAndRender(GLFWwindow *Window)
 
     TestCollisions();
 
+    orthographic_camera Camera;
+    SetProjection(&Camera, -5.f, -5.f, 5.f, 5.f);
+    RecalculateViewMatrix(&Camera);
+    
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
     {
-        processInput(Window, &Color);
+        processInput(Window, &Color, &Camera);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(Color.R, Color.G, Color.B, 1.f);
 
-        // NOTE(insolence): Actual drawing
-        DrawRectangle(0.0f, 0.0f, 1.f, 1.f, {0.1f, 0.3f, 0.7f});
+        RecalculateViewMatrix(&Camera);
 
-        DrawRectangleTextured(-0.9f, -.9f, 0.f, 0.f, Texture);
+        PrintVec3(Camera.Position);
+
+        // NOTE(insolence): Actual drawing
+        DrawRectangle(&Camera, 0.0f, 0.0f, 0.5f, 0.5f, {0.1f, 0.3f, 0.7f});
+
+        DrawRectangleTextured(&Camera, -1.f, -1.f, 0.f, 0.f, Texture);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();

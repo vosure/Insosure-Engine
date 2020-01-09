@@ -1,41 +1,8 @@
 #pragma once
 
-#include "../math/math.h"
+#include "../math/linear_math.h"
 #include <stdio.h>
 
-typedef vec2 point;
-
-//////////////////////////////////////////////////////////////
-// TODO(insolence): Move to math
-vec2 Abs(point Vector)
-{
-    (Vector.X < 0) ? Vector.X = -Vector.X : Vector.X = Vector.X;
-    (Vector.Y < 0) ? Vector.Y = -Vector.Y : Vector.Y = Vector.Y;
-    
-    return Vector;
-}
-float Max(float Left, float Right)
-{
-    return (Left > Right ? Left : Right);
-}
-float Min(float Left, float Right)
-{
-    return (Left < Right ? Left : Right);
-}
-float Clamp(float value, float min, float max)
-{
-    return Max(min, Min(max, value));
-}
-vec2 Clamp(vec2 value, vec2 min, vec2 max)
-{
-    vec2 Result;
-
-    Result.X = Max(min.X, Min(max.X, value.X));
-    Result.Y = Max(min.Y, Min(max.Y, value.Y));
-
-    return Result;
-}
-//////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////
 // NOTE(insolence): Physics for 2D objects
@@ -48,7 +15,7 @@ struct aabb
     vec2 Velocity;
 };
 
-struct bounding_sphere
+struct bounding_circle
 {
     point Center;
     float Radius;
@@ -63,12 +30,12 @@ IsPointInsideAABB(point Point, aabb Box)
 }
 
 bool
-IsPointInsideSphere(point Point, bounding_sphere Sphere)
+IsPointInsideCircle(point Point, bounding_circle Circle)
 {
-    vec2 Distance = Abs(Sphere.Center - Point);
+    vec2 Distance = Abs(Circle.Center - Point);
     float Dist = Length(Distance);
 
-    return (Dist < Sphere.Radius);
+    return (Dist < Circle.Radius);
 }
 
 
@@ -80,7 +47,7 @@ Intersect(aabb Left, aabb Right)
 }
 
 bool
-Intersect(bounding_sphere Sphere, aabb Box)
+Intersect(bounding_circle Circle, aabb Box)
 {
     point BoxHalfExtents;
     BoxHalfExtents.X = Box.MaxX - Box.MinX;
@@ -90,17 +57,17 @@ Intersect(bounding_sphere Sphere, aabb Box)
     BoxCenter.X = Box.MinX + BoxHalfExtents.X;
     BoxCenter.Y = Box.MinY + BoxHalfExtents.Y;
 
-    vec2 Difference = Sphere.Center - BoxCenter;
+    vec2 Difference = Circle.Center - BoxCenter;
     vec2 Clamped = Clamp(Difference, -BoxHalfExtents, BoxHalfExtents);
 
     vec2 Closest = BoxCenter + Clamped;
-    Difference = Closest - Sphere.Center;
+    Difference = Closest - Circle.Center;
 
-    return (Length(Difference) < Sphere.Radius);
+    return (Length(Difference) < Circle.Radius);
 }
 
 bool
-Intersect(bounding_sphere Left, bounding_sphere Right)
+Intersect(bounding_circle Left, bounding_circle Right)
 {
     vec2 Distance = Abs(Right.Center - Left.Center);
     float Dist = Length(Distance);
@@ -135,5 +102,73 @@ TestCollisions()
 // TODO(insolence): Physics for 3D objects 
 //////////////////////////////////////////
 
+typedef vec3 point3D;
+
+struct aabb_3D
+{
+    point3D Min;
+    point3D Max;
+    vec3 Velocity;
+};
+
+struct bounding_sphere
+{
+    point3D Center;
+    float Radius;
+    vec3 Velocity;
+};
+
+bool 
+IsPointInsideAABB(point3D Point, aabb_3D Box)
+{
+    return (Point.X <= Box.Max.X && Point.Y <= Box.Max.Y && Point.Z <= Box.Max.Z &&
+            Point.X >= Box.Min.X && Point.Y >= Box.Min.Y && Point.Z >= Box.Min.Z);
+}
+
+bool
+IsPointInsideSphere(point3D Point, bounding_sphere Sphere)
+{
+    vec3 Distance = Abs(Sphere.Center - Point);
+    float Dist = Length(Distance);
+
+    return (Dist < Sphere.Radius);
+}
 
 
+bool
+Intersect(aabb_3D Left, aabb_3D Right)
+{
+    return (Left.Min.X <= Right.Max.X && Left.Max.X >= Right.Min.X &&
+            Left.Min.Z <= Right.Max.Z && Left.Max.Z >= Right.Min.Z);
+}
+
+bool
+Intersect(bounding_sphere Sphere, aabb_3D Box)
+{
+    point3D BoxHalfExtents;
+    BoxHalfExtents.X = Box.Max.X - Box.Min.X;
+    BoxHalfExtents.Y = Box.Max.Y - Box.Min.Y;
+    BoxHalfExtents.Z = Box.Max.Z - Box.Min.Z;
+
+    point3D BoxCenter;
+    BoxCenter.X = Box.Min.X + BoxHalfExtents.X;
+    BoxCenter.Y = Box.Min.Y + BoxHalfExtents.Y;
+    BoxCenter.Z = Box.Min.Z + BoxHalfExtents.Z;
+
+    vec3 Difference = Sphere.Center - BoxCenter;
+    vec3 Clamped = Clamp(Difference, -BoxHalfExtents, BoxHalfExtents);
+
+    vec3 Closest = BoxCenter + Clamped;
+    Difference = Closest - Sphere.Center;
+
+    return (Length(Difference) < Sphere.Radius);
+}
+
+bool
+Intersect(bounding_sphere Left, bounding_sphere Right)
+{
+    vec3 Distance = Abs(Right.Center - Left.Center);
+    float Dist = Length(Distance);
+
+    return (Dist < (Left.Radius + Right.Radius));
+}

@@ -3,8 +3,10 @@
 #include "texture.h"
 #include "shader.h"
 
+#include "orthographic_camera.h"
+
 void 
-DrawRectangle(float FromX, float FromY, float ToX, float ToY, color Color)
+DrawRectangle(orthographic_camera *Camera, float FromX, float FromY, float ToX, float ToY, color Color)
 {
     static unsigned int VAO = 0, VBO = 0, ShaderProgram = 0;
     if (!VAO)
@@ -40,6 +42,7 @@ DrawRectangle(float FromX, float FromY, float ToX, float ToY, color Color)
 
     glUseProgram(ShaderProgram);
     SetColor("CustomColor", ShaderProgram, Color);
+    SetMat4("ViewProjection", ShaderProgram, Camera->ProjectionMatrix);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -48,7 +51,7 @@ DrawRectangle(float FromX, float FromY, float ToX, float ToY, color Color)
 }
 
 void 
-DrawRectangleTextured(float FromX, float FromY, float ToX, float ToY, texture Texture, color Color = {0.f, 0.f, 0.f})
+DrawRectangleTextured(orthographic_camera *Camera, float FromX, float FromY, float ToX, float ToY, texture Texture, color Color = {0.f, 0.f, 0.f})
 {
     static unsigned int TexturedVAO = 0, TexturedVBO = 0, TexturedShaderProgram = 0;
     if (!TexturedVAO)
@@ -87,6 +90,8 @@ DrawRectangleTextured(float FromX, float FromY, float ToX, float ToY, texture Te
     glUseProgram(TexturedShaderProgram);
     glBindTexture(GL_TEXTURE_2D, Texture.ID);
     SetColor("CustomColor", TexturedShaderProgram, Color);
+    SetMat4("ViewProjection", TexturedShaderProgram, Camera->ProjectionMatrix);
+    //SetMat4("ViewProjection", TexturedShaderProgram, Camera->ViewProjection);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

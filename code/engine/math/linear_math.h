@@ -13,6 +13,8 @@ union vec2 {
     };
     float E[2];
 };
+typedef vec2 point;
+
 
 inline vec2
 operator+(vec2 A, vec2 B)
@@ -108,9 +110,30 @@ Lerp(vec2 A, vec2 B, float t)
     return (A + (B - A) * t);
 }
 
-inline void PrintVec2(vec2 Vector)
+inline vec2 
+Abs(vec2 Vector)
 {
-    printf("Vec2: X = %.2f, Y = %.2f", Vector.X, Vector.Y);
+    (Vector.X < 0) ? Vector.X = -Vector.X : Vector.X = Vector.X;
+    (Vector.Y < 0) ? Vector.Y = -Vector.Y : Vector.Y = Vector.Y;
+    
+    return Vector;
+}
+
+inline vec2 
+Clamp(vec2 value, vec2 min, vec2 max)
+{
+    vec2 Result;
+
+    Result.X = Max(min.X, Min(max.X, value.X));
+    Result.Y = Max(min.Y, Min(max.Y, value.Y));
+
+    return Result;
+}
+
+inline void 
+PrintVec2(vec2 Vector)
+{
+    printf("Vec2: X = %.2f, Y = %.2f \n", Vector.X, Vector.Y);
 }
 
 //NOTE(vosure): vec3
@@ -125,6 +148,7 @@ union vec3 {
     };
     float E[3];
 };
+typedef vec3 color;
 
 inline vec3
 operator+(vec3 A, vec3 B)
@@ -234,10 +258,32 @@ Lerp(vec3 A, vec3 B, float t)
     return (A + (B - A) * t);
 }
 
+inline vec3 
+Abs(vec3 Vector)
+{
+    (Vector.X < 0) ? Vector.X = -Vector.X : Vector.X = Vector.X;
+    (Vector.Y < 0) ? Vector.Y = -Vector.Y : Vector.Y = Vector.Y;
+    (Vector.Z < 0) ? Vector.Z = -Vector.Z : Vector.Z = Vector.Z;
+    
+    return Vector;
+}
+
+inline vec3 
+Clamp(vec3 value, vec3 min, vec3 max)
+{
+    vec3 Result;
+
+    Result.X = Max(min.X, Min(max.X, value.X));
+    Result.Y = Max(min.Y, Min(max.Y, value.Y));
+    Result.Z = Max(min.Z, Min(max.Z, value.Z));
+
+    return Result;
+}
+
 //TODO(vosure):Custom String
 inline void PrintVec3(vec3 Vector)
 {
-    printf("Vec3: X = %.2f, Y = %.2f, Z = %.2f", Vector.X, Vector.Y, Vector.Z);
+    printf("Vec3: X = %.2f, Y = %.2f, Z = %.2f \n", Vector.X, Vector.Y, Vector.Z);
 }
 
 //NOTE(vosure): vec4
@@ -252,6 +298,7 @@ union vec4 {
     };
     float E[4];
 };
+typedef vec4 color4;
 
 inline vec4
 operator+(vec4 A, vec4 B)
@@ -356,7 +403,8 @@ Lerp(vec4 A, vec4 B, float t)
 }
 
 //TODO(vosure):Custom String
-inline void PrintVec4(vec4 Vector)
+inline void 
+PrintVec4(vec4 Vector)
 {
     printf("Vec4: X = %.2f, Y = %.2f, Z = %.2f, W = %.2f", Vector.X, Vector.Y, Vector.Z, Vector.W);
 }
@@ -388,6 +436,8 @@ Identity(float Diagonal = 1.0f)
     Result.Elements[5] = Diagonal;
     Result.Elements[10] = Diagonal;
     Result.Elements[15] = Diagonal;
+
+    return Result;
 }
 
 inline mat4
@@ -469,10 +519,6 @@ Scale(vec3 Scale)
 
     return (Result);
 }
-
-#define PI 3.14159265358979323846f
-#define DEG2RAD(Deg) ((Deg) / 180.0f * PI)
-#define RAD2DEG(Rad) ((Rad) / PI * 180.0f)
 
 inline mat4
 Rotate(float Angle, vec3 Axis)

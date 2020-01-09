@@ -1,15 +1,6 @@
 #pragma once
 
-// NOTE(insolence): Temp structs until the math materializes
-struct vec3
-{
-    float X, Y, Z;
-};
-struct mat4
-{
-    float values[4][4];
-};
-
+#include "../math/linear_math.h"
 
 struct orthographic_camera
 {
@@ -17,22 +8,25 @@ struct orthographic_camera
     mat4 ViewMatrix;
     mat4 ViewProjection;
 
-    vec3 Position; 
+    vec3 Position = {}; 
     float Rotation = 0.f; // TODO(insolence): Maybe implement later, unnecessary right now 
 };
 typedef orthographic_camera camera_2D;
 
 void
-SetProjection(orthographic_camera *Camera, float Left, float Right, float Bottom, float Top)
+RecalculateViewMatrix(orthographic_camera *Camera)
 {
-    // mat4 ProjectionMatrix = ;
-    // Camera->ProjectionMatrix = ProjectionMatrix;
-    // Camera->ViewProjection = Camera->ProjectionMatrix * Camera->ViewMatrix;
+    Camera->ViewMatrix = Identity();
+    mat4 Transform = Translate(Camera->Position); // * Rotate();
+    Camera->ViewMatrix = Transform;
+    Camera->ViewProjection = Camera->ProjectionMatrix * Camera->ViewMatrix;
 }
 
 void
-RecalculateViewMatrix(orthographic_camera *Camera)
+SetProjection(orthographic_camera *Camera, float Left, float Right, float Bot, float Top)
 {
-    // ViewMatrix = ;
-    // Camera->ViewProjection = Camera->ProjectionMatrix * ViewMatrix;
+    Camera->ProjectionMatrix = Ortho(Bot, Top, Left, Right, -1.f, 1.f);
+
+    RecalculateViewMatrix(Camera);
+    Camera->ViewProjection = Camera->ProjectionMatrix * Camera->ViewMatrix;
 }

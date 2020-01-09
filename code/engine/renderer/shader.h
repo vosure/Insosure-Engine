@@ -59,27 +59,39 @@ CreateShaderProgram(const char *VertSrc, const char *FragSrc)
 }
 
 void 
-SetColor(const char* Name, int ShaderProgram, color Color)
+SetColor(const char *Name, int ShaderProgram, color Color)
 { 
     glUniform3f(glGetUniformLocation(ShaderProgram, Name), Color.R, Color.G, Color.B); 
 }
 
 void 
-SetInt(const char* Name, int ShaderProgram, int Value)
+SetInt(const char *Name, int ShaderProgram, int Value)
 { 
     glUniform1i(glGetUniformLocation(ShaderProgram, Name), Value); 
 }
 
 void 
-SetBool(const char* Name, int ShaderProgram, bool Value)
+SetBool(const char *Name, int ShaderProgram, bool Value)
 { 
     glUniform1i(glGetUniformLocation(ShaderProgram, Name), (bool)Value); 
 }
 
 void 
-SetFloat(const char* Name, int ShaderProgram, float Value)
+SetFloat(const char *Name, int ShaderProgram, float Value)
 { 
     glUniform1f(glGetUniformLocation(ShaderProgram, Name), Value); 
+}
+
+void
+SetMat4(const char *Name, int ShaderProgram, mat4 Matrix)
+{
+    glUniformMatrix4fv(glGetUniformLocation(ShaderProgram, Name), 1, GL_FALSE, &Matrix.Elements[0]);
+}
+
+void
+SetVec3(const char *Name, int ShaderProgram, vec3 Vector)
+{
+    glUniform3f(glGetUniformLocation(ShaderProgram, Name), Vector.X, Vector.Y, Vector.Z); 
 }
 
 /////////////////////////////////////////////////////////////////
