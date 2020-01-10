@@ -94,4 +94,6 @@ DrawRectangleTextured(orthographic_camera *Camera, vec2 From, vec2 To, texture T
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

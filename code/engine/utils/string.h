@@ -7,7 +7,18 @@ struct string
 
     string operator= (char *String)
     {
+        Text = String;
+        Length = ArrayCount(String);
 
+        return *this;
+    }
+
+    string operator= (const char *String)
+    {
+        Text = (char*)String;
+        Length = ArrayCount(String);
+
+        return *this;
     }
 
     bool operator== (string String)

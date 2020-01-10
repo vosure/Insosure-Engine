@@ -79,11 +79,17 @@ void UpdateAndRender(GLFWwindow *Window)
     float DeltaTime = 0.f;
     float LastFrame = 0.f;
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+
     color Color = { 0.4f, 0.3f, 0.35f };
 
-    float TexCoords[] = { -1.f, -1.f, 1.f,  1.f };
-    texture Texture = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT); // TODO(insolence): change path to relative
-    Texture.TexCoords = TexCoords;
+    float TexCoords[] = { 0.f, 0.f, 1.f,  1.f };
+    texture BrickWall = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT);
+    BrickWall.TexCoords = TexCoords;
+
+    texture Bush = CreateTexture("bush.png", GL_NEAREST, GL_CLAMP_TO_BORDER); // GL_CLAMP_TO_EDGE for alpha textures
+    Bush.TexCoords = TexCoords;
 
     orthographic_camera Camera;
     SetViewProjection(&Camera, -1.f, 1.f, -1.f, 1.f);
@@ -95,6 +101,9 @@ void UpdateAndRender(GLFWwindow *Window)
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
 
+        printf("Seconds/frame: %.3f, ", DeltaTime);
+        printf("FPS: %.3f \n",  1.f/DeltaTime);  
+
         processInput(Window, &Camera, DeltaTime);
 
         glClear(GL_COLOR_BUFFER_BIT);
@@ -103,9 +112,12 @@ void UpdateAndRender(GLFWwindow *Window)
         RecalculateViewMatrix(&Camera);
 
         // NOTE(insolence): Actual drawing
-        DrawRectangle(&Camera, {0.0f, 0.0f}, {0.5f, 0.5f}, {0.1f, 0.3f, 0.7f});
+        DrawRectangle(&Camera, {0.0f, 0.0f}, {2.f, 2.f}, {0.1f, 0.7f, 0.7f});
 
-        DrawRectangleTextured(&Camera, {-1.f, -1.f}, {0.f, 0.f}, Texture);
+        //DrawRectangleTextured(&Camera, {4.f, 4.f}, {5.f, 5.f}, Sun);
+
+        DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, BrickWall);
+        DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, Bush);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
