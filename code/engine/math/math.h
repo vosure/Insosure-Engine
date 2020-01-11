@@ -78,5 +78,41 @@ TruncateFloatToInt(float Value)
 inline int
 RoundFloatToInt(float Value)
 {
-    return (int)(Value + 0.5f);
+    int Result = (int)roundf(Value);
+    return Result;
+}
+
+inline unsigned int
+RoundFloatToUInt(float Value)
+{
+    unsigned int Result = (unsigned int)roundf(Value);
+    return Result;
+}
+
+inline int
+FloorFloatToInt(float Value)
+{
+    int Result = (int)floorf(Value);
+    return Result;
+}
+
+inline float
+Sin(float Angle)
+{
+    float Result = sinf(Angle);
+    return Result;
+}
+
+inline float
+Cos(float Angle)
+{
+    float Result = cosf(Angle);
+    return Result;
+}
+
+inline float
+ATan2(float Y, float X)
+{
+    float Result = atan2f(Y, X);
+    return Result;
 }

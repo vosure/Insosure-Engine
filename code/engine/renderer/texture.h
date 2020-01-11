@@ -5,7 +5,6 @@
 struct texture
 {
     unsigned int ID;
-    float *TexCoords;
     int FilteringMode; // NOTE(insolence): GL_NEAREST or GL_LINEAR
     int WrappingMode;  // NOTE(insolence): GL_REPEAT, GL_CLAMP etc. 
 };
@@ -13,7 +12,8 @@ struct texture
 texture 
 CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 {
-    char Append[50];
+    // NOTE(insolence): Size must be determined dynamically!!!
+    char Append[120];
 	strcpy(Append, "D:/dev/InsosureEngine/assets/textures/");
 	strcat(Append, Path);
 

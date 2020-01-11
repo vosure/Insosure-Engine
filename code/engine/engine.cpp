@@ -74,6 +74,7 @@ void processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
     }
 }
 
+
 void UpdateAndRender(GLFWwindow *Window)
 {
     float DeltaTime = 0.f;
@@ -82,17 +83,23 @@ void UpdateAndRender(GLFWwindow *Window)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
+    // NOTE(insolence): We cull back faces specified in CCW order,
+    // Front faces are in CW order
+    glEnable(GL_CULL_FACE);  
+    glCullFace(GL_BACK);  
+    glFrontFace(GL_CW);  
+
+    printf(num2str(20));
+
     color Color = { 0.4f, 0.3f, 0.35f };
 
-    float TexCoords[] = { 0.f, 0.f, 1.f,  1.f };
     texture BrickWall = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT);
-    BrickWall.TexCoords = TexCoords;
-
     texture Bush = CreateTexture("bush.png", GL_NEAREST, GL_CLAMP_TO_BORDER); // GL_CLAMP_TO_EDGE for alpha textures
-    Bush.TexCoords = TexCoords;
-
+    texture Sun = CreateTexture("sun.jpg", GL_NEAREST, GL_CLAMP_TO_BORDER);
+    texture SemiTranspWindow = CreateTexture("blending_transparent_window.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
+    
     orthographic_camera Camera;
-    SetViewProjection(&Camera, -1.f, 1.f, -1.f, 1.f);
+    SetViewProjection(&Camera, -2.f, 2.f, -2.f, 2.f);
     
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
@@ -114,10 +121,13 @@ void UpdateAndRender(GLFWwindow *Window)
         // NOTE(insolence): Actual drawing
         DrawRectangle(&Camera, {0.0f, 0.0f}, {2.f, 2.f}, {0.1f, 0.7f, 0.7f});
 
-        //DrawRectangleTextured(&Camera, {4.f, 4.f}, {5.f, 5.f}, Sun);
+        DrawRectangleTextured(&Camera, {2.f, 2.f}, {4.f, 4.f}, Sun);
 
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, BrickWall);
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, Bush);
+
+        DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, SemiTranspWindow);
+
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
