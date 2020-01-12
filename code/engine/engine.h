@@ -9,6 +9,7 @@
 #define internal static
 #define local_persist static 
 #define global_variable static 
+#define bool32 int
 
 // NOTE(insolence): Useful Macros
 #define Assert(Expression) if (!(Expression)) { *(int*)0 = 0; }
@@ -29,3 +30,11 @@
         keep && count != size; \
         keep = !keep, count++) \
       for(item = (array)+count; keep; keep = !keep)
+
+
+struct postprocessing_effects
+{
+    bool Inversion;
+    bool Grayscale;
+    bool Blur;
+};

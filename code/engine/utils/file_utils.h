@@ -7,7 +7,7 @@
 // cause the app immediately crashes
 char *ReadFile(const char *FilePath)
 {
-	char Append[50];
+	char Append[130];
 	strcpy(Append, "D:/dev/InsosureEngine/assets/");
 	strcat(Append, FilePath);
 

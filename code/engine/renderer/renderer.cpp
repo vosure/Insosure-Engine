@@ -108,3 +108,54 @@ DrawRectangleTextured(orthographic_camera *Camera, vec2 From, vec2 To, texture T
     glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+void
+RenderScreenTexture(int FBTexture, postprocessing_effects Effects)
+{
+    static unsigned int FBShader = 0, ScreenVAO = 0, ScreenVBO = 0;
+    if (!FBShader)
+    {
+        const char *VertexSrc = (const char *)ReadFile("shaders/postprocessing.vert");
+        const char *FragSrc   = (const char *)ReadFile("shaders/postprocessing.frag");
+        FBShader = CreateShaderProgram(VertexSrc, FragSrc);
+        free((void *)VertexSrc);
+        free((void *)FragSrc);
+
+        float ScreenVertices[] = {
+         // positions  // texCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+        };
+
+        glGenVertexArrays(1, &ScreenVAO);
+        glGenBuffers(1, &ScreenVBO);
+
+        glBindVertexArray(ScreenVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, ScreenVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(ScreenVertices), &ScreenVertices, GL_STATIC_DRAW);
+    
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
+    }
+
+    glBindVertexArray(ScreenVAO);
+    glUseProgram(FBShader);
+    SetBool("Inversion", FBShader, Effects.Inversion);
+    SetBool("Grayscale", FBShader, Effects.Grayscale);
+    SetBool("Blur", FBShader, Effects.Blur);
+    glBindTexture(GL_TEXTURE_2D, FBTexture);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}

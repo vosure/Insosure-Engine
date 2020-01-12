@@ -8,6 +8,7 @@
 #include "renderer/renderer.cpp"
 #include "renderer/orthographic_camera.h"
 #include "physics/physics.h"
+#include "renderer/framebuffer.h"
 
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height);
 
@@ -74,7 +75,6 @@ void processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
     }
 }
 
-
 void UpdateAndRender(GLFWwindow *Window)
 {
     float DeltaTime = 0.f;
@@ -85,11 +85,9 @@ void UpdateAndRender(GLFWwindow *Window)
 
     // NOTE(insolence): We cull back faces specified in CCW order,
     // Front faces are in CW order
-    glEnable(GL_CULL_FACE);  
-    glCullFace(GL_BACK);  
-    glFrontFace(GL_CW);  
-
-    printf(num2str(20));
+    // glEnable(GL_CULL_FACE);  
+    // glCullFace(GL_BACK);  
+    // glFrontFace(GL_CW);  
 
     color Color = { 0.4f, 0.3f, 0.35f };
 
@@ -100,6 +98,13 @@ void UpdateAndRender(GLFWwindow *Window)
     
     orthographic_camera Camera;
     SetViewProjection(&Camera, -2.f, 2.f, -2.f, 2.f);
+
+    framebuffer Framebuffer = CreateFramebuffer(1280, 720);
+
+    postprocessing_effects Effects;
+    Effects.Inversion = false;
+    Effects.Grayscale = false;
+    Effects.Blur = true;
     
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
@@ -112,6 +117,8 @@ void UpdateAndRender(GLFWwindow *Window)
         printf("FPS: %.3f \n",  1.f/DeltaTime);  
 
         processInput(Window, &Camera, DeltaTime);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer.ID);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(Color.R, Color.G, Color.B, 1.f);
@@ -128,6 +135,9 @@ void UpdateAndRender(GLFWwindow *Window)
 
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, SemiTranspWindow);
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        RenderScreenTexture(Framebuffer.TextureAttachment, Effects);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
