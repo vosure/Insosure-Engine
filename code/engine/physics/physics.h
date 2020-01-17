@@ -1,8 +1,6 @@
 #pragma once
 
-#include "../math/linear_math.h"
 #include <stdio.h>
-
 
 //////////////////////////////////////////
 // NOTE(insolence): Physics for 2D objects
@@ -22,7 +20,7 @@ struct bounding_circle
     vec2 Velocity;
 };
 
-bool 
+bool
 IsPointInsideAABB(point Point, aabb Box)
 {
     return (Point.X <= Box.MaxX && Point.Y <= Box.MaxY &&
@@ -99,7 +97,7 @@ TestCollisions()
 
 
 //////////////////////////////////////////
-// TODO(insolence): Physics for 3D objects 
+// TODO(insolence): Physics for 3D objects
 //////////////////////////////////////////
 
 typedef vec3 point3D;
@@ -118,7 +116,7 @@ struct bounding_sphere
     vec3 Velocity;
 };
 
-bool 
+bool
 IsPointInsideAABB(point3D Point, aabb_3D Box)
 {
     return (Point.X <= Box.Max.X && Point.Y <= Box.Max.Y && Point.Z <= Box.Max.Z &&

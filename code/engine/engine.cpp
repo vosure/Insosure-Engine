@@ -1,14 +1,20 @@
 #include "engine.h"
 
-#include <stdio.h>
+// All includes
+#include <glad/src/glad.c>
+#include <glfw/include/glfw3.h>
+#include <stb_image/stb_image.cpp>
 
-#include "..\..\dependencies\glad\src\glad.c"
-#include "..\..\dependencies\glfw\include\glfw3.h"
+#include "utils/file_utils.h"
+#include "math/linear_math.h"
+#include "math/math.h"
+#include "utils/hash_map.cpp"
 
 #include "renderer/renderer.cpp"
 #include "renderer/orthographic_camera.h"
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
+
 
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height);
 
@@ -49,7 +55,8 @@ LoadGlad()
     }
 }
 
-void processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
+void
+processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
 {
     if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
@@ -81,13 +88,13 @@ void UpdateAndRender(GLFWwindow *Window)
     float LastFrame = 0.f;
 
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // NOTE(insolence): We cull back faces specified in CCW order,
     // Front faces are in CW order
-    // glEnable(GL_CULL_FACE);  
-    // glCullFace(GL_BACK);  
-    // glFrontFace(GL_CW);  
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(GL_BACK);
+    // glFrontFace(GL_CW);
 
     color Color = { 0.4f, 0.3f, 0.35f };
 
@@ -95,7 +102,7 @@ void UpdateAndRender(GLFWwindow *Window)
     texture Bush = CreateTexture("bush.png", GL_NEAREST, GL_CLAMP_TO_BORDER); // GL_CLAMP_TO_EDGE for alpha textures
     texture Sun = CreateTexture("sun.jpg", GL_NEAREST, GL_CLAMP_TO_BORDER);
     texture SemiTranspWindow = CreateTexture("blending_transparent_window.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
-    
+
     orthographic_camera Camera;
     SetViewProjection(&Camera, -2.f, 2.f, -2.f, 2.f);
 
@@ -105,7 +112,7 @@ void UpdateAndRender(GLFWwindow *Window)
     Effects.Inversion = false;
     Effects.Grayscale = false;
     Effects.Blur = true;
-    
+
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
     {
@@ -114,7 +121,7 @@ void UpdateAndRender(GLFWwindow *Window)
         LastFrame = CurrentFrame;
 
         printf("Seconds/frame: %.3f, ", DeltaTime);
-        printf("FPS: %.3f \n",  1.f/DeltaTime);  
+        printf("FPS: %.3f \n",  1.f/DeltaTime);
 
         processInput(Window, &Camera, DeltaTime);
 
@@ -144,7 +151,7 @@ void UpdateAndRender(GLFWwindow *Window)
     }
 }
 
-int 
+int
 Start()
 {
     printf("The Engine has started!");
@@ -176,10 +183,11 @@ Start()
 }
 
 
-///// NOTE: Callbacks for OpenGL /////////////// 
 
-void 
+///// NOTE: Callbacks for OpenGL ///////////////
+
+void
 FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 {
     glViewport(0, 0, Width, Height);
-} 
+}

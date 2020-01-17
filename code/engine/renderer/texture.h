@@ -1,20 +1,18 @@
 #pragma once
 
-#include "..\..\..\dependencies\stb_image\stb_image.cpp"
-
 struct texture
 {
     unsigned int ID;
     int FilteringMode; // NOTE(insolence): GL_NEAREST or GL_LINEAR
-    int WrappingMode;  // NOTE(insolence): GL_REPEAT, GL_CLAMP etc. 
+    int WrappingMode;  // NOTE(insolence): GL_REPEAT, GL_CLAMP etc.
 };
 
-texture 
+texture
 CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 {
     // NOTE(insolence): Size must be determined dynamically!!!
     char Append[120];
-	strcpy(Append, "D:/dev/InsosureEngine/assets/textures/");
+	strcpy(Append, "W:/Insosure-Engine/assets/textures/");
 	strcat(Append, Path);
 
     texture Texture;
@@ -24,7 +22,7 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
     glGenTextures(1, &Texture.ID);
     glBindTexture(GL_TEXTURE_2D, Texture.ID);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, WrappingMode);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, WrappingMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, WrappingMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilteringMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, FilteringMode);
@@ -54,7 +52,7 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
         {
             printf("Channels != 3 or 4!");
         }
-        
+
 
         // TODO(insolence): Add RGBA, sRGB loading
         glTexImage2D(GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, DataFormat, GL_UNSIGNED_BYTE, Data); // NOTE(insolence): Now only RGB support

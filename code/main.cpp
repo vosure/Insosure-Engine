@@ -3,7 +3,7 @@
 
 typedef int (*Start)();
 
-int 
+int
 main()
 {
     HINSTANCE DLL = LoadLibrary("../build/engine.dll");
@@ -19,8 +19,6 @@ main()
         return -1;
     }
     EngineStartFunc();
-
-    system("pause");
 
     return 0;
 }

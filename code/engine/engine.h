@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 #define SUCCESS 1
 #define BAD_RESULT -1
 
@@ -7,16 +9,16 @@
 #define FALSE 0
 
 #define internal static
-#define local_persist static 
-#define global_variable static 
+#define local_persist static
+#define global_variable static
 #define bool32 int
 
 // NOTE(insolence): Useful Macros
 #define Assert(Expression) if (!(Expression)) { *(int*)0 = 0; }
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
-#define SWAP(x, y, T) do { T tmp = (x); (x) = (y); (y) = tmp; } while(0)
+#define Swap(x, y, T) do { T tmp = (x); (x) = (y); (y) = tmp; } while(0)
 
-#define num2str(x) str(x) // printf(num2str(20));
+#define NumToStr(x) str(x) // printf(NumTostr(20));
 #define str(x) #x
 
 // assert(IMPLIES(n > 0, array != NULL));

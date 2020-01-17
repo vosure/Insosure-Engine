@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../math/linear_math.h"
-
 // TODO(insolence): Implement rotations of camera
 struct orthographic_camera
 {
@@ -9,8 +7,8 @@ struct orthographic_camera
     mat4 ViewMatrix;
     mat4 ViewProjection;
 
-    vec3 Position = {}; 
-    float Rotation = 0.f; // TODO(insolence): Maybe implement later, unnecessary right now 
+    vec3 Position = {};
+    float Rotation = 0.f; // TODO(insolence): Maybe implement later, unnecessary right now
 };
 typedef orthographic_camera camera_2D;
 

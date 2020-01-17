@@ -7,19 +7,19 @@
 #define DEG2RAD(Deg) ((Deg) / 180.0f * PI)
 #define RAD2DEG(Rad) ((Rad) / PI * 180.0f)
 
-inline float 
+inline float
 Max(float Left, float Right)
 {
     return (Left > Right ? Left : Right);
 }
 
-inline float 
+inline float
 Min(float Left, float Right)
 {
     return (Left < Right ? Left : Right);
 }
 
-inline float 
+inline float
 Clamp(float value, float min, float max)
 {
     return Max(min, Min(max, value));
@@ -32,7 +32,7 @@ Abs(float Value)
 }
 
 //NOTE(vosure):Sqrt, check it before you use
-float 
+float
 Root(float Value)
 {
     float Low = 0;
@@ -59,7 +59,7 @@ Square(float A)
 }
 
 // NOTE(insolence): Check this
-inline float 
+inline float
 Power(float Value, int Pow)
 {
     float Result = Value;
@@ -115,4 +115,30 @@ ATan2(float Y, float X)
 {
     float Result = atan2f(Y, X);
     return Result;
+}
+
+int
+IsPrime(const int Num)
+{
+	if (Num < 2) return -1;
+	if (Num < 4) return 1;
+	if ((Num % 2) == 0) return 0;
+
+	for (int i = 3; i <= floor(sqrt((double)Num)); i += 2)
+	{
+		if ((Num % i) == 0)
+			return 0;
+	}
+	return 1;
+}
+
+// NOTE(insolence): Returns the next prime after x, or x if x is prime
+int
+NextPrime(int Num)
+{
+	while (IsPrime(Num) != 1)
+	{
+		Num++;
+	}
+	return Num;
 }
