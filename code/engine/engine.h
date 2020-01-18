@@ -40,3 +40,6 @@ struct postprocessing_effects
     bool Grayscale;
     bool Blur;
 };
+
+global_variable const int WINDOW_WIDTH = 1920;
+global_variable const int WINDOW_HEIGHT = 1080;

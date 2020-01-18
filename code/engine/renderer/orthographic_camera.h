@@ -16,7 +16,7 @@ void
 RecalculateViewMatrix(orthographic_camera *Camera)
 {
     Camera->ViewMatrix = Identity();
-    Camera->ViewMatrix = Translate(Camera->Position); // * Rotate();
+    Camera->ViewMatrix = Translate(Camera->Position); // * Rotate(Camera->Rotation, {0.f, 0.f, 1.f});
 
     Camera->ViewProjection = Camera->ProjectionMatrix * Camera->ViewMatrix;
 }

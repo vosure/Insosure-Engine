@@ -80,6 +80,15 @@ processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
     {
         Camera->Position.X += 1.f * Dt;
     }
+
+    if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
+    {
+        Camera->Rotation += 1.f;
+    }
+    else if (glfwGetKey(Window, GLFW_KEY_E) == GLFW_PRESS)
+    {
+        Camera->Rotation -= 1.f;
+    }
 }
 
 void UpdateAndRender(GLFWwindow *Window)
@@ -104,14 +113,23 @@ void UpdateAndRender(GLFWwindow *Window)
     texture SemiTranspWindow = CreateTexture("blending_transparent_window.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
 
     orthographic_camera Camera;
-    SetViewProjection(&Camera, -2.f, 2.f, -2.f, 2.f);
+    SetViewProjection(&Camera, -16.f * 0.3f, 16.f * 0.3f, -9.f * 0.3f, 9.f * 0.3f); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
 
-    framebuffer Framebuffer = CreateFramebuffer(1280, 720);
+    framebuffer PostprocessingFB = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, 1, true);
 
     postprocessing_effects Effects;
     Effects.Inversion = false;
     Effects.Grayscale = false;
-    Effects.Blur = true;
+    Effects.Blur = false;
+
+    framebuffer HdrFB = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 2, true);
+
+    framebuffer PingpongFB[2];
+    for (int i = 0; i < 2; i++)
+    {
+        PingpongFB[i] = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 1, false);
+    }
+    shader BlurShader = CreateShader("shaders/blur.vert", "shaders/blur.frag");
 
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
@@ -120,12 +138,12 @@ void UpdateAndRender(GLFWwindow *Window)
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
 
-        printf("Seconds/frame: %.3f, ", DeltaTime);
-        printf("FPS: %.3f \n",  1.f/DeltaTime);
+        //printf("Seconds/frame: %.3f, ", DeltaTime);
+        //printf("FPS: %.3f \n",  1.f/DeltaTime);
 
         processInput(Window, &Camera, DeltaTime);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer.ID);
+        glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(Color.R, Color.G, Color.B, 1.f);
@@ -133,18 +151,41 @@ void UpdateAndRender(GLFWwindow *Window)
         RecalculateViewMatrix(&Camera);
 
         // NOTE(insolence): Actual drawing
-        DrawRectangle(&Camera, {0.0f, 0.0f}, {2.f, 2.f}, {0.1f, 0.7f, 0.7f});
+        DrawRectangle(&Camera, {0.0f, 0.0f}, {2.f, 2.f}, {10.f, 20.f, 40.f});
+        DrawRectangle(&Camera, {-4.f, -4.0f}, {-2.f, -2.f}, {10.f, 0.f, 0.f});
 
         DrawRectangleTextured(&Camera, {2.f, 2.f}, {4.f, 4.f}, Sun);
-
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, BrickWall);
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, Bush);
-
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, SemiTranspWindow);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        RenderScreenTexture(Framebuffer.TextureAttachment, Effects);
+        // // NOTE(insolence): Blur bright fragments with 2-pass Gaussian blur
+        int Horizontal = 1;
+        bool FirstIteration = true;
+        int Amount = 20;
+        for (int i = 0; i < Amount; i++)
+        {
+            glUseProgram(BlurShader.ShaderProgram);
+            glBindFramebuffer(GL_FRAMEBUFFER, PingpongFB[Horizontal].ID);
+            SetInt("Image", BlurShader, 0);
+            SetInt("Horizontal", BlurShader, Horizontal);
+            glBindTexture(GL_TEXTURE_2D, FirstIteration ? HdrFB.TextureAttachment[1] : PingpongFB[!Horizontal].TextureAttachment[0]);
+            RenderScreenTexture();
+            Horizontal = !Horizontal;
+            if (FirstIteration)
+                FirstIteration = false;
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, PostprocessingFB.ID);
+        ApplyHDR(HdrFB.TextureAttachment[0], PingpongFB[!Horizontal].TextureAttachment[0], 0.5f);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        PostprocessScreenTexture(PostprocessingFB.TextureAttachment[0], Effects);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
@@ -154,10 +195,8 @@ void UpdateAndRender(GLFWwindow *Window)
 int
 Start()
 {
-    printf("The Engine has started!");
+    printf("The Engine has started!\n");
 
-    const int WINDOW_WIDTH = 1280;
-    const int WINDOW_HEIGHT = 720;
     char* WindowName = "Insosure Engine";
 
     GLFWwindow* Window;
@@ -172,7 +211,7 @@ Start()
         return BAD_RESULT;
     }
 
-    glViewport(0, 0, 1280, 720);
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 

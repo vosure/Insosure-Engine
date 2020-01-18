@@ -1,7 +1,7 @@
 set CommonCompilerFlags= -nologo
 set CommonLinkerFlags= -incremental:no -opt:ref opengl32.lib gdi32.lib user32.lib kernel32.lib winmm.lib
 set CommonOpenGLLinkerFlags= "..\dependencies\glfw\lib\glfw3dll.lib"
-set IncludePaths= /I"W:/Insosure-Engine/dependencies"
+set IncludePaths= /I"W:\Insosure-Engine\dependencies"
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x86
 call cls

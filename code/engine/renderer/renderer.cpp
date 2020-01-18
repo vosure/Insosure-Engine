@@ -88,7 +88,7 @@ DrawRectangleTextured(orthographic_camera *Camera, vec2 From, vec2 To, texture T
 
     glUseProgram(TexturedShader.ShaderProgram);
     glBindTexture(GL_TEXTURE_2D, Texture.ID);
-    SetColor("CustomColor", TexturedShader, Color);
+    //SetColor("CustomColor", TexturedShader, Color);
     SetMat4("ViewProjection", TexturedShader, Camera->ViewProjection);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -100,14 +100,11 @@ DrawRectangleTextured(orthographic_camera *Camera, vec2 From, vec2 To, texture T
 }
 
 void
-RenderScreenTexture(int FBTexture, postprocessing_effects Effects)
+RenderScreenTexture()
 {
-    static shader FBShader;
     static unsigned int ScreenVAO = 0, ScreenVBO = 0;
-    if (!FBShader.ShaderProgram)
+    if (!ScreenVAO)
     {
-        FBShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
-
         float ScreenVertices[] = {
          // positions  // texCoords
         -1.0f,  1.0f,  0.0f, 1.0f,
@@ -133,11 +130,6 @@ RenderScreenTexture(int FBTexture, postprocessing_effects Effects)
     }
 
     glBindVertexArray(ScreenVAO);
-    glUseProgram(FBShader.ShaderProgram);
-    SetBool("Inversion", FBShader, Effects.Inversion);
-    SetBool("Grayscale", FBShader, Effects.Grayscale);
-    SetBool("Blur", FBShader, Effects.Blur);
-    glBindTexture(GL_TEXTURE_2D, FBTexture);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -145,4 +137,49 @@ RenderScreenTexture(int FBTexture, postprocessing_effects Effects)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void
+PostprocessScreenTexture(int FBTexture, postprocessing_effects Effects)
+{
+    static shader FBShader;
+    if (!FBShader.ShaderProgram)
+    {
+        FBShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
+    }
+    glUseProgram(FBShader.ShaderProgram);
+    SetBool("Inversion", FBShader, Effects.Inversion);
+    SetBool("Grayscale", FBShader, Effects.Grayscale);
+    SetBool("Blur", FBShader, Effects.Blur);
+    glBindTexture(GL_TEXTURE_2D, FBTexture);
+
+    RenderScreenTexture();
+}
+
+void
+//ApplyHDR(int ScreenTexture, int BloomTexture, bool DoHdr, bool ApplyBloom, float Exposure)
+ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
+
+{
+    static shader HDRShader;
+    if (!HDRShader.ShaderProgram)
+    {
+        HDRShader = CreateShader("shaders/hdr.vert", "shaders/hdr.frag");
+        glUseProgram(HDRShader.ShaderProgram);
+        SetInt("Scene", HDRShader, 1);
+        SetInt("BloomBlur", HDRShader, 0);
+
+    }
+    glUseProgram(HDRShader.ShaderProgram);
+    //SetInt("Scene", HDRShader, 0);
+    //SetInt("BloomBlur", HDRShader, 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, ScreenTexture);
+    SetInt("Scene", HDRShader, 1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, BloomTexture);
+    SetInt("BloomBlur", HDRShader, 0);
+    SetFloat("Exposure", HDRShader, Exposure);
+
+    RenderScreenTexture();
 }

@@ -111,16 +111,16 @@ Lerp(vec2 A, vec2 B, float t)
     return (A + (B - A) * t);
 }
 
-inline vec2 
+inline vec2
 Abs(vec2 Vector)
 {
     (Vector.X < 0) ? Vector.X = -Vector.X : Vector.X = Vector.X;
     (Vector.Y < 0) ? Vector.Y = -Vector.Y : Vector.Y = Vector.Y;
-    
+
     return Vector;
 }
 
-inline vec2 
+inline vec2
 Clamp(vec2 value, vec2 min, vec2 max)
 {
     vec2 Result;
@@ -131,7 +131,7 @@ Clamp(vec2 value, vec2 min, vec2 max)
     return Result;
 }
 
-inline void 
+inline void
 PrintVec2(vec2 Vector)
 {
     printf("Vec2: X = %.2f, Y = %.2f \n", Vector.X, Vector.Y);
@@ -259,17 +259,17 @@ Lerp(vec3 A, vec3 B, float t)
     return (A + (B - A) * t);
 }
 
-inline vec3 
+inline vec3
 Abs(vec3 Vector)
 {
     (Vector.X < 0) ? Vector.X = -Vector.X : Vector.X = Vector.X;
     (Vector.Y < 0) ? Vector.Y = -Vector.Y : Vector.Y = Vector.Y;
     (Vector.Z < 0) ? Vector.Z = -Vector.Z : Vector.Z = Vector.Z;
-    
+
     return Vector;
 }
 
-inline vec3 
+inline vec3
 Clamp(vec3 value, vec3 min, vec3 max)
 {
     vec3 Result;
@@ -404,7 +404,7 @@ Lerp(vec4 A, vec4 B, float t)
 }
 
 //TODO(vosure):Custom String
-inline void 
+inline void
 PrintVec4(vec4 Vector)
 {
     printf("Vec4: X = %.2f, Y = %.2f, Z = %.2f, W = %.2f", Vector.X, Vector.Y, Vector.Z, Vector.W);
@@ -582,7 +582,7 @@ Ortho(float Bot, float Top, float Left, float Right, float Near, float Far)
 	return Result;
 }
 
-inline mat4 
+inline mat4
 Perspective(float FoV, float AspectRatio, float Near, float Far)
 {
 	mat4 Result = Identity(1.0f);
@@ -602,13 +602,13 @@ Perspective(float FoV, float AspectRatio, float Near, float Far)
 	return(Result);
 }
 
-inline mat4 
+inline mat4
 LookAt(vec3 From, vec3 Target, vec3 UpAxis = vec3{0.0f, 1.0f, 0.0f})
 {
 	mat4 Result = Identity(1.0f);
 
 	vec3 Forward = Normalize(From - Target);
-	vec3 Right = Normalize(Cross(UpAxis, Forward)); 
+	vec3 Right = Normalize(Cross(UpAxis, Forward));
 	vec3 Up = Cross(Forward, Right);
 
 

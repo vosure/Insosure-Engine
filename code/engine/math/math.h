@@ -142,3 +142,15 @@ NextPrime(int Num)
 	}
 	return Num;
 }
+
+unsigned long
+Hash(unsigned char *Str)
+{
+    unsigned long Hash = 5381;
+    int Char;
+
+    while (Char = *Str++)
+        Hash = ((Hash << 5) + Hash) + Char; /* hash * 33 + c */
+
+    return Hash;
+}
