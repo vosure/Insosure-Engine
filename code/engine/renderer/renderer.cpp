@@ -6,33 +6,26 @@ DrawRectangle(orthographic_camera *Camera, vec2 From, vec2 To, color Color)
     static shader Shader;
     if (!Shader.ShaderProgram)
     {
-        //NOTE(vosure) Relative path doesn't work, magic?
-        //NOTE(vosure) free this pointer after you read it, otherwise we get a memory leak
-        // NOTE(insolence): FIXED!!!
         Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
     }
 
     unsigned int VAO = 0, VBO = 0;
 
-    float vertices[] = {
-            From.X, From.Y,
-            From.X, To.Y,
-            To.X,   From.Y,
-            To.X,   To.Y,
-    };
     glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
     glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
+    float vertices[] = {
+        From.X, From.Y,
+        From.X, To.Y,
+        To.X,   From.Y,
+        To.X,   To.Y,
+    };
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     glUseProgram(Shader.ShaderProgram);
     SetColor("CustomColor", Shader, Color);
@@ -42,6 +35,7 @@ DrawRectangle(orthographic_camera *Camera, vec2 From, vec2 To, color Color)
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
 }
 
 void
@@ -55,15 +49,9 @@ DrawRectangleTextured(orthographic_camera *Camera, vec2 From, vec2 To, texture T
 
     unsigned int TexturedVAO = 0, TexturedVBO = 0;
 
-    // float Vertices[] = {
-    //     // Vertices    // TexCoords
-    //     From.X, From.Y,  Texture.TexCoords[0], Texture.TexCoords[1],
-    //     From.X, To.Y,    Texture.TexCoords[0], Texture.TexCoords[3],
-    //     To.X,   From.Y,  Texture.TexCoords[2], Texture.TexCoords[1],
-    //     To.X,   To.Y,    Texture.TexCoords[2], Texture.TexCoords[3]
-    // };
+    glGenVertexArrays(1, &TexturedVAO);
+    glBindVertexArray(TexturedVAO);
 
-    // NOTE: These TexCoords are fine cause they are 0 to 1 most of the time anyway
     float Vertices[] = {
         // Vertices      // TexCoords
         From.X, From.Y,  0, 0,
@@ -71,10 +59,7 @@ DrawRectangleTextured(orthographic_camera *Camera, vec2 From, vec2 To, texture T
         To.X,   From.Y,  1, 0,
         To.X,   To.Y,    1, 1
     };
-    glGenVertexArrays(1, &TexturedVAO);
     glGenBuffers(1, &TexturedVBO);
-
-    glBindVertexArray(TexturedVAO);
     glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 
@@ -83,12 +68,9 @@ DrawRectangleTextured(orthographic_camera *Camera, vec2 From, vec2 To, texture T
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
 
-    glBindVertexArray(TexturedVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
-
     glUseProgram(TexturedShader.ShaderProgram);
     glBindTexture(GL_TEXTURE_2D, Texture.ID);
-    //SetColor("CustomColor", TexturedShader, Color);
+    SetColor("CustomColor", TexturedShader, Color);
     SetMat4("ViewProjection", TexturedShader, Camera->ViewProjection);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -157,7 +139,6 @@ PostprocessScreenTexture(int FBTexture, postprocessing_effects Effects)
 }
 
 void
-//ApplyHDR(int ScreenTexture, int BloomTexture, bool DoHdr, bool ApplyBloom, float Exposure)
 ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
 
 {
@@ -171,8 +152,6 @@ ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
 
     }
     glUseProgram(HDRShader.ShaderProgram);
-    //SetInt("Scene", HDRShader, 0);
-    //SetInt("BloomBlur", HDRShader, 1);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, ScreenTexture);
     SetInt("Scene", HDRShader, 1);
@@ -182,4 +161,74 @@ ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
     SetFloat("Exposure", HDRShader, Exposure);
 
     RenderScreenTexture();
+}
+
+///////////////////////////////////////
+// NOTE(insolence): Instanced rendering
+///////////////////////////////////////
+
+void
+InstancedDrawRectangleTextured(orthographic_camera *Camera, vec2 *Offsets, int Amount, texture Texture, color Color = {0.f, 0.f, 0.f})
+{
+
+    static shader InstancedShader;
+    if (!InstancedShader.ShaderProgram)
+    {
+        InstancedShader = CreateShader("shaders/instanced.vert", "shaders/instanced.frag");
+    }
+
+    unsigned int InstancedVAO = 0, InstancedVBO = 0;
+
+    glGenVertexArrays(1, &InstancedVAO);
+    glBindVertexArray(InstancedVAO);
+
+    float Vertices[] = {
+        // Vertices        TexCoords
+        -0.5f,  -0.5f,     0, 0,
+        -0.5f,   0.5f,     0, 1,
+         0.5f,  -0.5f,     1, 0,
+         0.5f,   0.5f,     1, 1
+    };
+    glGenBuffers(1, &InstancedVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, InstancedVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
+
+    unsigned int OffsetsVBO = 0;
+    glGenBuffers(1, &OffsetsVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, OffsetsVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2) * Amount, &Offsets[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribDivisor(2, 1);
+
+    glUseProgram(InstancedShader.ShaderProgram);
+    glBindTexture(GL_TEXTURE_2D, Texture.ID);
+    SetColor("CustomColor", InstancedShader, Color);
+    SetMat4("ViewProjection", InstancedShader, Camera->ViewProjection);
+
+    for (int i = 0; i < Amount; i++)
+    {
+        char NumInStr[6];
+        itoa(i, NumInStr, 10);
+        char OffsetIndex[40] = "Offsets[";
+        strcat(OffsetIndex, NumInStr);
+        strcat(OffsetIndex, "]");
+
+        // NOTE(insolence): Somehow this doesn't work
+        //SetVec2(OffsetIndex, InstancedShader, Offsets[i]);
+        int Location = glGetUniformLocation(InstancedShader.ShaderProgram, OffsetIndex);
+        glUniform2f(Location, Offsets[i].X, Offsets[i].Y);
+    }
+
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, Amount);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

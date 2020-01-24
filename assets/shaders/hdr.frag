@@ -9,13 +9,15 @@ uniform float Exposure;
 
 void main()
 {
-    //const float Gamma = 2.2f;
     vec3 HdrColor = texture(Scene, TexCoords).rgb;
     vec3 BloomColor = texture(BloomBlur, TexCoords).rgb;
     HdrColor += BloomColor;
 
+    // Exposure tone mapping
     vec3 Result = vec3(1.0) - exp(-HdrColor * Exposure);
     // Gamma correct
-    //Result = pow(Result, vec3(1.0 / Gamma));
+    const float Gamma = 1.7f; // FIXME(insolence): Fix this to 2.2f or fine-tune
+    Result = pow(Result, vec3(1.0 / Gamma));
+
     FragColor = vec4(Result, 1.0);
 }

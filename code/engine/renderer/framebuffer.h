@@ -27,6 +27,9 @@ AttachTexture(framebuffer *Framebuffer, int ScreenWidth, int ScreenHeight, int I
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + Index, GL_TEXTURE_2D, Framebuffer->TextureAttachment[Index], 0);
 }
 
+#define MAKE_RENDERBUFFER true
+#define RENDERBUFFER_NEEDLESS true
+
 void
 AttachRBO(framebuffer *Framebuffer, int ScreenWidth, int ScreenHeight)
 {

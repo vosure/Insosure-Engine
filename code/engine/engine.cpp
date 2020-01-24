@@ -63,24 +63,32 @@ processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
         glfwSetWindowShouldClose(Window, true);
     }
 
+    float CameraSpeed = 1.f;
+    // NOTE(insolence): For faster camera movement press UP, used for debugging
+    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+        CameraSpeed = 2.5f;
+    }
+
     // Camera
     if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        Camera->Position.Y += 1.f * Dt;
+        Camera->Position.Y += CameraSpeed * Dt;
     }
     if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        Camera->Position.Y -= 1.f * Dt;
+        Camera->Position.Y -= CameraSpeed * Dt;
     }
     if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
     {
-        Camera->Position.X -= 1.f * Dt;
+        Camera->Position.X -= CameraSpeed * Dt;
     }
     if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
     {
-        Camera->Position.X += 1.f * Dt;
+        Camera->Position.X += CameraSpeed * Dt;
     }
 
+    // NOTE(insolence): Camera rotation, yet to be done
     if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
     {
         Camera->Rotation += 1.f;
@@ -91,7 +99,37 @@ processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
     }
 }
 
-void UpdateAndRender(GLFWwindow *Window)
+void
+Blur(framebuffer *HdrFB, framebuffer *PingpongFB)
+{
+    local_persist shader BlurShader;
+    if (!BlurShader.ShaderProgram)
+    {
+        BlurShader = CreateShader("shaders/blur.vert", "shaders/blur.frag");
+    }
+
+    // NOTE(insolence): Blur bright fragments with 2-pass Gaussian blur
+    int Horizontal = 1;
+    bool FirstIteration = true;
+    int Amount = 20;
+    for (int i = 0; i < Amount; i++)
+    {
+        glUseProgram(BlurShader.ShaderProgram);
+        glBindFramebuffer(GL_FRAMEBUFFER, PingpongFB[Horizontal].ID);
+        SetInt("Image", BlurShader, 0);
+        SetInt("Horizontal", BlurShader, Horizontal);
+        glBindTexture(GL_TEXTURE_2D, FirstIteration ? HdrFB->TextureAttachment[1] : PingpongFB[!Horizontal].TextureAttachment[0]);
+        RenderScreenTexture();
+        Horizontal = !Horizontal;
+        if (FirstIteration)
+            FirstIteration = false;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void
+UpdateAndRender(GLFWwindow *Window)
 {
     float DeltaTime = 0.f;
     float LastFrame = 0.f;
@@ -105,31 +143,41 @@ void UpdateAndRender(GLFWwindow *Window)
     // glCullFace(GL_BACK);
     // glFrontFace(GL_CW);
 
-    color Color = { 0.4f, 0.3f, 0.35f };
+
+    color Color = { 0.1f, 0.1f, 0.1f };
 
     texture BrickWall = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT);
     texture Bush = CreateTexture("bush.png", GL_NEAREST, GL_CLAMP_TO_BORDER); // GL_CLAMP_TO_EDGE for alpha textures
     texture Sun = CreateTexture("sun.jpg", GL_NEAREST, GL_CLAMP_TO_BORDER);
     texture SemiTranspWindow = CreateTexture("blending_transparent_window.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
+    texture Star = CreateTexture("star.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
 
     orthographic_camera Camera;
-    SetViewProjection(&Camera, -16.f * 0.3f, 16.f * 0.3f, -9.f * 0.3f, 9.f * 0.3f); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
+    float AspectRatio = 16.f / 9.f;
+    float ZoomLevel = 2.6f;
+    SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
 
-    framebuffer PostprocessingFB = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, 1, true);
+    framebuffer PostprocessingFB = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, 1, MAKE_RENDERBUFFER);
 
     postprocessing_effects Effects;
     Effects.Inversion = false;
     Effects.Grayscale = false;
     Effects.Blur = false;
 
-    framebuffer HdrFB = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 2, true);
+    framebuffer HdrFB = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 2, MAKE_RENDERBUFFER);
 
-    framebuffer PingpongFB[2];
+    framebuffer PingpongFB[2]; //NOTE(insolence): Framebuffers for Gaussian blur
     for (int i = 0; i < 2; i++)
     {
-        PingpongFB[i] = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 1, false);
+        PingpongFB[i] = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 1, RENDERBUFFER_NEEDLESS);
     }
-    shader BlurShader = CreateShader("shaders/blur.vert", "shaders/blur.frag");
+
+    vec2 Offsets[300] = {};
+    for (int i = 0; i < ArrayCount(Offsets); i++)
+    {
+        Offsets[i].X += i % 10;
+        Offsets[i].Y = -i / 10;
+    }
 
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
@@ -151,37 +199,23 @@ void UpdateAndRender(GLFWwindow *Window)
         RecalculateViewMatrix(&Camera);
 
         // NOTE(insolence): Actual drawing
-        DrawRectangle(&Camera, {0.0f, 0.0f}, {2.f, 2.f}, {10.f, 20.f, 40.f});
-        DrawRectangle(&Camera, {-4.f, -4.0f}, {-2.f, -2.f}, {10.f, 0.f, 0.f});
+        DrawRectangle(&Camera, {0.0f, 0.0f}, {2.f, 2.f}, {1.f, 3.f, 3.f});
+        DrawRectangle(&Camera, {-4.f, -4.0f}, {-2.f, -2.f}, {5.f, 0.f, 0.f});
 
         DrawRectangleTextured(&Camera, {2.f, 2.f}, {4.f, 4.f}, Sun);
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, BrickWall);
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, Bush);
         DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, SemiTranspWindow);
+        DrawRectangleTextured(&Camera, {3.f, 1.f}, {6.f, 4.f}, Bush);
+
+        InstancedDrawRectangleTextured(&Camera, &Offsets[0], 300, Star);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // // NOTE(insolence): Blur bright fragments with 2-pass Gaussian blur
-        int Horizontal = 1;
-        bool FirstIteration = true;
-        int Amount = 20;
-        for (int i = 0; i < Amount; i++)
-        {
-            glUseProgram(BlurShader.ShaderProgram);
-            glBindFramebuffer(GL_FRAMEBUFFER, PingpongFB[Horizontal].ID);
-            SetInt("Image", BlurShader, 0);
-            SetInt("Horizontal", BlurShader, Horizontal);
-            glBindTexture(GL_TEXTURE_2D, FirstIteration ? HdrFB.TextureAttachment[1] : PingpongFB[!Horizontal].TextureAttachment[0]);
-            RenderScreenTexture();
-            Horizontal = !Horizontal;
-            if (FirstIteration)
-                FirstIteration = false;
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        Blur(&HdrFB, &PingpongFB[0]);
 
         glBindFramebuffer(GL_FRAMEBUFFER, PostprocessingFB.ID);
-        ApplyHDR(HdrFB.TextureAttachment[0], PingpongFB[!Horizontal].TextureAttachment[0], 0.5f);
+        ApplyHDR(HdrFB.TextureAttachment[0], PingpongFB[0].TextureAttachment[0], 1.0f);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

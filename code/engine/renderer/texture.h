@@ -10,7 +10,7 @@ struct texture
 texture
 CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 {
-    // NOTE(insolence): Size must be determined dynamically!!!
+    // TODO(insolence): Size must be determined dynamically!!!
     char Append[120];
 	strcpy(Append, "W:/Insosure-Engine/assets/textures/");
 	strcat(Append, Path);
@@ -40,12 +40,14 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
     {
         if (Channels == 4)
         {
-            InternalFormat = GL_RGBA8;
+            InternalFormat = GL_SRGB_ALPHA;
+            //InternalFormat = GL_RGBA;
             DataFormat = GL_RGBA;
         }
         else if (Channels == 3)
         {
-            InternalFormat = GL_RGB8;
+            InternalFormat = GL_SRGB;
+            //InternalFormat = GL_RGB;
             DataFormat = GL_RGB;
         }
         else
@@ -54,8 +56,7 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
         }
 
 
-        // TODO(insolence): Add RGBA, sRGB loading
-        glTexImage2D(GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, DataFormat, GL_UNSIGNED_BYTE, Data); // NOTE(insolence): Now only RGB support
+        glTexImage2D(GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, DataFormat, GL_UNSIGNED_BYTE, Data);
         // glGenerateMipmap(GL_TEXTURE_2D);
     }
     else

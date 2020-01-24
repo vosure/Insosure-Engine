@@ -143,6 +143,8 @@ SetVec3(const char *Name, shader Shader, vec3 Vector)
     glUniform3f(Location, Vector.X, Vector.Y, Vector.Z);
 }
 
+
+// NOTE(insolence): The Name var seems to be bugged, prob because of char length
 void
 SetVec2(const char *Name, shader Shader, vec2 Vector)
 {
