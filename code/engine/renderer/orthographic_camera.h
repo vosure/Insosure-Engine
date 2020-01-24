@@ -1,6 +1,6 @@
 #pragma once
 
-// TODO(insolence): Implement rotations of camera
+// TODO(insolence): Probably implement Zooming in and out
 struct orthographic_camera
 {
     mat4 ProjectionMatrix;
@@ -8,17 +8,16 @@ struct orthographic_camera
     mat4 ViewProjection;
 
     vec3 Position = {};
-    float Rotation = 0.f; // TODO(insolence): Maybe implement later, unnecessary right now
+    float Rotation = 0.f;
 };
 typedef orthographic_camera camera_2D;
 
 void
 RecalculateViewMatrix(orthographic_camera *Camera)
 {
-    Camera->ViewMatrix = Identity();
-    Camera->ViewMatrix = Translate(Camera->Position); // * Rotate(Camera->Rotation, {0.f, 0.f, 1.f});
+    Camera->ViewMatrix = Rotate(Camera->Rotation, {0.f, 0.f, 1.f}) * Translate(Camera->Position);
 
-    Camera->ViewProjection = Camera->ProjectionMatrix * Camera->ViewMatrix;
+    Camera->ViewProjection = Camera->ViewMatrix * Camera->ProjectionMatrix;
 }
 
 void

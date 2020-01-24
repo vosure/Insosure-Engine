@@ -56,21 +56,19 @@ LoadGlad()
 }
 
 void
-processInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
+ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
 {
     if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(Window, true);
     }
 
-    float CameraSpeed = 1.f;
+    float CameraSpeed = 4.f;
     // NOTE(insolence): For faster camera movement press UP, used for debugging
     if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS)
     {
-        CameraSpeed = 2.5f;
+        CameraSpeed = 10.f;
     }
-
-    // Camera
     if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
     {
         Camera->Position.Y += CameraSpeed * Dt;
@@ -128,6 +126,15 @@ Blur(framebuffer *HdrFB, framebuffer *PingpongFB)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+// NOTE(insolence): Temp, probably make a separate struct Transform
+mat4
+Transform(vec2 Pos, float Rotation, float ScaleAm)
+{
+    mat4 Result = Scale(ScaleAm) * Rotate(Rotation, {0, 0, 1}) * Translate({Pos.X, Pos.Y, 0});
+
+    return Result;
+}
+
 void
 UpdateAndRender(GLFWwindow *Window)
 {
@@ -142,9 +149,6 @@ UpdateAndRender(GLFWwindow *Window)
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_BACK);
     // glFrontFace(GL_CW);
-
-
-    color Color = { 0.1f, 0.1f, 0.1f };
 
     texture BrickWall = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT);
     texture Bush = CreateTexture("bush.png", GL_NEAREST, GL_CLAMP_TO_BORDER); // GL_CLAMP_TO_EDGE for alpha textures
@@ -172,11 +176,11 @@ UpdateAndRender(GLFWwindow *Window)
         PingpongFB[i] = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 1, RENDERBUFFER_NEEDLESS);
     }
 
-    vec2 Offsets[300] = {};
-    for (int i = 0; i < ArrayCount(Offsets); i++)
+    // NOTE(insolence): Temp code for testing instancing
+    mat4 Transforms[300] = {};
+    for (int i = 0; i < ArrayCount(Transforms); i++)
     {
-        Offsets[i].X += i % 10;
-        Offsets[i].Y = -i / 10;
+        Transforms[i] = Transform({(float)(i % 10), (float)(-i / 10)}, (i % 2 ? 45.f : -60.f), 1.f);
     }
 
     // NOTE(insolence): Main rendering loop
@@ -186,29 +190,29 @@ UpdateAndRender(GLFWwindow *Window)
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
 
-        //printf("Seconds/frame: %.3f, ", DeltaTime);
-        //printf("FPS: %.3f \n",  1.f/DeltaTime);
+        // printf("Seconds/frame: %.3f, ", DeltaTime);
+        // printf("FPS: %.3f \n",  1.f/DeltaTime);
 
-        processInput(Window, &Camera, DeltaTime);
+        ProcessInput(Window, &Camera, DeltaTime);
 
         glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
         glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(Color.R, Color.G, Color.B, 1.f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.f);
 
         RecalculateViewMatrix(&Camera);
 
         // NOTE(insolence): Actual drawing
-        DrawRectangle(&Camera, {0.0f, 0.0f}, {2.f, 2.f}, {1.f, 3.f, 3.f});
-        DrawRectangle(&Camera, {-4.f, -4.0f}, {-2.f, -2.f}, {5.f, 0.f, 0.f});
+        DrawRectangle(&Camera, Transform({-2.f, 0.f}, 20.f, 2.f), {1.f, 3.f, 3.f});
+        DrawRectangle(&Camera, Transform({-3.f, -3.f}, 0.f, 2.f), {5.f, 0.f, 0.f});
 
-        DrawRectangleTextured(&Camera, {2.f, 2.f}, {4.f, 4.f}, Sun);
-        DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, BrickWall);
-        DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, Bush);
-        DrawRectangleTextured(&Camera, {-2.f, -2.f}, {0.f, 0.f}, SemiTranspWindow);
-        DrawRectangleTextured(&Camera, {3.f, 1.f}, {6.f, 4.f}, Bush);
+        DrawRectangleTextured(&Camera, Transform({3.f, 3.f}, 0.f, 2.f), Sun);
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), BrickWall);
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), Bush);
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), SemiTranspWindow);
+        DrawRectangleTextured(&Camera, Transform({-1.f, 3.f}, 15.f, 2.f), Bush);
 
-        InstancedDrawRectangleTextured(&Camera, &Offsets[0], 300, Star);
+        InstancedDrawRectangleTextured(&Camera, &Transforms[0], 300, Star);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
