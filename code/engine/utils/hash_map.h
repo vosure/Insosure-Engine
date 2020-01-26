@@ -10,7 +10,7 @@ struct hash_node
 	int Value;
 };
 
-// NOTE(insolence): HashMap with open addressing is used
+// NOTE(insolence): HashMap with open addressing
 // TODO(insolence): Probably switch to separate chaining (https://github.com/jamesroutley/write-a-hash-table/tree/master/07-appendix)
 struct hash_map
 {

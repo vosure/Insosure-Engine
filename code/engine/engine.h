@@ -43,8 +43,7 @@ struct postprocessing_effects
 
 global_variable const int WINDOW_WIDTH = 1440; // NOTE(insolence): 1920 x 1080 is normal, 1440 x 900 (8 x 5 proportion) for NV
 global_variable const int WINDOW_HEIGHT = 900;
+global_variable int SCREEN_WIDTH;
+global_variable int SCREEN_HEIGHT;
 
 global_variable bool IsFullscreen = false;
-
-global_variable int CurrentWidth = 0;
-global_variable int CurrentHeight = 0;

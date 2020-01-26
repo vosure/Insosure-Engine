@@ -34,20 +34,18 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
     int Width, Height, Channels;
     unsigned char *Data = stbi_load(Append, &Width, &Height, &Channels, 0);
 
-    printf("Width: %d, Height: %d, Channels: %d \n", Width, Height, Channels);
+    //printf("Width: %d, Height: %d, Channels: %d \n", Width, Height, Channels);
 
     if (Data)
     {
         if (Channels == 4)
         {
             InternalFormat = GL_SRGB_ALPHA;
-            //InternalFormat = GL_RGBA;
             DataFormat = GL_RGBA;
         }
         else if (Channels == 3)
         {
             InternalFormat = GL_SRGB;
-            //InternalFormat = GL_RGB;
             DataFormat = GL_RGB;
         }
         else

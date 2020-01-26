@@ -1,32 +1,31 @@
 #include "renderer.h"
 
+shader Shader = {};
+shader TexturedShader = {};
+shader FBShader = {};
+shader HDRShader = {};
+shader InstancedShader = {};
+shader BlurShader = {};
+
 void
 DrawRectangle(orthographic_camera *Camera, mat4 Transform, color Color)
 {
-    //static shader Shader;
-    shader Shader = {};
-    //static 
     unsigned int VAO = 0, VBO = 0;
-    if (!Shader.ShaderProgram)
-    {
-        Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
 
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
+    float Vertices[] = {
+        -0.5f,  -0.5f,
+        -0.5f,   0.5f,
+         0.5f,  -0.5f,
+         0.5f,   0.5f,
+    };
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 
-        float Vertices[] = {
-            -0.5f,  -0.5f,
-            -0.5f,   0.5f,
-             0.5f,  -0.5f,
-             0.5f,   0.5f,
-        };
-        glGenBuffers(1, &VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    }
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
     glBindVertexArray(VAO);
     glUseProgram(Shader.ShaderProgram);
@@ -42,39 +41,30 @@ DrawRectangle(orthographic_camera *Camera, mat4 Transform, color Color)
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    DeleteShader(&Shader);
 }
 
 void
 DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, texture Texture, color Color = {0.f, 0.f, 0.f})
 {
-    //static shader TexturedShader;
-    shader TexturedShader = {};
-    //static 
     unsigned int TexturedVAO = 0, TexturedVBO = 0;
-    if (!TexturedShader.ShaderProgram)
-    {
-        TexturedShader = CreateShader("shaders/texture.vert", "shaders/texture.frag");
+    glGenVertexArrays(1, &TexturedVAO);
+    glBindVertexArray(TexturedVAO);
 
-        glGenVertexArrays(1, &TexturedVAO);
-        glBindVertexArray(TexturedVAO);
+    float Vertices[] = {
+        // Vertices        TexCoords
+        -0.5f,  -0.5f,     0, 0,
+        -0.5f,   0.5f,     0, 1,
+         0.5f,  -0.5f,     1, 0,
+         0.5f,   0.5f,     1, 1
+    };
+    glGenBuffers(1, &TexturedVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 
-        float Vertices[] = {
-            // Vertices        TexCoords
-            -0.5f,  -0.5f,     0, 0,
-            -0.5f,   0.5f,     0, 1,
-             0.5f,  -0.5f,     1, 0,
-             0.5f,   0.5f,     1, 1
-        };
-        glGenBuffers(1, &TexturedVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
-    }
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
 
     glUseProgram(TexturedShader.ShaderProgram);
     glBindVertexArray(TexturedVAO);
@@ -92,39 +82,33 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, texture Textu
 
     glDeleteVertexArrays(1, &TexturedVAO);
     glDeleteBuffers(1, &TexturedVBO);
-    DeleteShader(&TexturedShader);
 }
 
 void
 RenderScreenTexture()
 {
-    //static 
     unsigned int ScreenVAO = 0, ScreenVBO = 0;
-    if (!ScreenVAO)
-    {
-        float ScreenVertices[] = {
-             // positions  // texCoords
-            -1.0f,  1.0f,  0.0f, 1.0f,
-            -1.0f, -1.0f,  0.0f, 0.0f,
-             1.0f, -1.0f,  1.0f, 0.0f,
 
-            -1.0f,  1.0f,  0.0f, 1.0f,
-             1.0f, -1.0f,  1.0f, 0.0f,
-             1.0f,  1.0f,  1.0f, 1.0f
-        };
+    float ScreenVertices[] = {
+         // positions  // texCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };
+    glGenVertexArrays(1, &ScreenVAO);
+    glGenBuffers(1, &ScreenVBO);
 
-        glGenVertexArrays(1, &ScreenVAO);
-        glGenBuffers(1, &ScreenVBO);
+    glBindVertexArray(ScreenVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, ScreenVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ScreenVertices), &ScreenVertices, GL_STATIC_DRAW);
 
-        glBindVertexArray(ScreenVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, ScreenVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(ScreenVertices), &ScreenVertices, GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
-    }
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
 
     glBindVertexArray(ScreenVAO);
 
@@ -142,12 +126,6 @@ RenderScreenTexture()
 void
 PostprocessScreenTexture(int FBTexture, postprocessing_effects Effects)
 {
-    //static shader FBShader;
-    shader FBShader = {};
-    if (!FBShader.ShaderProgram)
-    {
-        FBShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
-    }
     glUseProgram(FBShader.ShaderProgram);
     SetBool("Inversion", FBShader, Effects.Inversion);
     SetBool("Grayscale", FBShader, Effects.Grayscale);
@@ -160,16 +138,6 @@ PostprocessScreenTexture(int FBTexture, postprocessing_effects Effects)
 void
 ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
 {
-    //static shader HDRShader;
-    shader HDRShader = {};
-    if (!HDRShader.ShaderProgram)
-    {
-        HDRShader = CreateShader("shaders/hdr.vert", "shaders/hdr.frag");
-        glUseProgram(HDRShader.ShaderProgram);
-        SetInt("Scene", HDRShader, 1);
-        SetInt("BloomBlur", HDRShader, 0);
-
-    }
     glUseProgram(HDRShader.ShaderProgram);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, ScreenTexture);
@@ -189,13 +157,6 @@ ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
 void
 InstancedDrawRectangleTextured(orthographic_camera *Camera, mat4 *Transforms, int Amount, texture Texture, color Color = {0.f, 0.f, 0.f})
 {
-    //static shader InstancedShader;
-    shader InstancedShader = {};
-    if (!InstancedShader.ShaderProgram)
-    {
-        InstancedShader = CreateShader("shaders/instanced.vert", "shaders/instanced.frag");
-    }
-
     unsigned int InstancedVAO = 0, InstancedVBO = 0;
 
     glGenVertexArrays(1, &InstancedVAO);
@@ -251,5 +212,4 @@ InstancedDrawRectangleTextured(orthographic_camera *Camera, mat4 *Transforms, in
     glDeleteVertexArrays(1, &InstancedVAO);
     glDeleteBuffers(1, &InstancedVBO);
     glDeleteBuffers(1, &TransformsVBO);
-    DeleteShader(&InstancedShader);
 }

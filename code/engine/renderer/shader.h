@@ -8,9 +8,6 @@ struct shader
     hash_map *UniformCache;
 };
 
-// TODO(insolence): Should shader be a separate struct?
-// Now it has nothing to hold except its program ID
-
 internal void
 CheckCompileErrors(int Shader, const char *Type)
 {

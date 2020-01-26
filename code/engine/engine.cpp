@@ -9,64 +9,35 @@
 #include "math/linear_math.h"
 #include "math/math.h"
 #include "utils/hash_map.cpp"
+#include "utils/array_list.h"
 
-#include "renderer/renderer.cpp"
 #include "renderer/orthographic_camera.h"
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
+#include "renderer/renderer.cpp"
 
-// HACK(insolence): Temp solution
-global_variable GLFWwindow *Window;
+global_variable texture BrickWall;
+global_variable texture Bush; // GL_CLAMP_TO_EDGE for alpha textures
+global_variable texture Sun;
+global_variable texture SemiTranspWindow;
+global_variable texture Star;
 
+global_variable framebuffer PostprocessingFB;
+global_variable framebuffer HdrFB;
+global_variable framebuffer PingpongFB[2]; // NOTE(insolence): Framebuffers for Gaussian blur
+
+GLenum glCheckError_(const char *file, int line);
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height);
 
-GLenum glCheckError_(const char *file, int line)
-{
-    GLenum errorCode;
-    while ((errorCode = glGetError()) != GL_NO_ERROR)
-    {
-        switch (errorCode)
-        {
-            case GL_INVALID_ENUM:                  printf("INVALID_ENUM"); break;
-            case GL_INVALID_VALUE:                 printf("INVALID_VALUE"); break;
-            case GL_INVALID_OPERATION:             printf("INVALID_OPERATION"); break;
-            case GL_OUT_OF_MEMORY:                 printf("OUT_OF_MEMORY"); break;
-            case GL_INVALID_FRAMEBUFFER_OPERATION: printf("INVALID_FRAMEBUFFER_OPERATION"); break;
-        }
-    }
-    return errorCode;
-}
+GLenum glCheckError_(const char *file, int line);
 #define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
-internal int
-LoadGlad()
+internal GLFWwindow*
+SetUpWindow(int Width, int Height, char *WindowName, bool SetFullScreen)
 {
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        return BAD_RESULT;
-    }
-    else
-    {
-        return SUCCESS;
-    }
-}
-
-//internal GLFWwindow*
-void
-SetUpWindowAndGlad(int Width, int Height, bool SetFullScreen)
-{
-    char *WindowName = "Insosure Engine";
-
-    //GLFWwindow *Window;
-
-    if (!glfwInit())
-    {
-        printf("Can't load glfw!");
-    }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    GLFWwindow *Window;
 
     if (!SetFullScreen)
     {
@@ -76,9 +47,6 @@ SetUpWindowAndGlad(int Width, int Height, bool SetFullScreen)
     {
         GLFWmonitor *Primary = glfwGetPrimaryMonitor();
         const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-
-        printf("ModeWidth: %d, ModeHeight: %d \n", Mode->width, Mode->height);
 
         Window = glfwCreateWindow(Width, Height, WindowName, Primary, NULL);	
         glfwSetWindowMonitor(Window, Primary, 0, 0, Mode->width, Mode->height, Mode->refreshRate);
@@ -90,39 +58,14 @@ SetUpWindowAndGlad(int Width, int Height, bool SetFullScreen)
     {
         printf("Failed to create a window");
         glfwTerminate();
-        //return Window;
+        return NULL;
     }
     glfwMakeContextCurrent(Window);
 
-    if (!LoadGlad())
-    {
-        printf("Failed to initialize GLAD!");
-        //return Window;
-    }
-    glViewport(0, 0, Width, Height);
-
-    CurrentWidth = Width;
-    CurrentHeight = Height;
-
-    printf("CurrenWidth: %d, CurrentHeight: %d \n", CurrentWidth, CurrentHeight);
-
-    //return Window;
+    return Window;
 }
 
 internal void
-DestroyWindow()//(GLFWwindow *Window)
-{
-    if (Window)
-        glfwDestroyWindow(Window);
-}
-
-texture BrickWall;
-texture Bush; // GL_CLAMP_TO_EDGE for alpha textures
-texture Sun;
-texture SemiTranspWindow;
-texture Star;
-
-void
 MakeTextures()
 {
     if (BrickWall.ID)
@@ -141,11 +84,8 @@ MakeTextures()
     Star = CreateTexture("star.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
 }
 
-framebuffer PostprocessingFB;
-framebuffer HdrFB;
-framebuffer PingpongFB[2]; //NOTE(insolence): Framebuffers for Gaussian blur
-
-void MakeFramebuffers(int Width, int Height)
+internal void 
+MakeFramebuffers(int Width, int Height)
 {
     if (PostprocessingFB.ID)
     {
@@ -163,58 +103,79 @@ void MakeFramebuffers(int Width, int Height)
     }
 }
 
+internal void 
+MakeShaders()
+{
+    Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
+    TexturedShader = CreateShader("shaders/texture.vert", "shaders/texture.frag");
+    FBShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
+
+    HDRShader = CreateShader("shaders/hdr.vert", "shaders/hdr.frag");
+    glUseProgram(HDRShader.ShaderProgram);
+    SetInt("Scene", HDRShader, 1);
+    SetInt("BloomBlur", HDRShader, 0);
+    glUseProgram(0);
+
+    InstancedShader = CreateShader("shaders/instanced.vert", "shaders/instanced.frag");
+    BlurShader = CreateShader("shaders/blur.vert", "shaders/blur.frag");
+}
+
+internal void 
+DeleteShaders()
+{
+    DeleteShader(&Shader);
+    DeleteShader(&TexturedShader);
+    DeleteShader(&FBShader);
+    DeleteShader(&HDRShader);
+    DeleteShader(&InstancedShader);
+    DeleteShader(&BlurShader);
+}
+
+// NOTE(insolence): If fullscreen, then switch to windowed, and vice versa
+internal void 
+SwitchFullscreen(GLFWwindow *Window)
+{
+    if (IsFullscreen)
+    {
+        glfwDestroyWindow(Window);
+
+        Window = SetUpWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Insosure Engine", false);
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+        DeleteShaders();
+        MakeShaders();
+        MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
+        MakeTextures();
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    else
+    {
+        // Make fullscreen
+        glfwDestroyWindow(Window);
+
+        Window = SetUpWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Insosure Engine", true);
+        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+        DeleteShaders();
+        MakeShaders();
+        MakeFramebuffers(SCREEN_WIDTH, SCREEN_HEIGHT);
+        MakeTextures();
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    IsFullscreen = !IsFullscreen;
+}
+
 void
-ProcessInput(orthographic_camera *Camera, float Dt)
+ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
 {
     // NOTE(insolence): Fullscreen support
     if (glfwGetKey(Window, GLFW_KEY_F12) == GLFW_PRESS)
     {
-        if (IsFullscreen)
-        {
-            DestroyWindow();
-
-            Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "InsosureEngine", NULL, NULL);
-            if (!Window)
-            {
-                glfwTerminate();
-                printf("Window hasn't been initialized!");
-                return;
-            }
-            glfwMakeContextCurrent(Window);
-            glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-            MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
-            MakeTextures();
-
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        }
-        else
-        {
-            // Make fullscreen
-            DestroyWindow();
-
-            GLFWmonitor *Primary = glfwGetPrimaryMonitor();
-            const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
-
-            Window = glfwCreateWindow(Mode->width, Mode->height, "InsosureEngine", Primary, NULL);
-            if (!Window)
-            {
-                glfwTerminate();
-                printf("Window hasn't been initialized!");
-                return;
-            }	
-            glfwMakeContextCurrent(Window);
-            glViewport(0, 0, Mode->width, Mode->height);
-
-            MakeFramebuffers(Mode->width, Mode->height);
-            MakeTextures();
-
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        }
-        IsFullscreen = !IsFullscreen;
-        return;
+        SwitchFullscreen(Window);
     }
 
     if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -259,13 +220,6 @@ ProcessInput(orthographic_camera *Camera, float Dt)
 void
 Blur(framebuffer *HdrFB, framebuffer *PingpongFB)
 {
-    //local_persist 
-    shader BlurShader = {};
-    if (!BlurShader.ShaderProgram)
-    {
-        BlurShader = CreateShader("shaders/blur.vert", "shaders/blur.frag");
-    }
-
     // NOTE(insolence): Blur bright fragments with 2-pass Gaussian blur
     int Horizontal = 1;
     bool FirstIteration = true;
@@ -312,6 +266,7 @@ UpdateAndRender(GLFWwindow *Window)
 
     MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
     MakeTextures();
+    MakeShaders();
 
     orthographic_camera Camera;
     float AspectRatio = 16.f / 9.f;
@@ -319,7 +274,7 @@ UpdateAndRender(GLFWwindow *Window)
     SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
 
     postprocessing_effects Effects;
-    Effects.Inversion = true;
+    Effects.Inversion = false;
     Effects.Grayscale = false;
     Effects.Blur = false;
 
@@ -340,7 +295,7 @@ UpdateAndRender(GLFWwindow *Window)
         // printf("Seconds/frame: %.3f, ", DeltaTime);
         // printf("FPS: %.3f \n",  1.f/DeltaTime);
 
-        ProcessInput(&Camera, DeltaTime);
+        ProcessInput(Window, &Camera, DeltaTime);
 
         glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
@@ -382,23 +337,56 @@ Start()
 {
     printf("The Engine has started!\n");
 
-    //GLFWwindow *Window = SetUpWindowAndGlad(WINDOW_WIDTH, WINDOW_HEIGHT, false);
-    SetUpWindowAndGlad(WINDOW_WIDTH, WINDOW_HEIGHT, false);
+    if (!glfwInit())
+    {
+        printf("Can't load glfw!");
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow *Window = SetUpWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Insosure Engine", false);
     if (!Window)
     {
         return BAD_RESULT;
     }
 
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        printf("Failed to initialize GLAD!");
+        return BAD_RESULT;
+    }
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    GLFWmonitor *Primary = glfwGetPrimaryMonitor();
+    const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
+    SCREEN_WIDTH = Mode->width;
+    SCREEN_HEIGHT = Mode->height;
+
     glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 
     UpdateAndRender(Window);
 
-    printf("Does it get there?");
-
-    glfwTerminate(); // TODO: Pass somewhere else or remove
+    glfwTerminate();
     return SUCCESS;
 }
 
+GLenum glCheckError_(const char *file, int line)
+{
+    GLenum errorCode;
+    while ((errorCode = glGetError()) != GL_NO_ERROR)
+    {
+        switch (errorCode)
+        {
+            case GL_INVALID_ENUM:                  printf("INVALID_ENUM"); break;
+            case GL_INVALID_VALUE:                 printf("INVALID_VALUE"); break;
+            case GL_INVALID_OPERATION:             printf("INVALID_OPERATION"); break;
+            case GL_OUT_OF_MEMORY:                 printf("OUT_OF_MEMORY"); break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: printf("INVALID_FRAMEBUFFER_OPERATION"); break;
+        }
+    }
+    return errorCode;
+}
 
 
 ///// NOTE: Callbacks for OpenGL ///////////////
