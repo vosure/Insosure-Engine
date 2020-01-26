@@ -12,7 +12,7 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 {
     // TODO(insolence): Size must be determined dynamically!!!
     char Append[120];
-	strcpy(Append, "W:/Insosure-Engine/assets/textures/");
+	strcpy(Append, "C:/dev/Insosure-Engine/assets/textures/");
 	strcat(Append, Path);
 
     texture Texture;

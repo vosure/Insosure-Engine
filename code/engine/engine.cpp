@@ -15,32 +15,29 @@
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
 
+// HACK(insolence): Temp solution
+global_variable GLFWwindow *Window;
+
 
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height);
 
-internal int
-SetUpWindow(GLFWwindow **Window, int Width, int Height, char* Name)
+GLenum glCheckError_(const char *file, int line)
 {
-    if (!glfwInit())
+    GLenum errorCode;
+    while ((errorCode = glGetError()) != GL_NO_ERROR)
     {
-        printf("Can't load glfw!");
-        return BAD_RESULT;
+        switch (errorCode)
+        {
+            case GL_INVALID_ENUM:                  printf("INVALID_ENUM"); break;
+            case GL_INVALID_VALUE:                 printf("INVALID_VALUE"); break;
+            case GL_INVALID_OPERATION:             printf("INVALID_OPERATION"); break;
+            case GL_OUT_OF_MEMORY:                 printf("OUT_OF_MEMORY"); break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: printf("INVALID_FRAMEBUFFER_OPERATION"); break;
+        }
     }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    *Window = glfwCreateWindow(Width, Height, Name, NULL, NULL);
-    if (!*Window)
-    {
-        printf("Failed to create a window");
-        glfwTerminate();
-        return BAD_RESULT;
-    }
-    glfwMakeContextCurrent(*Window);
-
-    return SUCCESS;
+    return errorCode;
 }
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
 internal int
 LoadGlad()
@@ -55,9 +52,171 @@ LoadGlad()
     }
 }
 
+//internal GLFWwindow*
 void
-ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
+SetUpWindowAndGlad(int Width, int Height, bool SetFullScreen)
 {
+    char *WindowName = "Insosure Engine";
+
+    //GLFWwindow *Window;
+
+    if (!glfwInit())
+    {
+        printf("Can't load glfw!");
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    if (!SetFullScreen)
+    {
+        Window = glfwCreateWindow(Width, Height, WindowName, NULL, NULL);
+    }
+    else
+    {
+        GLFWmonitor *Primary = glfwGetPrimaryMonitor();
+        const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
+        printf("ModeWidth: %d, ModeHeight: %d \n", Mode->width, Mode->height);
+
+        Window = glfwCreateWindow(Width, Height, WindowName, Primary, NULL);	
+        glfwSetWindowMonitor(Window, Primary, 0, 0, Mode->width, Mode->height, Mode->refreshRate);
+        Width = Mode->width;
+        Height = Mode->height;
+    }
+
+    if (!Window)
+    {
+        printf("Failed to create a window");
+        glfwTerminate();
+        //return Window;
+    }
+    glfwMakeContextCurrent(Window);
+
+    if (!LoadGlad())
+    {
+        printf("Failed to initialize GLAD!");
+        //return Window;
+    }
+    glViewport(0, 0, Width, Height);
+
+    CurrentWidth = Width;
+    CurrentHeight = Height;
+
+    printf("CurrenWidth: %d, CurrentHeight: %d \n", CurrentWidth, CurrentHeight);
+
+    //return Window;
+}
+
+internal void
+DestroyWindow()//(GLFWwindow *Window)
+{
+    if (Window)
+        glfwDestroyWindow(Window);
+}
+
+texture BrickWall;
+texture Bush; // GL_CLAMP_TO_EDGE for alpha textures
+texture Sun;
+texture SemiTranspWindow;
+texture Star;
+
+void
+MakeTextures()
+{
+    if (BrickWall.ID)
+    {
+        glDeleteTextures(1, &BrickWall.ID);
+        glDeleteTextures(1, &Bush.ID);
+        glDeleteTextures(1, &Sun.ID);
+        glDeleteTextures(1, &SemiTranspWindow.ID);
+        glDeleteTextures(1, &Star.ID);
+    }
+
+    BrickWall = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT);
+    Bush = CreateTexture("bush.png", GL_NEAREST, GL_CLAMP_TO_BORDER); // GL_CLAMP_TO_EDGE for alpha textures
+    Sun = CreateTexture("sun.jpg", GL_NEAREST, GL_CLAMP_TO_BORDER);
+    SemiTranspWindow = CreateTexture("blending_transparent_window.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
+    Star = CreateTexture("star.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
+}
+
+framebuffer PostprocessingFB;
+framebuffer HdrFB;
+framebuffer PingpongFB[2]; //NOTE(insolence): Framebuffers for Gaussian blur
+
+void MakeFramebuffers(int Width, int Height)
+{
+    if (PostprocessingFB.ID)
+    {
+        glDeleteFramebuffers(1, &PostprocessingFB.ID);
+        glDeleteFramebuffers(1, &HdrFB.ID);
+        glDeleteFramebuffers(1, &PingpongFB[0].ID);
+        glDeleteFramebuffers(1, &PingpongFB[1].ID);
+    }
+
+    PostprocessingFB = CreateFramebuffer(Width, Height, GL_RGBA, 1, MAKE_RENDERBUFFER);
+    HdrFB = CreateFramebuffer(Width, Height, GL_RGB16F, 2, MAKE_RENDERBUFFER);
+    for (int i = 0; i < 2; i++)
+    {
+        PingpongFB[i] = CreateFramebuffer(Width, Height, GL_RGB16F, 1, RENDERBUFFER_NEEDLESS);
+    }
+}
+
+void
+ProcessInput(orthographic_camera *Camera, float Dt)
+{
+    // NOTE(insolence): Fullscreen support
+    if (glfwGetKey(Window, GLFW_KEY_F12) == GLFW_PRESS)
+    {
+        if (IsFullscreen)
+        {
+            DestroyWindow();
+
+            Window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "InsosureEngine", NULL, NULL);
+            if (!Window)
+            {
+                glfwTerminate();
+                printf("Window hasn't been initialized!");
+                return;
+            }
+            glfwMakeContextCurrent(Window);
+            glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+            MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
+            MakeTextures();
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+        else
+        {
+            // Make fullscreen
+            DestroyWindow();
+
+            GLFWmonitor *Primary = glfwGetPrimaryMonitor();
+            const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
+
+            Window = glfwCreateWindow(Mode->width, Mode->height, "InsosureEngine", Primary, NULL);
+            if (!Window)
+            {
+                glfwTerminate();
+                printf("Window hasn't been initialized!");
+                return;
+            }	
+            glfwMakeContextCurrent(Window);
+            glViewport(0, 0, Mode->width, Mode->height);
+
+            MakeFramebuffers(Mode->width, Mode->height);
+            MakeTextures();
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+        IsFullscreen = !IsFullscreen;
+        return;
+    }
+
     if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(Window, true);
@@ -100,7 +259,8 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
 void
 Blur(framebuffer *HdrFB, framebuffer *PingpongFB)
 {
-    local_persist shader BlurShader;
+    //local_persist 
+    shader BlurShader = {};
     if (!BlurShader.ShaderProgram)
     {
         BlurShader = CreateShader("shaders/blur.vert", "shaders/blur.frag");
@@ -150,31 +310,18 @@ UpdateAndRender(GLFWwindow *Window)
     // glCullFace(GL_BACK);
     // glFrontFace(GL_CW);
 
-    texture BrickWall = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT);
-    texture Bush = CreateTexture("bush.png", GL_NEAREST, GL_CLAMP_TO_BORDER); // GL_CLAMP_TO_EDGE for alpha textures
-    texture Sun = CreateTexture("sun.jpg", GL_NEAREST, GL_CLAMP_TO_BORDER);
-    texture SemiTranspWindow = CreateTexture("blending_transparent_window.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
-    texture Star = CreateTexture("star.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
+    MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
+    MakeTextures();
 
     orthographic_camera Camera;
     float AspectRatio = 16.f / 9.f;
     float ZoomLevel = 2.6f;
     SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
 
-    framebuffer PostprocessingFB = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, 1, MAKE_RENDERBUFFER);
-
     postprocessing_effects Effects;
-    Effects.Inversion = false;
+    Effects.Inversion = true;
     Effects.Grayscale = false;
     Effects.Blur = false;
-
-    framebuffer HdrFB = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 2, MAKE_RENDERBUFFER);
-
-    framebuffer PingpongFB[2]; //NOTE(insolence): Framebuffers for Gaussian blur
-    for (int i = 0; i < 2; i++)
-    {
-        PingpongFB[i] = CreateFramebuffer(WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGB16F, 1, RENDERBUFFER_NEEDLESS);
-    }
 
     // NOTE(insolence): Temp code for testing instancing
     mat4 Transforms[300] = {};
@@ -193,7 +340,7 @@ UpdateAndRender(GLFWwindow *Window)
         // printf("Seconds/frame: %.3f, ", DeltaTime);
         // printf("FPS: %.3f \n",  1.f/DeltaTime);
 
-        ProcessInput(Window, &Camera, DeltaTime);
+        ProcessInput(&Camera, DeltaTime);
 
         glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
@@ -202,7 +349,7 @@ UpdateAndRender(GLFWwindow *Window)
 
         RecalculateViewMatrix(&Camera);
 
-        // NOTE(insolence): Actual drawing
+        // // NOTE(insolence): Actual drawing
         DrawRectangle(&Camera, Transform({-2.f, 0.f}, 20.f, 2.f), {1.f, 3.f, 3.f});
         DrawRectangle(&Camera, Transform({-3.f, -3.f}, 0.f, 2.f), {5.f, 0.f, 0.f});
 
@@ -235,25 +382,18 @@ Start()
 {
     printf("The Engine has started!\n");
 
-    char* WindowName = "Insosure Engine";
-
-    GLFWwindow* Window;
-    if (!SetUpWindow(&Window, WINDOW_WIDTH, WINDOW_HEIGHT, WindowName))
+    //GLFWwindow *Window = SetUpWindowAndGlad(WINDOW_WIDTH, WINDOW_HEIGHT, false);
+    SetUpWindowAndGlad(WINDOW_WIDTH, WINDOW_HEIGHT, false);
+    if (!Window)
     {
         return BAD_RESULT;
     }
-
-    if (!LoadGlad())
-    {
-        printf("Failed to initialize GLAD!");
-        return BAD_RESULT;
-    }
-
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 
     UpdateAndRender(Window);
+
+    printf("Does it get there?");
 
     glfwTerminate(); // TODO: Pass somewhere else or remove
     return SUCCESS;

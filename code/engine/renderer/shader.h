@@ -95,7 +95,7 @@ GetLocation(const char *Name, shader Shader)
     }
     else
     {
-        Location = Get(Shader.UniformCache, Name);
+       Location = Get(Shader.UniformCache, Name);
     }
 
     return Location;

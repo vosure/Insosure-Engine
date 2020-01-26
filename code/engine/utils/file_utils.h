@@ -8,7 +8,7 @@
 char *ReadFile(const char *FilePath)
 {
 	char Append[130];
-	strcpy(Append, "W:/Insosure-Engine/assets/");
+	strcpy(Append, "C:/dev/Insosure-Engine/assets/");
 	strcat(Append, FilePath);
 
 	FILE *File = fopen(Append, "rt");

@@ -3,8 +3,10 @@
 void
 DrawRectangle(orthographic_camera *Camera, mat4 Transform, color Color)
 {
-    static shader Shader;
-    static unsigned int VAO = 0, VBO = 0;
+    //static shader Shader;
+    shader Shader = {};
+    //static 
+    unsigned int VAO = 0, VBO = 0;
     if (!Shader.ShaderProgram)
     {
         Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
@@ -37,13 +39,19 @@ DrawRectangle(orthographic_camera *Camera, mat4 Transform, color Color)
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    DeleteShader(&Shader);
 }
 
 void
 DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, texture Texture, color Color = {0.f, 0.f, 0.f})
 {
-    static shader TexturedShader;
-    static unsigned int TexturedVAO = 0, TexturedVBO = 0;
+    //static shader TexturedShader;
+    shader TexturedShader = {};
+    //static 
+    unsigned int TexturedVAO = 0, TexturedVBO = 0;
     if (!TexturedShader.ShaderProgram)
     {
         TexturedShader = CreateShader("shaders/texture.vert", "shaders/texture.frag");
@@ -81,12 +89,17 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, texture Textu
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    glDeleteVertexArrays(1, &TexturedVAO);
+    glDeleteBuffers(1, &TexturedVBO);
+    DeleteShader(&TexturedShader);
 }
 
 void
 RenderScreenTexture()
 {
-    static unsigned int ScreenVAO = 0, ScreenVBO = 0;
+    //static 
+    unsigned int ScreenVAO = 0, ScreenVBO = 0;
     if (!ScreenVAO)
     {
         float ScreenVertices[] = {
@@ -121,12 +134,16 @@ RenderScreenTexture()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    glDeleteVertexArrays(1, &ScreenVAO);
+    glDeleteBuffers(1, &ScreenVBO);
 }
 
 void
 PostprocessScreenTexture(int FBTexture, postprocessing_effects Effects)
 {
-    static shader FBShader;
+    //static shader FBShader;
+    shader FBShader = {};
     if (!FBShader.ShaderProgram)
     {
         FBShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
@@ -142,9 +159,9 @@ PostprocessScreenTexture(int FBTexture, postprocessing_effects Effects)
 
 void
 ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
-
 {
-    static shader HDRShader;
+    //static shader HDRShader;
+    shader HDRShader = {};
     if (!HDRShader.ShaderProgram)
     {
         HDRShader = CreateShader("shaders/hdr.vert", "shaders/hdr.frag");
@@ -172,8 +189,8 @@ ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
 void
 InstancedDrawRectangleTextured(orthographic_camera *Camera, mat4 *Transforms, int Amount, texture Texture, color Color = {0.f, 0.f, 0.f})
 {
-
-    static shader InstancedShader;
+    //static shader InstancedShader;
+    shader InstancedShader = {};
     if (!InstancedShader.ShaderProgram)
     {
         InstancedShader = CreateShader("shaders/instanced.vert", "shaders/instanced.frag");
@@ -230,4 +247,9 @@ InstancedDrawRectangleTextured(orthographic_camera *Camera, mat4 *Transforms, in
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    glDeleteVertexArrays(1, &InstancedVAO);
+    glDeleteBuffers(1, &InstancedVBO);
+    glDeleteBuffers(1, &TransformsVBO);
+    DeleteShader(&InstancedShader);
 }
