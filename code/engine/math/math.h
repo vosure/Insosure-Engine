@@ -7,6 +7,25 @@
 #define DEG2RAD(Deg) ((Deg) / 180.0f * PI)
 #define RAD2DEG(Rad) ((Rad) / PI * 180.0f)
 
+// NOTE(insolence): Lehmer (linear congruential) random number generator
+uint32_t Lehmer = 0;
+uint32_t
+Lehmer32()
+{
+    Lehmer += 0xe120fc15;
+    uint64_t Temp;
+    Temp = (unsigned long)Lehmer * 0x4a39b70d;
+    uint32_t M1 = (Temp >> 32) ^ Temp;
+    Temp = (unsigned long)M1 * 0x12fad5c9;
+    uint32_t M2 = (Temp >> 32) ^ Temp;
+    return M2;
+}
+
+int RndInt(int Min, int Max)
+{
+    return (Lehmer32() % (Max - Min)) + Min;
+}
+
 inline float
 Max(float Left, float Right)
 {

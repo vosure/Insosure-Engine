@@ -8,6 +8,7 @@
 #include "utils/file_utils.h"
 #include "math/linear_math.h"
 #include "math/math.h"
+#include "math/perlin.h"
 #include "utils/hash_map.cpp"
 #include "utils/array_list.h"
 
@@ -255,18 +256,17 @@ UpdateAndRender(GLFWwindow *Window)
     float DeltaTime = 0.f;
     float LastFrame = 0.f;
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // NOTE(insolence): We cull back faces specified in CCW order,
-    // Front faces are in CW order
-    // glEnable(GL_CULL_FACE);
-    // glCullFace(GL_BACK);
-    // glFrontFace(GL_CW);
-
     MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
     MakeTextures();
     MakeShaders();
+
+    // for (int Y = 0; Y < 1000; Y++)
+    // {
+    //     for (int X = 0; X < 1000; X++)
+    //     {
+    //         printf("%.2f \n", PerlinGet2D(X, Y, 0.1, 4));
+    //     }
+    // }
 
     orthographic_camera Camera;
     float AspectRatio = 16.f / 9.f;
@@ -364,6 +364,15 @@ Start()
     SCREEN_HEIGHT = Mode->height;
 
     glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
+
+    // NOTE(insolence): We cull back faces specified in CCW order,
+    // Front faces are in CW order
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(GL_BACK);
+    // glFrontFace(GL_CW);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     UpdateAndRender(Window);
 

@@ -1,7 +1,7 @@
 #pragma once
 
 // TODO(insolence): Probably use templates or macros, as we
-// need to store different types (Shaders, Textures)
+// may need to store different types
 
 struct array_list
 {

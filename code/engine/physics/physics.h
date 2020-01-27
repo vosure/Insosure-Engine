@@ -6,6 +6,8 @@
 // NOTE(insolence): Physics for 2D objects
 //////////////////////////////////////////
 
+// TODO(insolence): Add Ray-AABB and Ray-Sphere interscetion
+
 struct aabb
 {
     int MinX, MinY;
