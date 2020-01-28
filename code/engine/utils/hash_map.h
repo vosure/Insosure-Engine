@@ -26,9 +26,9 @@ static const int BASE_SIZE = 50;
 
 
 void DeleteHashMap(hash_map *HashMap);
-hash_map* CreateHashMap();
+internal hash_map* CreateHashMap();
 void Insert(hash_map *HashMap, const char *Key, int Value);
 int  Get(hash_map *HashMap, const char *Key);
 void Remove(hash_map *HashMap, const char *Key);
-static void ResizeUp(hash_map *HashMap);
-static void ResizeDown(hash_map *HashMap);
+internal void ResizeUp(hash_map *HashMap);
+internal void ResizeDown(hash_map *HashMap);

@@ -1,13 +1,8 @@
 #pragma once
 
-struct texture
-{
-    unsigned int ID;
-    int FilteringMode; // NOTE(insolence): GL_NEAREST or GL_LINEAR
-    int WrappingMode;  // NOTE(insolence): GL_REPEAT, GL_CLAMP etc.
-};
+global_variable hash_map *TextureCache;
 
-texture
+uint
 CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 {
     // TODO(insolence): Size must be determined dynamically!!!
@@ -15,12 +10,10 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 	strcpy(Append, "C:/dev/Insosure-Engine/assets/textures/");
 	strcat(Append, Path);
 
-    texture Texture;
-    Texture.FilteringMode = FilteringMode;
-    Texture.WrappingMode = WrappingMode;
+    uint Texture;
 
-    glGenTextures(1, &Texture.ID);
-    glBindTexture(GL_TEXTURE_2D, Texture.ID);
+    glGenTextures(1, &Texture);
+    glBindTexture(GL_TEXTURE_2D, Texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, WrappingMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, WrappingMode);
@@ -59,11 +52,59 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
     }
     else
     {
-        printf("Failed to load a texture!");
+        printf("Failed to load a texture! ");
+        printf("Name: %s \n", Path);
     }
 
     stbi_image_free(Data);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    Insert(TextureCache, Path, Texture);
+
     return Texture;
+}
+
+// NOTE(insolence): Can return -1
+uint GetTexture(const char *Path)
+{
+    // Query the TextureCache first
+    if (Get(TextureCache, Path) != -1)
+    {
+        return Get(TextureCache, Path);
+    }
+
+    return CreateTexture(Path, GL_NEAREST, GL_CLAMP_TO_EDGE);
+}
+
+// NOTE(insolence): At window resize
+// TODO(insolence): Probably we should reupload all textures currently loaded
+void 
+UpdateTextureCache()
+{
+    hash_map *Temp = CreateHashMap();
+    hash_map *Swap = Temp;
+    Temp = TextureCache;
+    TextureCache = Swap;
+
+    for (int i = 0; i < Temp->Size; i++)
+    {
+        if (Temp->Nodes[i] != NULL)
+        {
+            glDeleteTextures(1, &(uint)(Temp->Nodes[i]->Value));
+
+            //char *Name = Temp->Nodes[i]->Key;
+            //printf("Texture: %s \n", Name);
+            //CreateTexture(Name, GL_NEAREST, GL_CLAMP_TO_BORDER);
+        }
+    }
+
+    DeleteHashMap(Temp);
+
+    // for (int i = 0; i < TextureCache->Size; i++)
+    // {
+    //     if (TextureCache->Nodes[i] != NULL)
+    //     {
+    //         printf("Name: %s \n", TextureCache->Nodes[i]->Key);
+    //     }
+    // }
 }

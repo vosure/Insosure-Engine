@@ -40,7 +40,7 @@ shader
 CreateShader(const char *VertPath, const char *FragPath)
 {
     shader Shader;
-    Shader.UniformCache = CreateMap();
+    Shader.UniformCache = CreateHashMap();
 
     const char *VertSrc = (const char *)ReadFile(VertPath);
     const char *FragSrc = (const char *)ReadFile(FragPath);

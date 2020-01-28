@@ -12,16 +12,12 @@
 #include "utils/hash_map.cpp"
 #include "utils/array_list.h"
 
+#include "renderer/texture.h"
+#include "renderer/sprite.h"
 #include "renderer/orthographic_camera.h"
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
 #include "renderer/renderer.cpp"
-
-global_variable texture BrickWall;
-global_variable texture Bush; // GL_CLAMP_TO_EDGE for alpha textures
-global_variable texture Sun;
-global_variable texture SemiTranspWindow;
-global_variable texture Star;
 
 global_variable framebuffer PostprocessingFB;
 global_variable framebuffer HdrFB;
@@ -64,25 +60,6 @@ SetUpWindow(int Width, int Height, char *WindowName, bool SetFullScreen)
     glfwMakeContextCurrent(Window);
 
     return Window;
-}
-
-internal void
-MakeTextures()
-{
-    if (BrickWall.ID)
-    {
-        glDeleteTextures(1, &BrickWall.ID);
-        glDeleteTextures(1, &Bush.ID);
-        glDeleteTextures(1, &Sun.ID);
-        glDeleteTextures(1, &SemiTranspWindow.ID);
-        glDeleteTextures(1, &Star.ID);
-    }
-
-    BrickWall = CreateTexture("test.jpg", GL_NEAREST, GL_REPEAT);
-    Bush = CreateTexture("bush.png", GL_NEAREST, GL_CLAMP_TO_BORDER); // GL_CLAMP_TO_EDGE for alpha textures
-    Sun = CreateTexture("sun.jpg", GL_NEAREST, GL_CLAMP_TO_BORDER);
-    SemiTranspWindow = CreateTexture("blending_transparent_window.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
-    Star = CreateTexture("star.png", GL_NEAREST, GL_CLAMP_TO_BORDER);
 }
 
 internal void 
@@ -136,37 +113,31 @@ DeleteShaders()
 internal void 
 SwitchFullscreen(GLFWwindow *Window)
 {
+    glfwDestroyWindow(Window);
+
     if (IsFullscreen)
     {
-        glfwDestroyWindow(Window);
-
         Window = SetUpWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Insosure Engine", false);
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-        DeleteShaders();
-        MakeShaders();
         MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
-        MakeTextures();
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
     else
     {
         // Make fullscreen
-        glfwDestroyWindow(Window);
-
         Window = SetUpWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Insosure Engine", true);
         glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-        DeleteShaders();
-        MakeShaders();
         MakeFramebuffers(SCREEN_WIDTH, SCREEN_HEIGHT);
-        MakeTextures();
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // Window = SetUpWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Insosure Engine", false);
+        // glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        // MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
     }
+    DeleteShaders();
+    MakeShaders();
+    UpdateTextureCache();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     IsFullscreen = !IsFullscreen;
 }
 
@@ -256,17 +227,10 @@ UpdateAndRender(GLFWwindow *Window)
     float DeltaTime = 0.f;
     float LastFrame = 0.f;
 
-    MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
-    MakeTextures();
-    MakeShaders();
+    TextureCache = CreateHashMap();
 
-    // for (int Y = 0; Y < 1000; Y++)
-    // {
-    //     for (int X = 0; X < 1000; X++)
-    //     {
-    //         printf("%.2f \n", PerlinGet2D(X, Y, 0.1, 4));
-    //     }
-    // }
+    MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
+    MakeShaders();
 
     orthographic_camera Camera;
     float AspectRatio = 16.f / 9.f;
@@ -308,13 +272,13 @@ UpdateAndRender(GLFWwindow *Window)
         DrawRectangle(&Camera, Transform({-2.f, 0.f}, 20.f, 2.f), {1.f, 3.f, 3.f});
         DrawRectangle(&Camera, Transform({-3.f, -3.f}, 0.f, 2.f), {5.f, 0.f, 0.f});
 
-        DrawRectangleTextured(&Camera, Transform({3.f, 3.f}, 0.f, 2.f), Sun);
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), BrickWall);
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), Bush);
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), SemiTranspWindow);
-        DrawRectangleTextured(&Camera, Transform({-1.f, 3.f}, 15.f, 2.f), Bush);
+        DrawRectangleTextured(&Camera, Transform({-1.f, 3.f}, 15.f, 2.f), GetTexture("star.png"));
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), GetTexture("test.jpg"));
+        DrawRectangleTextured(&Camera, Transform({3.f, 3.f}, 0.f, 2.f), GetTexture("sun.jpg"));
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), GetTexture("bush.png"));
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), GetTexture("blending_transparent_window.png"));
 
-        InstancedDrawRectangleTextured(&Camera, &Transforms[0], 300, Star);
+        InstancedDrawRectangleTextured(&Camera, &Transforms[0], 300, GetTexture("star.png"));
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

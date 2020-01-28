@@ -63,7 +63,6 @@ Noise2D(double X, double Y)
     return Result;
 }
 
-// NOTE(insolence): 
 double
 PerlinGet2D(double X, double Y, double Freq, int Depth)
 {

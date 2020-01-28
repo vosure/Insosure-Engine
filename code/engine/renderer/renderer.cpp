@@ -44,7 +44,7 @@ DrawRectangle(orthographic_camera *Camera, mat4 Transform, color Color)
 }
 
 void
-DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, texture Texture, color Color = {0.f, 0.f, 0.f})
+DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, color Color = {0.f, 0.f, 0.f})
 {
     unsigned int TexturedVAO = 0, TexturedVBO = 0;
     glGenVertexArrays(1, &TexturedVAO);
@@ -68,7 +68,7 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, texture Textu
 
     glUseProgram(TexturedShader.ShaderProgram);
     glBindVertexArray(TexturedVAO);
-    glBindTexture(GL_TEXTURE_2D, Texture.ID);
+    glBindTexture(GL_TEXTURE_2D, Texture);
     SetColor("CustomColor", TexturedShader, Color);
     SetMat4("ViewProjection", TexturedShader, Camera->ViewProjection);
     SetMat4("Transform", TexturedShader, Transform);
@@ -155,7 +155,7 @@ ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
 ///////////////////////////////////////
 
 void
-InstancedDrawRectangleTextured(orthographic_camera *Camera, mat4 *Transforms, int Amount, texture Texture, color Color = {0.f, 0.f, 0.f})
+InstancedDrawRectangleTextured(orthographic_camera *Camera, mat4 *Transforms, int Amount, uint Texture, color Color = {0.f, 0.f, 0.f})
 {
     unsigned int InstancedVAO = 0, InstancedVBO = 0;
 
@@ -198,7 +198,7 @@ InstancedDrawRectangleTextured(orthographic_camera *Camera, mat4 *Transforms, in
     glVertexAttribDivisor(6, 1);
 
     glUseProgram(InstancedShader.ShaderProgram);
-    glBindTexture(GL_TEXTURE_2D, Texture.ID);
+    glBindTexture(GL_TEXTURE_2D, Texture);
     SetColor("CustomColor", InstancedShader, Color);
     SetMat4("ViewProjection", InstancedShader, Camera->ViewProjection);
 

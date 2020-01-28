@@ -12,6 +12,7 @@
 #define local_persist static
 #define global_variable static
 #define bool32 int
+#define uint unsigned int
 
 // NOTE(insolence): Useful Macros
 #define Assert(Expression) if (!(Expression)) { *(int*)0 = 0; }

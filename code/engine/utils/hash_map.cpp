@@ -150,8 +150,8 @@ CreateMapSized(const int BaseSize)
 	return HashMap;
 }
 
-hash_map*
-CreateMap()
+internal hash_map*
+CreateHashMap()
 {
 	return CreateMapSized(BASE_SIZE);
 }
