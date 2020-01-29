@@ -1,10 +1,11 @@
 #pragma once
 
+// TODO(insolence): Probably implement 1D Perlin noise
+
 #include <math.h>
 
-global_variable int SEED = 1985;
-
-global_variable const unsigned char HASH[] = {
+// A lattice grid of size 256
+global_variable const unsigned char HASH[256] = {
     208,34,231,213,32,248,233,56,161,78,24,140,71,48,140,254,245,255,247,247,40,
     185,248,251,245,28,124,204,204,76,36,1,107,28,234,163,202,224,245,128,167,204,
     9,92,217,54,239,174,173,102,193,189,190,121,100,108,167,44,43,77,180,204,8,81,
@@ -22,7 +23,9 @@ global_variable const unsigned char HASH[] = {
 internal int
 Noise2(int X, int Y)
 {
-    int YIndex = (Y + SEED) % 256;
+    const int SEED = 1985;
+
+    int YIndex = (Y + SEED) % 256; // NOTE(insolence): 256 is a period of a func
     if (YIndex < 0)
         YIndex += 256;
     int XIndex = (HASH[YIndex] + X) % 256;
@@ -34,18 +37,20 @@ Noise2(int X, int Y)
 }
 
 internal double 
-LinInter(double X, double Y, double S)
+LinInter(double X, double Y, double T)
 {
-    return X + S*(Y-X);
+    return (X + T*(Y-X));
 }
 
+// NOTE(insolence): A smoothstep remapping function for T
 internal double
-SmoothInter(double X, double Y, double S)
+SmoothInter(double X, double Y, double T)
 {
-    return LinInter(X, Y, S*S*(3-2*S));
+    float TRemapSmoothstep = T*T * (3 - 2*T); // NOTE(insolence): T * T * T * (T * (T * 6 - 15) + 10); Fade func as defined by Ken Perlin
+    return LinInter(X, Y, TRemapSmoothstep);
 }
 
-internal double
+double
 Noise2D(double X, double Y)
 {
     int Xint = floor(X);
@@ -63,6 +68,7 @@ Noise2D(double X, double Y)
     return Result;
 }
 
+// NOTE(insolence): Frequency is the period of the function
 double
 PerlinGet2D(double X, double Y, double Freq, int Depth)
 {

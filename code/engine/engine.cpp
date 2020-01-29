@@ -25,6 +25,7 @@ global_variable framebuffer PingpongFB[2]; // NOTE(insolence): Framebuffers for 
 
 GLenum glCheckError_(const char *file, int line);
 #define glCheckError() glCheckError_(__FILE__, __LINE__) 
+void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height);
 
@@ -305,9 +306,12 @@ Start()
     {
         printf("Can't load glfw!");
     }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4.6);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4.6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#if DEBUG
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
 
     GLFWwindow *Window = SetUpWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Insosure Engine", false);
     if (!Window)
@@ -322,10 +326,24 @@ Start()
     }
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
+#if DEBUG
+    GLint Flags;
+    glGetIntegerv(GL_CONTEXT_FLAGS, &Flags);
+    if (Flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+    {
+        printf("Debug context initialized!\n");
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
+        glDebugMessageCallback(glDebugOutput, 0);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
+    }
+#endif
+
     GLFWmonitor *Primary = glfwGetPrimaryMonitor();
     const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
     SCREEN_WIDTH = Mode->width;
     SCREEN_HEIGHT = Mode->height;
+
 
     glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 
@@ -344,7 +362,8 @@ Start()
     return SUCCESS;
 }
 
-GLenum glCheckError_(const char *file, int line)
+GLenum 
+glCheckError_(const char *file, int line)
 {
     GLenum errorCode;
     while ((errorCode = glGetError()) != GL_NO_ERROR)
@@ -359,6 +378,49 @@ GLenum glCheckError_(const char *file, int line)
         }
     }
     return errorCode;
+}
+
+//typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,const void *userParam);
+void APIENTRY
+glDebugOutput(GLenum Source, GLenum Type, GLuint ID, GLenum Severity, GLsizei Length, const GLchar *Message, const void *UserParam)
+{
+    // NOTE(insolence): ignore non-significant error/warning codes
+    if (ID == 131169 || ID == 131185 || ID == 131218 || ID == 131204) return; 
+
+    printf("--------------- \n");
+    printf("Debug message (%d): %s \n", ID, Message);
+
+    switch (Source)
+    {
+        case GL_DEBUG_SOURCE_API:             printf("Source: API"); break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   printf("Source: Window System"); break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: printf("Source: Shader Compiler"); break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:     printf("Source: Third Party"); break;
+        case GL_DEBUG_SOURCE_APPLICATION:     printf("Source: Application"); break;
+        case GL_DEBUG_SOURCE_OTHER:           printf("Source: Other"); break;
+    } printf("\n");
+
+    switch (Type)
+    {
+        case GL_DEBUG_TYPE_ERROR:               printf("Type: Error"); break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: printf("Type: Deprecated Behaviour"); break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  printf("Type: Undefined Behaviour"); break; 
+        case GL_DEBUG_TYPE_PORTABILITY:         printf("Type: Portability"); break;
+        case GL_DEBUG_TYPE_PERFORMANCE:         printf("Type: Performance"); break;
+        case GL_DEBUG_TYPE_MARKER:              printf("Type: Marker"); break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:          printf("Type: Push Group"); break;
+        case GL_DEBUG_TYPE_POP_GROUP:           printf("Type: Pop Group"); break;
+        case GL_DEBUG_TYPE_OTHER:               printf("Type: Other"); break;
+    } printf("\n");
+    
+    switch (Severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:         printf("Severity: high"); break;
+        case GL_DEBUG_SEVERITY_MEDIUM:       printf("Severity: medium"); break;
+        case GL_DEBUG_SEVERITY_LOW:          printf("Severity: low"); break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: printf("Severity: notification"); break;
+    } printf("\n");
+    printf("\n");
 }
 
 

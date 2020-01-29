@@ -1,4 +1,4 @@
-set CommonCompilerFlags= -nologo
+set CommonCompilerFlags= -nologo -DEBUG=1
 set CommonLinkerFlags= -incremental:no -opt:ref opengl32.lib gdi32.lib user32.lib kernel32.lib winmm.lib
 set CommonOpenGLLinkerFlags= "..\dependencies\glfw\lib\glfw3dll.lib"
 set IncludePaths= /I"C:\dev\Insosure-Engine\dependencies"
