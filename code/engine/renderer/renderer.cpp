@@ -6,6 +6,7 @@ shader FBShader = {};
 shader HDRShader = {};
 shader InstancedShader = {};
 shader BlurShader = {};
+shader TextShader;
 
 void
 DrawRectangle(orthographic_camera *Camera, mat4 Transform, color Color)
@@ -82,6 +83,77 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
 
     glDeleteVertexArrays(1, &TexturedVAO);
     glDeleteBuffers(1, &TexturedVBO);
+}
+
+#include <map>
+struct Character {
+    GLuint TextureID;  // ID handle of the glyph texture
+    vec2 Size;         // Size of glyph
+    vec2 Bearing;      // Offset from baseline to left/top of glyph
+    GLuint Advance;    // Offset to advance to next glyph
+};
+std::map<GLchar, Character> Characters;
+
+#include <string>
+void 
+RenderText(std::string Text, float X, float Y, float Scale, color Color)
+{
+    static uint VAO = 0, VBO = 0;
+    if (!VAO)
+    {
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);  
+    }
+
+    // FIXME(insolence): SCREEN_HEIGHT(WIDTH) should be replaced with CurrentWidth(Height)
+    mat4 Projection = Ortho(0.f, SCREEN_HEIGHT, 0.f, SCREEN_WIDTH, 0.f, 1.f);
+
+    glUseProgram(TextShader.ShaderProgram);
+    SetVec3("TextColor", TextShader, Color);
+    SetMat4("Projection", TextShader, Projection);
+    glBindVertexArray(VAO);
+
+    // Iterate through all characters
+    std::string::const_iterator c;
+    for (c = Text.begin(); c != Text.end(); c++)
+    {
+        Character ch = Characters[*c];
+
+        GLfloat xpos = X + ch.Bearing.X * Scale;
+        GLfloat ypos = Y - (ch.Size.Y - ch.Bearing.Y) * Scale;
+
+        GLfloat w = ch.Size.X * Scale;
+        GLfloat h = ch.Size.Y * Scale;
+        // Update VBO for each character
+        GLfloat vertices[6][4] = {
+            { xpos,     ypos + h,   0.0, 0.0 },            
+            { xpos,     ypos,       0.0, 1.0 },
+            { xpos + w, ypos,       1.0, 1.0 },
+
+            { xpos,     ypos + h,   0.0, 0.0 },
+            { xpos + w, ypos,       1.0, 1.0 },
+            { xpos + w, ypos + h,   1.0, 0.0 }           
+        };
+        // Render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        // Update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // Render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        X += (ch.Advance >> 6) * Scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void

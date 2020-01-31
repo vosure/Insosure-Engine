@@ -1,10 +1,5 @@
 #include "engine.h"
 
-// All includes
-#include <glad/src/glad.c>
-#include <glfw/include/glfw3.h>
-#include <stb_image/stb_image.cpp>
-
 #include "utils/file_utils.h"
 #include "math/linear_math.h"
 #include "math/math.h"
@@ -97,6 +92,7 @@ MakeShaders()
 
     InstancedShader = CreateShader("shaders/instanced.vert", "shaders/instanced.frag");
     BlurShader = CreateShader("shaders/blur.vert", "shaders/blur.frag");
+    TextShader = CreateShader("shaders/text.vert", "shaders/text.frag");
 }
 
 internal void 
@@ -108,6 +104,7 @@ DeleteShaders()
     DeleteShader(&HDRShader);
     DeleteShader(&InstancedShader);
     DeleteShader(&BlurShader);
+    DeleteShader(&TextShader);
 }
 
 // NOTE(insolence): If fullscreen, then switch to windowed, and vice versa
@@ -229,7 +226,7 @@ UpdateAndRender(GLFWwindow *Window)
     float LastFrame = 0.f;
 
     TextureCache = CreateHashMap();
-
+    
     MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
     MakeShaders();
 
@@ -270,16 +267,20 @@ UpdateAndRender(GLFWwindow *Window)
         RecalculateViewMatrix(&Camera);
 
         // // NOTE(insolence): Actual drawing
+
         DrawRectangle(&Camera, Transform({-2.f, 0.f}, 20.f, 2.f), {1.f, 3.f, 3.f});
         DrawRectangle(&Camera, Transform({-3.f, -3.f}, 0.f, 2.f), {5.f, 0.f, 0.f});
 
         DrawRectangleTextured(&Camera, Transform({-1.f, 3.f}, 15.f, 2.f), GetTexture("star.png"));
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), GetTexture("test.jpg"));
-        DrawRectangleTextured(&Camera, Transform({3.f, 3.f}, 0.f, 2.f), GetTexture("sun.jpg"));
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), GetTexture("bush.png"));
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f}, 0.f, 2.f), GetTexture("blending_transparent_window.png"));
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("test.jpg"));
+        DrawRectangleTextured(&Camera, Transform({3.f, 3.f},  0.f, 2.f),  GetTexture("sun.jpg"));
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("bush.png"));
+        DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("blending_transparent_window.png"));
 
         InstancedDrawRectangleTextured(&Camera, &Transforms[0], 300, GetTexture("star.png"));
+
+        RenderText("You are like commit, lol, anime commit", 100.f, 500.f, 1.f, {4, 1, 1});
+        RenderText("Me: Commit commit commit", 100.f, 300.f, 1.f, {2, 4, 4});
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -295,6 +296,51 @@ UpdateAndRender(GLFWwindow *Window)
         glfwSwapBuffers(Window);
         glfwPollEvents();
     }
+}
+
+void
+LoadFreetype()
+{
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+        printf("Freetype error: Could not init FreeType Library \n");
+
+    FT_Face face;
+    if (FT_New_Face(ft, "../assets/fonts/arial.ttf", 0, &face))
+        printf("Freetype error: Failed to load font");  
+
+    FT_Set_Pixel_Sizes(face, 0, 48);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // NOTE(insolence): Disable byte-alignment restriction
+
+    for (GLubyte c = 0; c < 128; c++)
+    {
+        // NOTE(insolence): Load character glyph 
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+        {
+            printf("Freetype error: Failed to load Glyph \n");
+            continue;
+        }
+        GLuint texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, face->glyph->bitmap.width, face->glyph->bitmap.rows, 
+                     0, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Now store character for later use
+        Character character = {
+            texture, 
+            vec2{ (float)face->glyph->bitmap.width, (float)face->glyph->bitmap.rows},
+            vec2{ (float)face->glyph->bitmap_left,  (float)face->glyph->bitmap_top},
+            (GLuint)face->glyph->advance.x 
+            };
+        Characters.insert(std::pair<GLchar, Character>(c, character));
+    }
+
+    FT_Done_Face(face);
+    FT_Done_FreeType(ft);
 }
 
 int
@@ -344,6 +390,7 @@ Start()
     SCREEN_WIDTH = Mode->width;
     SCREEN_HEIGHT = Mode->height;
 
+    LoadFreetype();
 
     glfwSetFramebufferSizeCallback(Window, FramebufferSizeCallback);
 
@@ -380,7 +427,6 @@ glCheckError_(const char *file, int line)
     return errorCode;
 }
 
-//typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,const void *userParam);
 void APIENTRY
 glDebugOutput(GLenum Source, GLenum Type, GLuint ID, GLenum Severity, GLsizei Length, const GLchar *Message, const void *UserParam)
 {

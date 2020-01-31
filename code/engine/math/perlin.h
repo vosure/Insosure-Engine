@@ -1,6 +1,6 @@
 #pragma once
 
-// TODO(insolence): Probably implement 1D Perlin noise
+// TODO(insolence): Probably implement 3D Perlin noise?
 
 #include <math.h>
 
@@ -87,4 +87,31 @@ PerlinGet2D(double X, double Y, double Freq, int Depth)
     }
 
     return Fin/Div;
+}
+
+
+////////////////////////////////////////////
+///// 1D Value (Not Perlin!!!) Noise ///////
+////////////////////////////////////////////
+
+global_variable double SlopeAt[256];
+
+double
+ValueNoise1D(double X)
+{
+    int MaxVertices = 256;
+    int MaxVerticesMask = 255;
+
+    for (int i = 0; i < MaxVertices; i++)
+    {
+        SlopeAt[i] = ((double)RndInt(0, MaxVertices)) / 256.0;
+    }
+
+    int XInt = (int)X - (X < 0 && X != (int)X);
+    float T = X - XInt;
+
+    int XMin = XInt & MaxVerticesMask;
+    int XMax = (XMin + 1) & MaxVerticesMask;
+
+    return LinInter(SlopeAt[XMin], SlopeAt[XMax], T);
 }

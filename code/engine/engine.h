@@ -2,6 +2,13 @@
 
 #include <stdio.h>
 
+// All includes
+#include <glad/src/glad.c>
+#include <glfw/include/glfw3.h>
+#include <stb_image/stb_image.cpp>
+#include <ft2build.h>
+#include FT_FREETYPE_H  
+
 #define SUCCESS 1
 #define BAD_RESULT -1
 
