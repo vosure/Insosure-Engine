@@ -1,12 +1,18 @@
 #pragma once
 
-#include "engine.h"
-
 struct shader
 {
     int ShaderProgram;
     hash_map *UniformCache;
 };
+
+shader Shader;
+shader TexturedShader;
+shader FBShader;
+shader HDRShader;
+shader InstancedShader;
+shader BlurShader;
+shader TextShader;
 
 internal void
 CheckCompileErrors(int Shader, const char *Type)
@@ -147,4 +153,33 @@ SetVec2(const char *Name, shader Shader, vec2 Vector)
 {
     int Location = GetLocation(Name, Shader);
     glUniform2f(Location, Vector.X, Vector.Y);
+}
+
+internal void 
+MakeShaders()
+{
+    if (Shader.ShaderProgram)
+    {
+        DeleteShader(&Shader);
+        DeleteShader(&TexturedShader);
+        DeleteShader(&FBShader);
+        DeleteShader(&HDRShader);
+        DeleteShader(&InstancedShader);
+        DeleteShader(&BlurShader);
+        DeleteShader(&TextShader);
+    }
+
+    Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
+    TexturedShader = CreateShader("shaders/texture.vert", "shaders/texture.frag");
+    FBShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
+
+    HDRShader = CreateShader("shaders/hdr.vert", "shaders/hdr.frag");
+    glUseProgram(HDRShader.ShaderProgram);
+    SetInt("Scene", HDRShader, 1);
+    SetInt("BloomBlur", HDRShader, 0);
+    glUseProgram(0);
+
+    InstancedShader = CreateShader("shaders/instanced.vert", "shaders/instanced.frag");
+    BlurShader = CreateShader("shaders/blur.vert", "shaders/blur.frag");
+    TextShader = CreateShader("shaders/text.vert", "shaders/text.frag");
 }

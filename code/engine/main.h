@@ -2,19 +2,6 @@
 
 #include <stdio.h>
 
-// All includes
-#include <glad/src/glad.c>
-#include <glfw/include/glfw3.h>
-#include <stb_image/stb_image.cpp>
-#include <ft2build.h>
-#include FT_FREETYPE_H  
-
-#define SUCCESS 1
-#define BAD_RESULT -1
-
-#define TRUE 1
-#define FALSE 0
-
 #define internal static
 #define local_persist static
 #define global_variable static

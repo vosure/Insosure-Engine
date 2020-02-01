@@ -11,7 +11,6 @@ pushd ..\build
 
 XCOPY ..\dependencies\glfw\lib\glfw3.dll C:\dev\Insosure-Engine\build /Y
 
-cl %IncludePaths% %CommonCompilerFlags% ..\code\Engine\engine.cpp /Zi /LD /link %CommonLinkerFlags% /PDB:engine.pdb /DEBUG:FULL /EXPORT:Start %CommonOpenGLLinkerFlags%
-cl %CommonCompilerFlags% ..\code\main.cpp /Zi
+cl %IncludePaths% %CommonCompilerFlags% ..\code\Engine\main.cpp /Zi /link %CommonLinkerFlags% %CommonOpenGLLinkerFlags%
 
 popd

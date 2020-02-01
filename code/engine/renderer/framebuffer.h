@@ -10,6 +10,10 @@ struct framebuffer
     unsigned int RBO;
 };
 
+global_variable framebuffer PostprocessingFB;
+global_variable framebuffer HdrFB;
+global_variable framebuffer PingpongFB[2]; // NOTE(insolence): Framebuffers for Gaussian blur
+
 void
 AttachTexture(framebuffer *Framebuffer, int ScreenWidth, int ScreenHeight, int InternalFormat, int Index)
 {
@@ -72,5 +76,24 @@ CreateFramebuffer(int ScreenWidth, int ScreenHeight, int InternalFormat, int Tex
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     return Framebuffer;
+}
+
+internal void 
+MakeFramebuffers(int Width, int Height)
+{
+    if (PostprocessingFB.ID)
+    {
+        glDeleteFramebuffers(1, &PostprocessingFB.ID);
+        glDeleteFramebuffers(1, &HdrFB.ID);
+        glDeleteFramebuffers(1, &PingpongFB[0].ID);
+        glDeleteFramebuffers(1, &PingpongFB[1].ID);
+    }
+
+    PostprocessingFB = CreateFramebuffer(Width, Height, GL_RGBA, 1, MAKE_RENDERBUFFER);
+    HdrFB = CreateFramebuffer(Width, Height, GL_RGB16F, 2, MAKE_RENDERBUFFER);
+    for (int i = 0; i < 2; i++)
+    {
+        PingpongFB[i] = CreateFramebuffer(Width, Height, GL_RGB16F, 1, RENDERBUFFER_NEEDLESS);
+    }
 }
 

@@ -1,13 +1,5 @@
 #include "renderer.h"
 
-shader Shader = {};
-shader TexturedShader = {};
-shader FBShader = {};
-shader HDRShader = {};
-shader InstancedShader = {};
-shader BlurShader = {};
-shader TextShader;
-
 void
 DrawRectangle(orthographic_camera *Camera, mat4 Transform, color Color)
 {
@@ -85,20 +77,10 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
     glDeleteBuffers(1, &TexturedVBO);
 }
 
-#include <map>
-struct Character {
-    GLuint TextureID;  // ID handle of the glyph texture
-    vec2 Size;         // Size of glyph
-    vec2 Bearing;      // Offset from baseline to left/top of glyph
-    GLuint Advance;    // Offset to advance to next glyph
-};
-std::map<GLchar, Character> Characters;
-
-#include <string>
 void 
 RenderText(std::string Text, float X, float Y, float Scale, color Color)
 {
-    static uint VAO = 0, VBO = 0;
+    uint VAO = 0, VBO = 0;
     if (!VAO)
     {
         glGenVertexArrays(1, &VAO);
@@ -112,8 +94,7 @@ RenderText(std::string Text, float X, float Y, float Scale, color Color)
         glBindVertexArray(0);  
     }
 
-    // FIXME(insolence): SCREEN_HEIGHT(WIDTH) should be replaced with CurrentWidth(Height)
-    mat4 Projection = Ortho(0.f, SCREEN_HEIGHT, 0.f, SCREEN_WIDTH, 0.f, 1.f);
+    mat4 Projection = Ortho(0.f, SCREEN_WIDTH, 0.f, SCREEN_WIDTH, 0.f, 1.f);
 
     glUseProgram(TextShader.ShaderProgram);
     SetVec3("TextColor", TextShader, Color);
@@ -154,6 +135,10 @@ RenderText(std::string Text, float X, float Y, float Scale, color Color)
     }
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
 }
 
 void
@@ -220,6 +205,29 @@ ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
     SetFloat("Exposure", HDRShader, Exposure);
 
     RenderScreenTexture();
+}
+
+void
+Blur(framebuffer *HdrFB, framebuffer *PingpongFB)
+{
+    // NOTE(insolence): Blur bright fragments with 2-pass Gaussian blur
+    int Horizontal = 1;
+    bool FirstIteration = true;
+    int Amount = 20;
+    for (int i = 0; i < Amount; i++)
+    {
+        glUseProgram(BlurShader.ShaderProgram);
+        glBindFramebuffer(GL_FRAMEBUFFER, PingpongFB[Horizontal].ID);
+        SetInt("Image", BlurShader, 0);
+        SetInt("Horizontal", BlurShader, Horizontal);
+        glBindTexture(GL_TEXTURE_2D, FirstIteration ? HdrFB->TextureAttachment[1] : PingpongFB[!Horizontal].TextureAttachment[0]);
+        RenderScreenTexture();
+        Horizontal = !Horizontal;
+        if (FirstIteration)
+            FirstIteration = false;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 ///////////////////////////////////////

@@ -619,3 +619,12 @@ LookAt(vec3 From, vec3 Target, vec3 UpAxis = vec3{0.0f, 1.0f, 0.0f})
 
 	return(Result);
 }
+
+// NOTE(insolence): Temp, probably make a separate struct Transform
+mat4
+Transform(vec2 Pos, float Rotation, float ScaleAm)
+{
+    mat4 Result = Scale(ScaleAm) * Rotate(Rotation, {0, 0, 1}) * Translate({Pos.X, Pos.Y, 0});
+
+    return Result;
+}
