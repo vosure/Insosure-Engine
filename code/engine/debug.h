@@ -1,14 +1,12 @@
-GLenum glCheckError_(const char *file, int line);
-#define glCheckError() glCheckError_(__FILE__, __LINE__) 
-void APIENTRY glDebugOutput(GLenum Source, GLenum Type, GLuint ID, GLenum Severity, GLsizei Length, const GLchar *Message, const void *UserParam);
+#pragma once
 
 GLenum 
-glCheckError_(const char *file, int line)
+glCheckError_(const char *File, int Line)
 {
-    GLenum errorCode;
-    while ((errorCode = glGetError()) != GL_NO_ERROR)
+    GLenum ErrorCode;
+    while ((ErrorCode = glGetError()) != GL_NO_ERROR)
     {
-        switch (errorCode)
+        switch (ErrorCode)
         {
             case GL_INVALID_ENUM:                  printf("INVALID_ENUM"); break;
             case GL_INVALID_VALUE:                 printf("INVALID_VALUE"); break;
@@ -17,8 +15,10 @@ glCheckError_(const char *file, int line)
             case GL_INVALID_FRAMEBUFFER_OPERATION: printf("INVALID_FRAMEBUFFER_OPERATION"); break;
         }
     }
-    return errorCode;
+    
+    return ErrorCode;
 }
+#define glCheckError() glCheckError_(__FILE__, __LINE__) 
 
 void APIENTRY
 glDebugOutput(GLenum Source, GLenum Type, GLuint ID, GLenum Severity, GLsizei Length, const GLchar *Message, const void *UserParam)

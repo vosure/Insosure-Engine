@@ -8,7 +8,7 @@ struct shader
 
 shader Shader;
 shader TexturedShader;
-shader FBShader;
+shader PostprocessingShader;
 shader HDRShader;
 shader InstancedShader;
 shader BlurShader;
@@ -146,7 +146,6 @@ SetVec3(const char *Name, shader Shader, vec3 Vector)
     glUniform3f(Location, Vector.X, Vector.Y, Vector.Z);
 }
 
-
 // NOTE(insolence): The Name var seems to be bugged, prob because of char length
 void
 SetVec2(const char *Name, shader Shader, vec2 Vector)
@@ -155,6 +154,7 @@ SetVec2(const char *Name, shader Shader, vec2 Vector)
     glUniform2f(Location, Vector.X, Vector.Y);
 }
 
+
 internal void 
 MakeShaders()
 {
@@ -162,7 +162,7 @@ MakeShaders()
     {
         DeleteShader(&Shader);
         DeleteShader(&TexturedShader);
-        DeleteShader(&FBShader);
+        DeleteShader(&PostprocessingShader);
         DeleteShader(&HDRShader);
         DeleteShader(&InstancedShader);
         DeleteShader(&BlurShader);
@@ -171,7 +171,7 @@ MakeShaders()
 
     Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
     TexturedShader = CreateShader("shaders/texture.vert", "shaders/texture.frag");
-    FBShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
+    PostprocessingShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
 
     HDRShader = CreateShader("shaders/hdr.vert", "shaders/hdr.frag");
     glUseProgram(HDRShader.ShaderProgram);

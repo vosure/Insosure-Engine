@@ -7,6 +7,7 @@ SetUpWindow(int Width, int Height, char *WindowName, bool SetFullScreen)
     if (!SetFullScreen)
     {
         Window = glfwCreateWindow(Width, Height, WindowName, NULL, NULL);
+        glfwSetWindowPos(Window, 70, 70);
     }
     else
     {

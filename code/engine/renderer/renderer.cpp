@@ -80,13 +80,13 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
 void 
 RenderText(std::string Text, float X, float Y, float Scale, color Color)
 {
-    uint VAO = 0, VBO = 0;
-    if (!VAO)
+    uint TextVAO = 0, TextVBO = 0;
+    if (!TextVAO)
     {
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glGenVertexArrays(1, &TextVAO);
+        glGenBuffers(1, &TextVBO);
+        glBindVertexArray(TextVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, TextVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
@@ -99,46 +99,46 @@ RenderText(std::string Text, float X, float Y, float Scale, color Color)
     glUseProgram(TextShader.ShaderProgram);
     SetVec3("TextColor", TextShader, Color);
     SetMat4("Projection", TextShader, Projection);
-    glBindVertexArray(VAO);
+    glBindVertexArray(TextVAO);
 
     // Iterate through all characters
     std::string::const_iterator c;
     for (c = Text.begin(); c != Text.end(); c++)
     {
-        Character ch = Characters[*c];
+        Character Ch = Characters[*c];
 
-        GLfloat xpos = X + ch.Bearing.X * Scale;
-        GLfloat ypos = Y - (ch.Size.Y - ch.Bearing.Y) * Scale;
+        GLfloat Xpos = X + Ch.Bearing.X * Scale;
+        GLfloat Ypos = Y - (Ch.Size.Y - Ch.Bearing.Y) * Scale;
 
-        GLfloat w = ch.Size.X * Scale;
-        GLfloat h = ch.Size.Y * Scale;
+        GLfloat W = Ch.Size.X * Scale;
+        GLfloat H = Ch.Size.Y * Scale;
         // Update VBO for each character
-        GLfloat vertices[6][4] = {
-            { xpos,     ypos + h,   0.0, 0.0 },            
-            { xpos,     ypos,       0.0, 1.0 },
-            { xpos + w, ypos,       1.0, 1.0 },
+        GLfloat Vertices[6][4] = {
+            { Xpos,     Ypos + H,   0.0, 0.0 },            
+            { Xpos,     Ypos,       0.0, 1.0 },
+            { Xpos + W, Ypos,       1.0, 1.0 },
 
-            { xpos,     ypos + h,   0.0, 0.0 },
-            { xpos + w, ypos,       1.0, 1.0 },
-            { xpos + w, ypos + h,   1.0, 0.0 }           
+            { Xpos,     Ypos + H,   0.0, 0.0 },
+            { Xpos + W, Ypos,       1.0, 1.0 },
+            { Xpos + W, Ypos + H,   1.0, 0.0 }           
         };
         // Render glyph texture over quad
-        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        glBindTexture(GL_TEXTURE_2D, Ch.TextureID);
         // Update content of VBO memory
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBindBuffer(GL_ARRAY_BUFFER, TextVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices); 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         // Render quad
         glDrawArrays(GL_TRIANGLES, 0, 6);
         // Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-        X += (ch.Advance >> 6) * Scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+        X += (Ch.Advance >> 6) * Scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
     }
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &TextVAO);
+    glDeleteBuffers(1, &TextVBO);
 }
 
 void
@@ -181,13 +181,17 @@ RenderScreenTexture()
 }
 
 void
-PostprocessScreenTexture(int FBTexture, postprocessing_effects Effects)
+PostprocessScreenTexture(int ScreenTexture, postprocessing_effects Effects)
 {
-    glUseProgram(FBShader.ShaderProgram);
-    SetBool("Inversion", FBShader, Effects.Inversion);
-    SetBool("Grayscale", FBShader, Effects.Grayscale);
-    SetBool("Blur", FBShader, Effects.Blur);
-    glBindTexture(GL_TEXTURE_2D, FBTexture);
+    // TODO(insolence): Handle the case when no Effects are set and we don't have to call FBShsader
+    // if (!Effects.Inversion && !Effects.Grayscale && !Effects.Blur)
+    //     return;
+
+    glUseProgram(PostprocessingShader.ShaderProgram);
+    SetBool("Inversion", PostprocessingShader, Effects.Inversion);
+    SetBool("Grayscale", PostprocessingShader, Effects.Grayscale);
+    SetBool("Blur", PostprocessingShader, Effects.Blur);
+    glBindTexture(GL_TEXTURE_2D, ScreenTexture);
 
     RenderScreenTexture();
 }

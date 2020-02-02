@@ -159,6 +159,7 @@ void main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4.6);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4.6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 #if DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
@@ -166,8 +167,13 @@ void main()
     GLFWwindow *Window = SetUpWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Heroes Budget Version", false);
     if (!Window)
     {
+        printf("Failed to create the GLFW Window!");
         return;
     }
+    GLFWmonitor *Primary = glfwGetPrimaryMonitor();
+    const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
+    SCREEN_WIDTH = Mode->width;
+    SCREEN_HEIGHT = Mode->height;
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -189,11 +195,6 @@ void main()
     }
 #endif
 
-    GLFWmonitor *Primary = glfwGetPrimaryMonitor();
-    const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
-    SCREEN_WIDTH = Mode->width;
-    SCREEN_HEIGHT = Mode->height;
-
     LoadFreetype();
 
     // NOTE(insolence): We cull back faces specified in CCW order,
@@ -201,7 +202,6 @@ void main()
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_BACK);
     // glFrontFace(GL_CW);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
