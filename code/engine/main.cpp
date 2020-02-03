@@ -5,7 +5,7 @@
 #include <glfw/include/glfw3.h>
 #include <stb_image/stb_image.cpp>
 #include <ft2build.h>
-#include FT_FREETYPE_H  
+#include FT_FREETYPE_H
 
 #include "utils/file_utils.h"
 #include "math/linear_math.h"
@@ -78,7 +78,7 @@ UpdateAndRender(GLFWwindow *Window)
     float LastFrame = 0.f;
 
     TextureCache = CreateHashMap();
-    
+
     MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
     MakeShaders();
 
@@ -91,6 +91,36 @@ UpdateAndRender(GLFWwindow *Window)
     Effects.Inversion = false;
     Effects.Grayscale = false;
     Effects.Blur = false;
+
+    // Character char1 = Character{423, {0, 0}, {1, 1}, 40};
+    // Character char2 = Character{5, {0, 0}, {1, 1}, 40};
+    // Character char3 = Character{10000, {0, 0}, {1, 1}, 20};
+    // Character char4 = Character{40, {0, 0}, {1, 1}, 20};
+
+    // array_list<Character> *List = CreateList<Character>(40);
+    // PushToList(List, &char2);
+    // PushToList(List, &char1);
+    // PushToList(List, &char3);
+    // PushToList(List, &char4);
+    // AddIndexedToList(List, 5, &char2);
+    // AddIndexedToList(List, 10, &char3);
+    // AddIndexedToList(List, 1, &char4);
+    // for (int i = 0; i < List->Capacity; i++)
+    // {
+    //     if (List->Elements[i] != NULL)
+    //         printf("%d: %d \n", i, List->Elements[i]->TextureID);
+    // }
+    // RemoveFromList(List, 5);
+    // Character *t = Get(List, 10);
+    // printf("\n%d", t->TextureID);
+
+    // if (ListContains(List, *t))
+    // {
+    //     printf("WTF?");
+    // }
+    // Clear(List);
+    // DestroyList(List);
+
 
     // NOTE(insolence): Temp code for testing instancing
     mat4 Transforms[300] = {};
@@ -130,6 +160,9 @@ UpdateAndRender(GLFWwindow *Window)
         DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("blending_transparent_window.png"));
 
         InstancedDrawRectangleTextured(&Camera, &Transforms[0], 300, GetTexture("star.png"));
+
+        DrawTriangle(&Camera, Transform({-4, -2}, 0.f, 1.f), {2, 7, 18});
+        DrawRectangleTextured(&Camera, Transform({6.f, 4.f}, 0.f, 2.f), GetTexture("test.jpg"));
 
         RenderText("Heroes Budget Version", 100.f, 500.f, 1.f, {4, 1, 1});
         RenderText("The legend has been born!!!", 100.f, 300.f, 1.f, {2, 4, 4});
@@ -189,7 +222,7 @@ void main()
     {
         printf("Debug context initialized!\n");
         glEnable(GL_DEBUG_OUTPUT);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
         glDebugMessageCallback(glDebugOutput, 0);
         glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
     }

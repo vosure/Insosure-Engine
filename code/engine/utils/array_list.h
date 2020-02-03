@@ -1,109 +1,107 @@
 #pragma once
 
+#include <stdio.h>
+
 // TODO(insolence): Probably use templates or macros, as we
 // may need to store different types
 
+template <class T>
 struct array_list
 {
-    int *Elements; // ints for now
+    T **Elements; // ints for now
     int CurrentSize;
     int Capacity;
     // float LoadFactor = 0.75f;
 };
-typedef array_list vector;
 
-#define EMPTY -1000000
 
-void CreateList();
-void DestroyList(array_list *List);
-void AddToList(array_list *List, int Value); // NOTE(insolence): Same as PushBack, add to the end of the list
-void AddIndexedToList(array_list *List, int Index, int Value);
-void RemoveFromList(array_list *List, int Index);
-void Clear(array_list *List);
-
-int Get(array_list *List, int Index);
-bool ListContains(array_list *List, int Value);
-
-void Resize(array_list *List, int NewCapacity);
-
-array_list*
+template<typename T>
+array_list<T>*
 CreateList(int InitialCapacity = 20)
 {
-    array_list *Result = (array_list*)malloc(sizeof(array_list));
+    array_list<T> *Result = (array_list<T>*)malloc(sizeof(array_list<T>));
     Result->Capacity = InitialCapacity;
     Result->CurrentSize = 0;
-    Result->Elements = (int*)calloc(InitialCapacity, sizeof(int)); 
+    Result->Elements = (T**)calloc(InitialCapacity, sizeof(T));
 
     return Result;
 }
 
-void 
-DestroyList(array_list *List)
+template<typename T>
+void
+DestroyList(array_list<T> *List)
 {
     free(List);
 }
 
+template<typename T>
 void
-AddToList(array_list *List, int Value)
+PushToList(array_list<T> *List, T *Value)
 {
     if (List->CurrentSize < List->Capacity)
     {
-        List->Elements[List->CurrentSize - 1] = Value;
+        List->Elements[List->CurrentSize] = Value;
         List->CurrentSize++;
     }
     else
     {
         // TODO(insolence): Resize
         Resize(List, List->Capacity * 2);
-        AddToList(List, Value);
+        PushToList(List, Value);
     }
 }
 
+template<typename T>
 void
-AddIndexedToList(array_list *List, int Index, int Value)
+AddIndexedToList(array_list<T> *List, int Index, T *Value)
 {
+
     if (Index >= 0 && Index < List->Capacity)
     {
         List->Elements[Index] = Value;
+        List->CurrentSize++;
     }
 }
 
-void 
-RemoveFromList(array_list *List, int Index)
+template<typename T>
+void
+RemoveFromList(array_list<T> *List, int Index)
 {
     if (Index >= 0 && Index < List->Capacity)
     {
-        List->Elements[Index] = EMPTY; // FIXME(insolence): Temp solution
+        List->Elements[Index] = NULL; // FIXME(insolence): Temp solution
     }
 }
 
-void 
-Clear(array_list *List)
+template<typename T>
+void
+Clear(array_list<T> *List)
 {
     for (int i = 0; i < List->Capacity; i++)
     {
-        List->Elements[i] = EMPTY;
+        List->Elements[i] = NULL;
     }
 }
 
-
-int
-Get(array_list *List, int Index)
+template<typename T>
+T*
+Get(array_list<T> *List, int Index)
 {
     if (Index >= 0 && Index < List->Capacity)
     {
         return List->Elements[Index];
     }
     else
-        return EMPTY;
+        return NULL;
 }
 
-bool 
-ListContains(array_list *List, int Value)
+template<typename T>
+bool
+ListContains(array_list<T> *List, T Value)
 {
     for (int i = 0; i < List->Capacity; i++)
     {
-        if (List->Elements[i] == Value)
+        if (List->Elements[i] == &Value)
             return true;
     }
 
@@ -112,11 +110,12 @@ ListContains(array_list *List, int Value)
 
 
 // NOTE(insolence): Currently resizing up
-void 
-Resize(array_list *List, int NewCapacity)
+template<typename T>
+void
+Resize(array_list<T> *List, int NewCapacity)
 {
     if (NewCapacity > List->Capacity)
     {
-        List->Elements = (int*)realloc(List->Elements, sizeof(int) * NewCapacity);
+        List->Elements = (T**)realloc(List->Elements, sizeof(T) * NewCapacity);
     }
 }
