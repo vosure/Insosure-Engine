@@ -1,5 +1,6 @@
 #include "hash_map.h"
 
+// FIXME(insolence): UPDATE CALC HASH TO USE NOT ONLY STRINGS
 global_variable const int PRIME_1 = 151;
 global_variable const int PRIME_2 = 163;
 internal int
@@ -24,28 +25,31 @@ GetHash(const char *Str, int NumBuckets, int Attempt)
 	return (HashA + (Attempt * (HashB + 1))) % NumBuckets;
 }
 
-internal hash_node*
-NewNode(const char* k, int v)
+template <typename K, typename V>
+internal hash_node<K, V>*
+NewNode(K Key, V Value)
 {
-	hash_node* Node = (hash_node*)malloc(sizeof(hash_node));
-	Node->Key = strdup(k);
-	Node->Value = v;
+	hash_node<K, V>* Node = (hash_node<K, V>*)malloc(sizeof(hash_node<K, V>));
+	Node->Key = Key;
+	Node->Value = Value;
+
 	return Node;
 }
 
+template <typename K, typename V>
 internal void
-DeleteNode(hash_node *Node)
+DeleteNode(hash_node<K, V> *Node)
 {
-	free(Node->Key);
 	free(Node);
 }
 
+template <typename K, typename V>
 void
-DeleteHashMap(hash_map *HashMap)
+DeleteHashMap(hash_map<K, V> *HashMap)
 {
 	for (int i = 0; i < HashMap->Size; i++)
     {
-		hash_node* Node = HashMap->Nodes[i];
+		hash_node<K, V>* Node = HashMap->Nodes[i];
 		if (Node != NULL)
 			DeleteNode(Node);
 	}
@@ -53,30 +57,28 @@ DeleteHashMap(hash_map *HashMap)
 	free(HashMap);
 }
 
+template <typename K, typename V>
 void
-Insert(hash_map *HashMap, const char *Key, int Value)
+Insert(hash_map<K, V> *HashMap, K Key, V Value)
 {
 	// NOTE(insolence): Check if we can extend our table
 	const int Load = HashMap->Count * 100 / HashMap->Size;
 	if (Load > 70)
-		ResizeUp(HashMap);
+		ResizeUp<const char*, uint>(HashMap);
 
-	hash_node* Node = NewNode(Key, Value);
-	int Index = GetHash(Node->Key, HashMap->Size, 0);
-	hash_node* CurrentNode = HashMap->Nodes[Index];
+	hash_node<K, V>* Node = NewNode(Key, Value);
+	int Index = GetHash("Hello", HashMap->Size, 0); // FIXME(insolence): Fix this
+	hash_node<K, V>* CurrentNode = HashMap->Nodes[Index];
 
 	int Attempt = 1;
 	while (CurrentNode != NULL)
     {
-		if (CurrentNode != &REMOVED_NODE)
-        {
-			if (strcmp(CurrentNode->Key, Key) == 0) {
+			if (CurrentNode->Key == Key) {
 				DeleteNode(CurrentNode);
 				HashMap->Nodes[Index] = Node;
 				return;
-			}
 		}
-		Index = GetHash(Node->Key, HashMap->Size, Attempt);
+		Index = GetHash("Hello", HashMap->Size, Attempt);
 		CurrentNode = HashMap->Nodes[Index];
 		Attempt++;
 	}
@@ -84,30 +86,30 @@ Insert(hash_map *HashMap, const char *Key, int Value)
 	HashMap->Count++;
 }
 
-int
-Get(hash_map *HashMap, const char *Key)
+template <typename K, typename V>
+V
+Get(hash_map<K, V> *HashMap, K Key)
 {
-	int Index = GetHash(Key, HashMap->Size, 0);
-	hash_node *Node = HashMap->Nodes[Index];
+	int Index = GetHash("Hello", HashMap->Size, 0);
+	hash_node<K, V> *Node = HashMap->Nodes[Index];
 	int Attempt = 1;
 	while (Node != NULL)
     {
-		if (Node != &REMOVED_NODE)
-        {
-			if (strcmp(Node->Key, Key) == 0)
-            {
-				return Node->Value;
-			}
+		if (Node->Key == Key)
+		{
+			return Node->Value;
 		}
-		Index = GetHash(Key, HashMap->Size, Attempt);
+
+		Index = GetHash("Hello", HashMap->Size, Attempt);
 		Node = HashMap->Nodes[Index];
 		Attempt++;
 	}
-	return -1;
+	return NULL;
 }
 
+template <typename K, typename V>
 void
-Remove(hash_map *HashMap, const char *Key)
+Remove(hash_map<K, V> *HashMap, K Key)
 {
 	const int Load = HashMap->Count * 100 / HashMap->Size;
 	if (Load < 10)
@@ -115,21 +117,19 @@ Remove(hash_map *HashMap, const char *Key)
 		ResizeDown(HashMap);
 	}
 
-	int Index = GetHash(Key, HashMap->Size, 0);
-	hash_node *Node = HashMap->Nodes[Index];
+	int Index = GetHash("Hello", HashMap->Size, 0);
+	hash_node<K, V> *Node = HashMap->Nodes[Index];
 
 	int Attempt = 0;
 	while (Node != NULL)
     {
-		if (Node != &REMOVED_NODE)
-        {
-			if (strcmp(Node->Key, Key) == 0)
-            {
-				DeleteNode(Node);
-				HashMap->Nodes[Index] = &REMOVED_NODE;
-			}
+		if (Node->Key == Key)
+		{
+			DeleteNode(Node);
+			HashMap->Nodes[Index] = NULL;
 		}
-		Index = GetHash(Key, HashMap->Size, Attempt);
+
+		Index = GetHash("Hello", HashMap->Size, Attempt);
 		Node = HashMap->Nodes[Index];
 		Attempt++;
 	}
@@ -137,35 +137,40 @@ Remove(hash_map *HashMap, const char *Key)
 	HashMap->Count--;
 }
 
-internal hash_map*
+template <typename K, typename V>
+hash_map<K, V>*
 CreateMapSized(const int BaseSize)
 {
-	hash_map* HashMap = (hash_map*)malloc(sizeof(hash_map));
+	hash_map<K, V>* HashMap = (hash_map<K, V>*)malloc(sizeof(hash_map<K, V>));
 	HashMap->BaseSize = BaseSize;
 
 	HashMap->Size = NextPrime(HashMap->BaseSize);
 
 	HashMap->Count = 0;
-	HashMap->Nodes = (hash_node**)calloc(HashMap->Size, sizeof(hash_node*));
+	HashMap->Nodes = (hash_node<K, V>**)calloc(HashMap->Size, sizeof(hash_node<K, V>*));
 	return HashMap;
 }
 
-internal hash_map*
+template <typename K, typename V>
+hash_map<K, V>*
 CreateHashMap()
 {
-	return CreateMapSized(BASE_SIZE);
+	return CreateMapSized<const char*, uint>(BASE_SIZE);
 }
 
-internal void
-ResizeMap(hash_map *HashMap, const int BaseSize) {
-	if (BaseSize < BASE_SIZE) {
+template <typename K, typename V>
+void
+ResizeMap(hash_map<K, V> *HashMap, const int BaseSize)
+{
+	if (BaseSize < BASE_SIZE)
+	{
 		return;
 	}
-	hash_map *NewHashMap = CreateMapSized(BaseSize);
+	hash_map<K, V> *NewHashMap = CreateMapSized<const char*, uint>(BaseSize);
 	for (int i = 0; i < HashMap->Size; i++)
     {
-		hash_node* Node = HashMap->Nodes[i];
-		if (Node != NULL && Node != &REMOVED_NODE)
+		hash_node<K, V>* Node = HashMap->Nodes[i];
+		if (Node != NULL)
         {
 			Insert(NewHashMap, Node->Key, Node->Value);
 		}
@@ -178,22 +183,24 @@ ResizeMap(hash_map *HashMap, const int BaseSize) {
 	HashMap->Size = NewHashMap->Size;
 	NewHashMap->Size = TempSize;
 
-	hash_node **TempNodes = HashMap->Nodes;
+	hash_node<K, V> **TempNodes = HashMap->Nodes;
 	HashMap->Nodes = NewHashMap->Nodes;
 	NewHashMap->Nodes = TempNodes;
 
 	DeleteHashMap(NewHashMap);
 }
 
-internal void
-ResizeUp(hash_map *HashMap)
+template <typename K, typename V>
+void
+ResizeUp(hash_map<K, V> *HashMap)
 {
 	const int NewSize = HashMap->BaseSize * 2;
-	ResizeMap(HashMap, NewSize);
+	ResizeMap<const char*, uint>(HashMap, NewSize);
 }
 
+template <typename K, typename V>
 internal void
-ResizeDown(hash_map *HashMap)
+ResizeDown(hash_map<K, V> *HashMap)
 {
 	const int NewSize = HashMap->BaseSize / 2;
 	ResizeMap(HashMap, NewSize);

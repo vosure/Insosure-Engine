@@ -3,7 +3,7 @@
 struct shader
 {
     int ShaderProgram;
-    hash_map *UniformCache;
+    hash_map<const char*, uint> *UniformCache;
 };
 
 shader Shader;
@@ -46,7 +46,7 @@ shader
 CreateShader(const char *VertPath, const char *FragPath)
 {
     shader Shader;
-    Shader.UniformCache = CreateHashMap();
+    Shader.UniformCache = CreateHashMap<const char*, uint>();
 
     const char *VertSrc = (const char *)ReadFile(VertPath);
     const char *FragSrc = (const char *)ReadFile(FragPath);
@@ -90,8 +90,8 @@ DeleteShader(shader *Shader)
 internal int
 GetLocation(const char *Name, shader Shader)
 {
-    int Location;
-    if (Get(Shader.UniformCache, Name) == -1)
+    uint Location;
+    if (Get(Shader.UniformCache, Name) == NULL)
     {
         Location = glGetUniformLocation(Shader.ShaderProgram, Name);
         Insert(Shader.UniformCache, Name, Location);
@@ -155,7 +155,7 @@ SetVec2(const char *Name, shader Shader, vec2 Vector)
 }
 
 
-internal void 
+internal void
 MakeShaders()
 {
     if (Shader.ShaderProgram)

@@ -1,7 +1,7 @@
 set CommonCompilerFlags= -nologo -DEBUG=1
 set CommonLinkerFlags= -incremental:no -opt:ref opengl32.lib gdi32.lib user32.lib kernel32.lib winmm.lib "..\dependencies\freetype\lib\freetype.lib"
 set CommonOpenGLLinkerFlags= "..\dependencies\glfw\lib\glfw3dll.lib"
-set IncludePaths= /I"C:\dev\Insosure-Engine\dependencies" /I"C:\dev\Insosure-Engine\dependencies\freetype\include"
+set IncludePaths= /I"W:\Insosure-Engine\dependencies" /I"W:\Insosure-Engine\dependencies\freetype\include"
 
 call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x86
 call cls
@@ -9,7 +9,8 @@ call cls
 IF NOT EXIST ..\build mkdir ..\build
 pushd ..\build
 
-XCOPY ..\dependencies\glfw\lib\glfw3.dll C:\dev\Insosure-Engine\build /Y
+XCOPY ..\dependencies\glfw\lib\glfw3.dll W:\Insosure-Engine\build /Y
+XCOPY ..\dependencies\freetype\lib\freetype.dll W:\Insosure-Engine\build /Y
 
 cl /EHsc %IncludePaths% %CommonCompilerFlags% ..\code\Engine\main.cpp /Zi /link %CommonLinkerFlags% %CommonOpenGLLinkerFlags%
 

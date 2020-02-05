@@ -1,13 +1,13 @@
 #pragma once
 
-global_variable hash_map *TextureCache;
+global_variable hash_map<const char*, uint> *TextureCache;
 
 uint
 CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 {
     // TODO(insolence): Size must be determined dynamically!!!
     char Append[120];
-	strcpy(Append, "C:/dev/Insosure-Engine/assets/textures/");
+	strcpy(Append, "W:/Insosure-Engine/assets/textures/");
 	strcat(Append, Path);
 
     uint Texture;
@@ -68,7 +68,7 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 uint GetTexture(const char *Path)
 {
     // Query the TextureCache first
-    if (Get(TextureCache, Path) != -1)
+    if (Get(TextureCache, Path) != NULL)
     {
         return Get(TextureCache, Path);
     }
@@ -78,11 +78,11 @@ uint GetTexture(const char *Path)
 
 // NOTE(insolence): At window resize
 // TODO(insolence): Probably we should reupload all textures currently loaded
-void 
+void
 UpdateTextureCache()
 {
-    hash_map *Temp = CreateHashMap();
-    hash_map *Swap = Temp;
+    hash_map<const char*, uint> *Temp = CreateHashMap<const char*, uint>();
+    hash_map<const char*, uint> *Swap = Temp;
     Temp = TextureCache;
     TextureCache = Swap;
 

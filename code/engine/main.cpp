@@ -13,6 +13,7 @@
 #include "math/perlin.h"
 #include "utils/hash_map.cpp"
 #include "utils/array_list.h"
+#include "utils/time.h"
 
 #include "debug.h"
 #include "renderer/texture.h"
@@ -77,7 +78,7 @@ UpdateAndRender(GLFWwindow *Window)
     float DeltaTime = 0.f;
     float LastFrame = 0.f;
 
-    TextureCache = CreateHashMap();
+    TextureCache = CreateHashMap<const char*, uint>();
 
     MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
     MakeShaders();
@@ -159,10 +160,10 @@ UpdateAndRender(GLFWwindow *Window)
         DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("bush.png"));
         DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("blending_transparent_window.png"));
 
-        InstancedDrawRectangleTextured(&Camera, &Transforms[0], 300, GetTexture("star.png"));
+        InstancedDrawRectanglesTextured(&Camera, &Transforms[0], 300, GetTexture("star.png"));
 
         DrawTriangle(&Camera, Transform({-4, -2}, 0.f, 1.f), {2, 7, 18});
-        DrawRectangleTextured(&Camera, Transform({6.f, 4.f}, 0.f, 2.f), GetTexture("test.jpg"));
+        DrawTriangleTextured(&Camera, Transform({6.f, 4.f}, 0.f, 2.f), GetTexture("test.jpg"));
 
         RenderText("Heroes Budget Version", 100.f, 500.f, 1.f, {4, 1, 1});
         RenderText("The legend has been born!!!", 100.f, 300.f, 1.f, {2, 4, 4});
