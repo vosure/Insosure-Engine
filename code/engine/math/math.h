@@ -21,6 +21,13 @@ Lehmer32()
     return M2;
 }
 
+// returns a float from 0 to 1
+float
+LehmerFloat()
+{
+    return (float)Lehmer32() / (float)UINT32_MAX;
+}
+
 int RndInt(int Min, int Max)
 {
     return (Lehmer32() % (Max - Min)) + Min;

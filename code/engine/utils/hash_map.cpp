@@ -104,7 +104,8 @@ Get(hash_map<K, V> *HashMap, K Key)
 		Node = HashMap->Nodes[Index];
 		Attempt++;
 	}
-	return NULL;
+
+	return NULL; // FIXME(insolence): Return smth else
 }
 
 template <typename K, typename V>
@@ -155,7 +156,7 @@ template <typename K, typename V>
 hash_map<K, V>*
 CreateHashMap()
 {
-	return CreateMapSized<const char*, uint>(BASE_SIZE);
+	return CreateMapSized<K, V>(BASE_SIZE);
 }
 
 template <typename K, typename V>
@@ -166,7 +167,7 @@ ResizeMap(hash_map<K, V> *HashMap, const int BaseSize)
 	{
 		return;
 	}
-	hash_map<K, V> *NewHashMap = CreateMapSized<const char*, uint>(BaseSize);
+	hash_map<K, V> *NewHashMap = CreateMapSized<K, V>(BaseSize);
 	for (int i = 0; i < HashMap->Size; i++)
     {
 		hash_node<K, V>* Node = HashMap->Nodes[i];
@@ -195,7 +196,7 @@ void
 ResizeUp(hash_map<K, V> *HashMap)
 {
 	const int NewSize = HashMap->BaseSize * 2;
-	ResizeMap<const char*, uint>(HashMap, NewSize);
+	ResizeMap<K, V>(HashMap, NewSize);
 }
 
 template <typename K, typename V>

@@ -13,6 +13,7 @@ shader HDRShader;
 shader InstancedShader;
 shader BlurShader;
 shader TextShader;
+shader ParticleShader;
 
 internal void
 CheckCompileErrors(int Shader, const char *Type)
@@ -146,6 +147,13 @@ SetVec3(const char *Name, shader Shader, vec3 Vector)
     glUniform3f(Location, Vector.X, Vector.Y, Vector.Z);
 }
 
+void
+SetVec4(const char *Name, shader Shader, vec4 Vector)
+{
+    int Location = GetLocation(Name, Shader);
+    glUniform4f(Location, Vector.X, Vector.Y, Vector.Z, Vector.W);
+}
+
 // NOTE(insolence): The Name var seems to be bugged, prob because of char length
 void
 SetVec2(const char *Name, shader Shader, vec2 Vector)
@@ -167,11 +175,13 @@ MakeShaders()
         DeleteShader(&InstancedShader);
         DeleteShader(&BlurShader);
         DeleteShader(&TextShader);
+        DeleteShader(&ParticleShader);
     }
 
     Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
     TexturedShader = CreateShader("shaders/texture.vert", "shaders/texture.frag");
     PostprocessingShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
+    ParticleShader = CreateShader("shaders/particle.vert", "shaders/particle.frag");
 
     HDRShader = CreateShader("shaders/hdr.vert", "shaders/hdr.frag");
     glUseProgram(HDRShader.ShaderProgram);

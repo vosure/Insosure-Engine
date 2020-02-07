@@ -22,6 +22,7 @@
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
 #include "renderer/text.h"
+#include "renderer/particle_system.h"
 #include "renderer/renderer.cpp"
 #include "window.h"
 
@@ -73,61 +74,22 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
 }
 
 void
-UpdateAndRender(GLFWwindow *Window)
+UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_effects *Effects)
 {
     float DeltaTime = 0.f;
     float LastFrame = 0.f;
-
-    TextureCache = CreateHashMap<const char*, uint>();
-
-    MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
-    MakeShaders();
-
-    orthographic_camera Camera;
-    float AspectRatio = 16.f / 9.f;
-    float ZoomLevel = 2.6f;
-    SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
-
-    postprocessing_effects Effects;
-    Effects.Inversion = false;
-    Effects.Grayscale = false;
-    Effects.Blur = false;
-
-    // Character char1 = Character{423, {0, 0}, {1, 1}, 40};
-    // Character char2 = Character{5, {0, 0}, {1, 1}, 40};
-    // Character char3 = Character{10000, {0, 0}, {1, 1}, 20};
-    // Character char4 = Character{40, {0, 0}, {1, 1}, 20};
-
-    // array_list<Character> *List = CreateList<Character>(40);
-    // PushToList(List, &char2);
-    // PushToList(List, &char1);
-    // PushToList(List, &char3);
-    // PushToList(List, &char4);
-    // AddIndexedToList(List, 5, &char2);
-    // AddIndexedToList(List, 10, &char3);
-    // AddIndexedToList(List, 1, &char4);
-    // for (int i = 0; i < List->Capacity; i++)
-    // {
-    //     if (List->Elements[i] != NULL)
-    //         printf("%d: %d \n", i, List->Elements[i]->TextureID);
-    // }
-    // RemoveFromList(List, 5);
-    // Character *t = Get(List, 10);
-    // printf("\n%d", t->TextureID);
-
-    // if (ListContains(List, *t))
-    // {
-    //     printf("WTF?");
-    // }
-    // Clear(List);
-    // DestroyList(List);
-
 
     // NOTE(insolence): Temp code for testing instancing
     mat4 Transforms[300] = {};
     for (int i = 0; i < ArrayCount(Transforms); i++)
     {
         Transforms[i] = Transform({(float)(i % 10), (float)(-i / 10)}, (i % 2 ? 45.f : -60.f), 1.f);
+    }
+
+    particle Particles[100];
+    for (int i = 0; i < 100; i++)
+    {
+        Particles[i] = SpawnParticle(vec2{-3.f, -3.f}, vec2{1, 1});
     }
 
     // NOTE(insolence): Main rendering loop
@@ -140,33 +102,36 @@ UpdateAndRender(GLFWwindow *Window)
         // printf("Seconds/frame: %.3f, ", DeltaTime);
         // printf("FPS: %.3f \n",  1.f/DeltaTime);
 
-        ProcessInput(Window, &Camera, DeltaTime);
+        ProcessInput(Window, Camera, DeltaTime);
+        UpdateParticleLifetime(Particles, 100, DeltaTime);
 
         glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.1f, 0.1f, 0.1f, 1.f);
 
-        RecalculateViewMatrix(&Camera);
+        RecalculateViewMatrix(Camera);
 
         // // NOTE(insolence): Actual drawing
 
-        DrawRectangle(&Camera, Transform({-2.f, 0.f}, 20.f, 2.f), {1.f, 3.f, 3.f});
-        DrawRectangle(&Camera, Transform({-3.f, -3.f}, 0.f, 2.f), {5.f, 0.f, 0.f});
+        DrawRectangle(Camera, Transform({-2.f, 0.f}, 20.f, 2.f), {1.f, 3.f, 3.f});
+        DrawRectangle(Camera, Transform({-3.f, -3.f}, 0.f, 2.f), {5.f, 0.f, 0.f});
 
-        DrawRectangleTextured(&Camera, Transform({-1.f, 3.f}, 15.f, 2.f), GetTexture("star.png"));
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("test.jpg"));
-        DrawRectangleTextured(&Camera, Transform({3.f, 3.f},  0.f, 2.f),  GetTexture("sun.jpg"));
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("bush.png"));
-        DrawRectangleTextured(&Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("blending_transparent_window.png"));
+        DrawRectangleTextured(Camera, Transform({-1.f, 3.f}, 15.f, 2.f), GetTexture("star.png"));
+        DrawRectangleTextured(Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("test.jpg"));
+        DrawRectangleTextured(Camera, Transform({3.f, 3.f},  0.f, 2.f),  GetTexture("sun.jpg"));
+        DrawRectangleTextured(Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("bush.png"));
+        DrawRectangleTextured(Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("blending_transparent_window.png"));
 
-        InstancedDrawRectanglesTextured(&Camera, &Transforms[0], 300, GetTexture("star.png"));
+        InstancedDrawRectanglesTextured(Camera, &Transforms[0], 300, GetTexture("star.png"));
 
-        DrawTriangle(&Camera, Transform({-4, -2}, 0.f, 1.f), {2, 7, 18});
-        DrawTriangleTextured(&Camera, Transform({6.f, 4.f}, 0.f, 2.f), GetTexture("test.jpg"));
+        DrawTriangle(Camera, Transform({-4, -2}, 0.f, 1.f), {2, 7, 18});
+        DrawTriangleTextured(Camera, Transform({6.f, 4.f}, 0.f, 2.f), GetTexture("test.jpg"));
 
         RenderText("Heroes Budget Version", 100.f, 500.f, 1.f, {4, 1, 1});
         RenderText("The legend has been born!!!", 100.f, 300.f, 1.f, {2, 4, 4});
+
+        DrawParticles(Camera, Particles, 100, GetTexture("sun.jpg"));
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -177,7 +142,7 @@ UpdateAndRender(GLFWwindow *Window)
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        PostprocessScreenTexture(PostprocessingFB.TextureAttachment[0], Effects);
+        PostprocessScreenTexture(PostprocessingFB.TextureAttachment[0], *Effects);
 
         glfwSwapBuffers(Window);
         glfwPollEvents();
@@ -230,6 +195,9 @@ void main()
 #endif
 
     LoadFreetype();
+    TextureCache = CreateHashMap<const char*, uint>();
+    MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
+    MakeShaders();
 
     // NOTE(insolence): We cull back faces specified in CCW order,
     // Front faces are in CW order
@@ -239,7 +207,17 @@ void main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    UpdateAndRender(Window);
+    orthographic_camera Camera;
+    float AspectRatio = 16.f / 9.f;
+    float ZoomLevel = 2.6f;
+    SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
+
+    postprocessing_effects Effects;
+    Effects.Inversion = false;
+    Effects.Grayscale = false;
+    Effects.Blur = false;
+
+    UpdateAndRender(Window, &Camera, &Effects);
 
     glfwTerminate();
 }

@@ -9,7 +9,19 @@ TimeSeconds()
 }
 
 long
-TimeMs()
+TimeMilliseconds()
 {
     return time(NULL) * 1000l;
+}
+
+long
+TimeMicroseconds()
+{
+    return time(NULL) * 1000 * 1000;
+}
+
+long
+TimeNanoseconds()
+{
+    return time(NULL) * 1000 * 1000 * 1000;
 }
