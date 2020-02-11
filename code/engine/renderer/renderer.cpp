@@ -114,7 +114,7 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
 
 // FIXME(insolence): Make this instanced rendering
 void
-DrawParticles(orthographic_camera *Camera, particle *Particles, int Length, uint Texture)
+DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uint Texture)
 {
     unsigned int ParticleVAO = 0, ParticleVBO = 0;
     glGenVertexArrays(1, &ParticleVAO);
@@ -141,12 +141,12 @@ DrawParticles(orthographic_camera *Camera, particle *Particles, int Length, uint
     glBindTexture(GL_TEXTURE_2D, Texture);
     SetMat4("ViewProjection", ParticleShader, Camera->ViewProjection);
 
-    for (int i = 0; i < Length; i++)
+    for (int i = 0; i < Particles.size(); i++)
     {
         // TODO(insolence): Probably map the Lifetime to a 0-1 range
         SetFloat("Lifetime", ParticleShader, Particles[i].Lifetime > 1.f ? 1.f : Particles[i].Lifetime); // NOTE(insolence): If lifetime of a particle is > 1 sec, round it to 1 sec
         SetVec2("Offset", ParticleShader, Particles[i].Position);
-        SetFloat("Size", ParticleShader, Particles[i].Size);
+        //SetFloat("Size", ParticleShader, Particles[i].Size);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 

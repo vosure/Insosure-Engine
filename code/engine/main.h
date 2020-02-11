@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <stdio.h>
+#include "math/linear_math.h"
 
 #define internal static
 #define local_persist static
@@ -43,3 +44,11 @@ global_variable int SCREEN_WIDTH;
 global_variable int SCREEN_HEIGHT;
 
 global_variable bool IsFullscreen = false;
+
+
+// NOTE(insolence): Game state
+struct game_world
+{
+    int Tiles[300][300];
+    vec2 PlayerPos;
+};

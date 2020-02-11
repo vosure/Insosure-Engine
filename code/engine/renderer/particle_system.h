@@ -9,27 +9,29 @@ struct particle
 };
 
 particle
-SpawnParticle(vec2 ObjectPos, vec2 Offset)
+SpawnParticle(vec2 ObjectPos, vec2 Offset, vec2 Velocity)
 {
-    //vec2 Random = { LehmerFloat() * 3.f, LehmerFloat() * 2.f };
     vec2 Random = {((rand() % 100) - 50) / 100.0f, ((rand() % 100) - 50) / 100.0f};
 
     particle Particle;
-    Particle.Position = ObjectPos + Random + Offset;
-    Particle.Lifetime = 6.0f;
-    // Particle.Velocity =LehmerFloat() * 1.5fObject.Velocity * 0.1f;
+    Particle.Position = ObjectPos + Offset + Random;
+    Particle.Lifetime = 2.5f;
+    Particle.Velocity = Velocity;
     Particle.Size = LehmerFloat() * 2.f;
 
     return Particle;
 }
 
+// NOTE(insolence): Updating lifetime and position of a particle
 void
-UpdateParticleLifetime(particle *Particles, int Length, float DeltaTime)
+UpdateParticles(std::vector<particle> &Particles, float DeltaTime)
 {
-    for (int i = 0; i < Length; i++)
+    for (int i = 0; i < Particles.size(); i++)
     {
+        Particles[i].Position += Particles[i].Velocity * DeltaTime;
         Particles[i].Lifetime -= DeltaTime;
         if (Particles[i].Lifetime <= 0.f)
-            Particles[i].Lifetime = 0.f;
+            Particles.erase(Particles.begin() + i);
+            //Particles[i].Lifetime = 0.f;
     }
 }

@@ -7,10 +7,10 @@ out vec2 TexCoords;
 uniform mat4 ViewProjection;
 uniform vec2 Offset;
 uniform vec4 Color;
-uniform float Size;
+//uniform float Size;
 
 void main()
 {
     TexCoords = aTexCoords;
-    gl_Position = ViewProjection * vec4((aPosition + Offset) * Size, 0.0, 1.0);
+    gl_Position = ViewProjection * vec4((aPosition + Offset), 0.0, 1.0);
 }

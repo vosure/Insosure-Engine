@@ -1,11 +1,14 @@
 #include "main.h"
 
+#include <vector>
+
 // All includes
 #include <glad/src/glad.c>
 #include <glfw/include/glfw3.h>
 #include <stb_image/stb_image.cpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include <irrKlang/include/irrKlang.h>
 
 #include "utils/file_utils.h"
 #include "math/linear_math.h"
@@ -15,6 +18,7 @@
 #include "utils/array_list.h"
 #include "utils/time.h"
 
+//#include <audio/audio.h>
 #include "debug.h"
 #include "renderer/texture.h"
 #include "renderer/sprite.h"
@@ -26,8 +30,10 @@
 #include "renderer/renderer.cpp"
 #include "window.h"
 
+global_variable bool PlayerMoved = false;
+global_variable vec2 OldPosition;
 void
-ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
+ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World, float Dt)
 {
     // NOTE(insolence): Fullscreen
     if (glfwGetKey(Window, GLFW_KEY_F12) == GLFW_PRESS)
@@ -42,10 +48,10 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
 
     float CameraSpeed = 4.f;
     // NOTE(insolence): For faster camera movement press UP, used for debugging
-    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS)
-    {
-        CameraSpeed = 10.f;
-    }
+    // if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS)
+    // {
+    //     CameraSpeed = 10.f;
+    // }
     if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
     {
         Camera->Position.Y += CameraSpeed * Dt;
@@ -63,15 +69,66 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, float Dt)
         Camera->Position.X += CameraSpeed * Dt;
     }
 
-    if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
+    // if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
+    // {
+    //     Camera->Rotation += 1.f;
+    // }
+    // else if (glfwGetKey(Window, GLFW_KEY_E) == GLFW_PRESS)
+    // {
+    //     Camera->Rotation -= 1.f;
+    // }
+
+    static bool UpProcessed    = false;
+    static bool DownProcessed  = false;
+    static bool LeftProcessed  = false;
+    static bool RightProcessed = false;
+    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS && !UpProcessed)
     {
-        Camera->Rotation += 1.f;
+        OldPosition = World->PlayerPos;
+        World->PlayerPos.Y++;
+        UpProcessed = true;
+        PlayerMoved = true;
     }
-    else if (glfwGetKey(Window, GLFW_KEY_E) == GLFW_PRESS)
+    else if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_PRESS && !DownProcessed)
     {
-        Camera->Rotation -= 1.f;
+        OldPosition = World->PlayerPos;
+        World->PlayerPos.Y--;
+        DownProcessed = true;
+        PlayerMoved = true;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_PRESS && !LeftProcessed)
+    {
+        OldPosition = World->PlayerPos;
+        World->PlayerPos.X--;
+        LeftProcessed = true;
+        PlayerMoved = true;
+    }
+    else if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_PRESS && !RightProcessed)
+    {
+        OldPosition = World->PlayerPos;
+        World->PlayerPos.X++;
+        RightProcessed = true;
+        PlayerMoved = true;
+    }
+
+    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_RELEASE)
+    {
+        UpProcessed = false;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_RELEASE)
+    {
+        DownProcessed = false;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_RELEASE)
+    {
+        LeftProcessed = false;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_RELEASE)
+    {
+        RightProcessed = false;
     }
 }
+
 
 void
 UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_effects *Effects)
@@ -79,18 +136,21 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     float DeltaTime = 0.f;
     float LastFrame = 0.f;
 
-    // NOTE(insolence): Temp code for testing instancing
-    mat4 Transforms[300] = {};
-    for (int i = 0; i < ArrayCount(Transforms); i++)
-    {
-        Transforms[i] = Transform({(float)(i % 10), (float)(-i / 10)}, (i % 2 ? 45.f : -60.f), 1.f);
-    }
+    irrklang::ISoundEngine *SoundEngine = irrklang::createIrrKlangDevice();
+    SoundEngine->setSoundVolume(0.5f);
+    SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
 
-    particle Particles[100];
-    for (int i = 0; i < 100; i++)
+    game_world World = {};
+    for (int Y = 0; Y < 300; Y++)
     {
-        Particles[i] = SpawnParticle(vec2{-3.f, -3.f}, vec2{1, 1});
+        for (int X = 0; X < 300; X++)
+        {
+            World.Tiles[X][Y] = rand() % 2;
+        }
     }
+    World.PlayerPos = vec2{0, 0};
+
+    std::vector<particle> Particles(100);
 
     // NOTE(insolence): Main rendering loop
     while (!glfwWindowShouldClose(Window))
@@ -102,36 +162,57 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         // printf("Seconds/frame: %.3f, ", DeltaTime);
         // printf("FPS: %.3f \n",  1.f/DeltaTime);
 
-        ProcessInput(Window, Camera, DeltaTime);
-        UpdateParticleLifetime(Particles, 100, DeltaTime);
+        ProcessInput(Window, Camera, &World, DeltaTime);
 
         glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
         glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.f);
+        glClearColor(0.01f, 0.01f, 0.01f, 1.f);
 
         RecalculateViewMatrix(Camera);
 
-        // // NOTE(insolence): Actual drawing
+        // NOTE(insolence): Actual drawing
+        vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
+        mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
+        //printf("CurrentTilePos X: %.2f Y: %.2f \n", CurrentTilePos.X, CurrentTilePos.Y);
 
-        DrawRectangle(Camera, Transform({-2.f, 0.f}, 20.f, 2.f), {1.f, 3.f, 3.f});
-        DrawRectangle(Camera, Transform({-3.f, -3.f}, 0.f, 2.f), {5.f, 0.f, 0.f});
+        for (int Y = CurrentTilePos.Y - 5; Y < CurrentTilePos.Y + 5; Y++)
+        {
+            for (int X = CurrentTilePos.X - 7; X < CurrentTilePos.X + 7; X++)
+            {
+                if (X < 0 || Y < 0 || X > 300 || Y > 300)
+                    continue;
 
-        DrawRectangleTextured(Camera, Transform({-1.f, 3.f}, 15.f, 2.f), GetTexture("star.png"));
-        DrawRectangleTextured(Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("test.jpg"));
-        DrawRectangleTextured(Camera, Transform({3.f, 3.f},  0.f, 2.f),  GetTexture("sun.jpg"));
-        DrawRectangleTextured(Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("bush.png"));
-        DrawRectangleTextured(Camera, Transform({1.f, 1.f},  0.f, 2.f),  GetTexture("blending_transparent_window.png"));
+                int Value = World.Tiles[X][Y];
+                if (Value == 0)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"));
+                }
+                else if (Value == 1)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
+                }
 
-        InstancedDrawRectanglesTextured(Camera, &Transforms[0], 300, GetTexture("star.png"));
+                if (X == World.PlayerPos.X && Y == World.PlayerPos.Y)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanlitso.png"));
+                }
+            }
+        }
 
-        DrawTriangle(Camera, Transform({-4, -2}, 0.f, 1.f), {2, 7, 18});
-        DrawTriangleTextured(Camera, Transform({6.f, 4.f}, 0.f, 2.f), GetTexture("test.jpg"));
+        if (PlayerMoved)
+        {
+            for (int i = 0; i < 15; i++)
+            {
+                Particles.push_back(SpawnParticle(OldPosition, {0.f, 0.f}, {0.f, 0.f}));
+                PlayerMoved = false;
+            }
+        }
+        UpdateParticles(Particles, DeltaTime);
+        DrawParticles(Camera, Particles,  GetTexture("star.png"));
 
-        RenderText("Heroes Budget Version", 100.f, 500.f, 1.f, {4, 1, 1});
-        RenderText("The legend has been born!!!", 100.f, 300.f, 1.f, {2, 4, 4});
-
-        DrawParticles(Camera, Particles, 100, GetTexture("sun.jpg"));
+        RenderText("Heroes Budget Version", 20.f, 200.f, 1.f, {4, 1, 1});
+        RenderText("The legend has been born!!!", 20.f, 50.f, 1.f, {2, 4, 4});
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -209,7 +290,7 @@ void main()
 
     orthographic_camera Camera;
     float AspectRatio = 16.f / 9.f;
-    float ZoomLevel = 2.6f;
+    float ZoomLevel = 2.f;
     SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
 
     postprocessing_effects Effects;
