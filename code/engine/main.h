@@ -45,10 +45,22 @@ global_variable int SCREEN_HEIGHT;
 
 global_variable bool IsFullscreen = false;
 
+struct player
+{
+    vec2 Pos;
+    vec2 OldPos;
+    int Power;
+};
+
+struct tile
+{
+    int Value;
+    bool Visible; // NOTE(insolence): Is it covered by the fog of war?
+};
 
 // NOTE(insolence): Game state
 struct game_world
 {
-    int Tiles[300][300];
-    vec2 PlayerPos;
+    tile Tiles[300][300];
+    player Player;
 };

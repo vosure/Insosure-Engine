@@ -85,6 +85,18 @@ operator-(vec2 A)
     return A;
 }
 
+inline bool
+operator==(vec2 A, vec2 B)
+{
+    return (A.X == B.X && A.Y == B.Y);
+}
+
+inline bool
+operator!=(vec2 A, vec2 B)
+{
+    return (A.X != B.X && A.Y != B.Y);
+}
+
 inline float
 Dot(vec2 A, vec2 B)
 {

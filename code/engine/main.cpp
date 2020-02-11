@@ -31,7 +31,6 @@
 #include "window.h"
 
 global_variable bool PlayerMoved = false;
-global_variable vec2 OldPosition;
 void
 ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World, float Dt)
 {
@@ -84,29 +83,29 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     static bool RightProcessed = false;
     if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS && !UpProcessed)
     {
-        OldPosition = World->PlayerPos;
-        World->PlayerPos.Y++;
+        World->Player.OldPos = World->Player.Pos;
+        World->Player.Pos.Y++;
         UpProcessed = true;
         PlayerMoved = true;
     }
     else if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_PRESS && !DownProcessed)
     {
-        OldPosition = World->PlayerPos;
-        World->PlayerPos.Y--;
+        World->Player.OldPos = World->Player.Pos;
+        World->Player.Pos.Y--;
         DownProcessed = true;
         PlayerMoved = true;
     }
     if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_PRESS && !LeftProcessed)
     {
-        OldPosition = World->PlayerPos;
-        World->PlayerPos.X--;
+        World->Player.OldPos = World->Player.Pos;
+        World->Player.Pos.X--;
         LeftProcessed = true;
         PlayerMoved = true;
     }
     else if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_PRESS && !RightProcessed)
     {
-        OldPosition = World->PlayerPos;
-        World->PlayerPos.X++;
+        World->Player.OldPos = World->Player.Pos;
+        World->Player.Pos.X++;
         RightProcessed = true;
         PlayerMoved = true;
     }
@@ -129,6 +128,20 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     }
 }
 
+// NOTE(insolence): Reveals 8 tiles around player
+void
+UpdateFogOfWar(game_world *World)
+{
+    for (int Y = World->Player.Pos.Y - 1; Y <= World->Player.Pos.Y + 1; Y++)
+    {
+        for (int X = World->Player.Pos.X - 1; X <= World->Player.Pos.X + 1; X++)
+        {
+            if (X < 0 || Y < 0 || X >= 300 || Y >= 300)
+                continue;
+            World->Tiles[X][Y].Visible = true;
+        }
+    }
+}
 
 void
 UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_effects *Effects)
@@ -137,7 +150,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     float LastFrame = 0.f;
 
     irrklang::ISoundEngine *SoundEngine = irrklang::createIrrKlangDevice();
-    SoundEngine->setSoundVolume(0.5f);
+    SoundEngine->setSoundVolume(0.1f);
     SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
 
     game_world World = {};
@@ -145,10 +158,22 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     {
         for (int X = 0; X < 300; X++)
         {
-            World.Tiles[X][Y] = rand() % 2;
+            World.Tiles[X][Y].Value = rand() % 2;
+            World.Tiles[X][Y].Visible = false;
         }
     }
-    World.PlayerPos = vec2{0, 0};
+    World.Tiles[4][3].Value = 2;
+    World.Tiles[6][8].Value = 2;
+    World.Tiles[5][1].Value = 2;
+    World.Tiles[3][3].Value = 3;
+    World.Tiles[10][8].Value = 3;
+    World.Tiles[2][4].Value = 3;
+
+    World.Player.Pos = vec2{0, 0};
+    World.Player.Power = 32;
+    char PlayerPower[10];
+    itoa(World.Player.Power, PlayerPower, 10); // Obtaining player power as a string
+
 
     std::vector<particle> Particles(100);
 
@@ -164,6 +189,8 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
         ProcessInput(Window, Camera, &World, DeltaTime);
 
+        UpdateFogOfWar(&World);
+
         glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
         glClear(GL_COLOR_BUFFER_BIT);
@@ -176,26 +203,40 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
         //printf("CurrentTilePos X: %.2f Y: %.2f \n", CurrentTilePos.X, CurrentTilePos.Y);
 
-        for (int Y = CurrentTilePos.Y - 5; Y < CurrentTilePos.Y + 5; Y++)
+        for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
         {
-            for (int X = CurrentTilePos.X - 7; X < CurrentTilePos.X + 7; X++)
+            for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
             {
                 if (X < 0 || Y < 0 || X > 300 || Y > 300)
                     continue;
 
-                int Value = World.Tiles[X][Y];
-                if (Value == 0)
+                int TileValue = World.Tiles[X][Y].Value;
+                bool TileVisible = World.Tiles[X][Y].Visible;
+                if (TileValue == 0 && TileVisible)
                 {
                     DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"));
                 }
-                else if (Value == 1)
+                else if (TileValue == 1 && TileVisible)
                 {
                     DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
                 }
-
-                if (X == World.PlayerPos.X && Y == World.PlayerPos.Y)
+                else if (TileValue == 2 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanlitso.png"));
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.jpg"));
+                }
+                else if (TileValue == 3 && TileVisible)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.jpg"));
+                }
+                else if (!TileVisible)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("mist.jpg"));
+                }
+
+
+                if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"));
                 }
             }
         }
@@ -204,15 +245,14 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         {
             for (int i = 0; i < 15; i++)
             {
-                Particles.push_back(SpawnParticle(OldPosition, {0.f, 0.f}, {0.f, 0.f}));
+                Particles.push_back(SpawnParticle(World.Player.OldPos, {0.f, 0.f}, {0.f, 0.f}));
                 PlayerMoved = false;
             }
         }
         UpdateParticles(Particles, DeltaTime);
         DrawParticles(Camera, Particles,  GetTexture("star.png"));
 
-        RenderText("Heroes Budget Version", 20.f, 200.f, 1.f, {4, 1, 1});
-        RenderText("The legend has been born!!!", 20.f, 50.f, 1.f, {2, 4, 4});
+        RenderTextOnScreen("The legend has been born!!!", 20.f, 50.f, 1.f, {2, 4, 4});
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -289,8 +329,9 @@ void main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     orthographic_camera Camera;
+    Camera.Position = vec3{-3, -3, 0};
     float AspectRatio = 16.f / 9.f;
-    float ZoomLevel = 2.f;
+    float ZoomLevel = 4.f;
     SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
 
     postprocessing_effects Effects;
