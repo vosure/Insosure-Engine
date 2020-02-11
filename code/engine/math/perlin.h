@@ -104,7 +104,7 @@ ValueNoise1D(double X)
 
     for (int i = 0; i < MaxVertices; i++)
     {
-        SlopeAt[i] = ((double)RndInt(0, MaxVertices)) / 256.0;
+        SlopeAt[i] = ((double)GetRandomInt(0, MaxVertices)) / 256.0;
     }
 
     int XInt = (int)X - (X < 0 && X != (int)X);

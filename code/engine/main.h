@@ -38,8 +38,10 @@ struct postprocessing_effects
     bool Blur;
 };
 
-global_variable const int WINDOW_WIDTH = 1920; // NOTE(insolence): 1920 x 1080 is normal, 1440 x 900 (8 x 5 proportion) for NV
-global_variable const int WINDOW_HEIGHT = 1080;
+// NOTE(insolence): 1920 x 1080 is normal, 1440 x 900 (8 x 5 proportion) for NV. 
+//NOTE(vosre): It's not fucking normal man, resolution of MY monitor is 1920x1080, lets use HD(1280x720)
+global_variable const int WINDOW_WIDTH = 1280; // NOTE(insolence): 1920 x 1080 is normal, 1440 x 900 (8 x 5 proportion) for NV
+global_variable const int WINDOW_HEIGHT = 720;
 global_variable int SCREEN_WIDTH;
 global_variable int SCREEN_HEIGHT;
 

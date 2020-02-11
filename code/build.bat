@@ -9,6 +9,7 @@ call cls
 IF NOT EXIST ..\build mkdir ..\build
 pushd ..\build
 
+XCOPY ..\dependencies\irrKlang\lib\irrKlang.dll W:\Insosure-Engine\build /Y
 XCOPY ..\dependencies\glfw\lib\glfw3.dll W:\Insosure-Engine\build /Y
 XCOPY ..\dependencies\freetype\lib\freetype.dll W:\Insosure-Engine\build /Y
 
