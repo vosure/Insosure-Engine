@@ -1,8 +1,0 @@
-{
-    "C_Cpp.errorSquiggles": "Disabled",
-    "files.associations": {
-        "ostream": "cpp",
-        "xlocnum": "cpp",
-        "xmemory0": "cpp"
-    }
-}

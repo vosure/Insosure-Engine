@@ -29,21 +29,20 @@
 #include "renderer/text.h"
 #include "renderer/particle_system.h"
 #include "renderer/renderer.cpp"
-#include "input/input.h"
 #include "window.h"
+#include "input/input.h"
 
 global_variable bool PlayerMoved = false;
 void
 ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World, float Dt)
 {
     // NOTE(insolence): Fullscreen
-    //TODO(vosure): Change glfw key names to custom
-    if (IsKeyPressed(GLFW_KEY_F12))
+    if (glfwGetKey(Window, GLFW_KEY_F12) == GLFW_PRESS)
     {
         SwitchFullscreen(Window);
     }
 
-    if (IsKeyPressed(GLFW_KEY_ESCAPE))
+    if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(Window, true);
     }
@@ -54,41 +53,21 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     // {
     //     CameraSpeed = 10.f;
     // }
-    if (IsKeyPressed(GLFW_KEY_UP))
+    if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
     {
         Camera->Position.Y -= CameraSpeed * Dt;
     }
-    if (IsKeyPressed(GLFW_KEY_DOWN))
+    if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
     {
         Camera->Position.Y += CameraSpeed * Dt;
     }
-    if (IsKeyPressed(GLFW_KEY_LEFT))
+    if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
     {
         Camera->Position.X += CameraSpeed * Dt;
     }
-    if (IsKeyPressed(GLFW_KEY_RIGHT))
+    if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
     {
         Camera->Position.X -= CameraSpeed * Dt;
-    }
-
-    // NOTE(insolence): Moving the camera with the mouse cursor
-    float ScrollingSpeed = 1.f;
-    vec2 MousePosition = GetMousePosition();
-    if (MousePosition.X <= 75)
-    {
-        Camera->Position.X += CameraSpeed * Dt * ScrollingSpeed;
-    }
-    if (MousePosition.Y <= 75)
-    {
-        Camera->Position.Y -= CameraSpeed * Dt * ScrollingSpeed;
-    }
-    if (MousePosition.X >= CurrentWidth - 75)
-    {
-        Camera->Position.X -= CameraSpeed * Dt * ScrollingSpeed;
-    }
-    if (MousePosition.Y >= CurrentHeight - 75)
-    {
-        Camera->Position.Y += CameraSpeed * Dt * ScrollingSpeed;
     }
 
     // if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
@@ -100,33 +79,54 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     //     Camera->Rotation -= 1.f;
     // }
 
-    if (IsKeyPressed(GLFW_KEY_W) && !IsKeyProcessed(GLFW_KEY_W))
+    static bool UpProcessed    = false;
+    static bool DownProcessed  = false;
+    static bool LeftProcessed  = false;
+    static bool RightProcessed = false;
+    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS && !UpProcessed)
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.Y++;
+        UpProcessed = true;
         PlayerMoved = true;
-        KeyboardInput.KeysProcessed[GLFW_KEY_W] = true;
     }
-    if (IsKeyPressed(GLFW_KEY_S) && !IsKeyProcessed(GLFW_KEY_S))
+    else if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_PRESS && !DownProcessed)
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.Y--;
+        DownProcessed = true;
         PlayerMoved = true;
-        KeyboardInput.KeysProcessed[GLFW_KEY_S] = true;
     }
-    else if (IsKeyPressed(GLFW_KEY_A) && !IsKeyProcessed(GLFW_KEY_A))
+    if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_PRESS && !LeftProcessed)
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.X--;
+        LeftProcessed = true;
         PlayerMoved = true;
-        KeyboardInput.KeysProcessed[GLFW_KEY_A] = true;
     }
-    if (IsKeyPressed(GLFW_KEY_D) && !IsKeyProcessed(GLFW_KEY_D))
+    else if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_PRESS && !RightProcessed)
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.X++;
+        RightProcessed = true;
         PlayerMoved = true;
-        KeyboardInput.KeysProcessed[GLFW_KEY_D] = true;
+    }
+
+    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_RELEASE)
+    {
+        UpProcessed = false;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_RELEASE)
+    {
+        DownProcessed = false;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_RELEASE)
+    {
+        LeftProcessed = false;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_RELEASE)
+    {
+        RightProcessed = false;
     }
 }
 
@@ -156,9 +156,9 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
 
     game_world World = {};
-    for (int Y = 0; Y < WORLD_WIDTH; Y++)
+    for (int Y = 0; Y < 300; Y++)
     {
-        for (int X = 0; X < WORLD_HEIGHT; X++)
+        for (int X = 0; X < 300; X++)
         {
             World.Tiles[X][Y].Value = rand() % 2;
             World.Tiles[X][Y].Visible = false;
@@ -209,7 +209,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         {
             for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
             {
-                if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
+                if (X < 0 || Y < 0 || X > 300 || Y > 300)
                     continue;
 
                 int TileValue = World.Tiles[X][Y].Value;
@@ -331,7 +331,7 @@ void main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     orthographic_camera Camera;
-    Camera.Position = vec3{0, 0, 0}; //NOTE(vosure): check starting camera position
+    Camera.Position = vec3{-3, -3, 0};
     float AspectRatio = 16.f / 9.f;
     float ZoomLevel = 4.f;
     SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes

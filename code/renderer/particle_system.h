@@ -11,7 +11,7 @@ struct particle
 particle
 SpawnParticle(vec2 ObjectPos, vec2 Offset, vec2 Velocity)
 {
-    vec2 Random = {((rand() % 100) - 50) / 100.0f, ((rand() % 100) - 50) / 100.0f};
+    vec2 Random = vec2{GetRandomFloat(-1, 1), GetRandomFloat(-1, 1)};
 
     particle Particle;
     Particle.Position = ObjectPos + Offset + Random;

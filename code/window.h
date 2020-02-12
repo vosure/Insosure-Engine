@@ -27,7 +27,7 @@ SetUpWindow(int Width, int Height, char *WindowName, bool SetFullScreen)
         return NULL;
     }
     glfwMakeContextCurrent(Window);
-
+    SetInputCallbacks(Window);
     CurrentWidth = Width;
     CurrentHeight = Height;
 
