@@ -51,21 +51,42 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     // {
     //     CameraSpeed = 10.f;
     // }
-    if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
-    {
-        Camera->Position.Y += CameraSpeed * Dt;
-    }
-    if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
+    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS)
     {
         Camera->Position.Y -= CameraSpeed * Dt;
     }
-    if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
+    if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        Camera->Position.Y += CameraSpeed * Dt;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_PRESS)
+    {
+        Camera->Position.X += CameraSpeed * Dt;
+    }
+    if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_PRESS)
     {
         Camera->Position.X -= CameraSpeed * Dt;
     }
-    if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
+
+    // NOTE(insolence): Moving the camera with the mouse cursor
+    float ScrollingSpeed = 1.f;
+    double XPos, YPos;
+    glfwGetCursorPos(Window, &XPos, &YPos);
+    if (XPos <= 0)
     {
-        Camera->Position.X += CameraSpeed * Dt;
+        Camera->Position.X += CameraSpeed * Dt * ScrollingSpeed;
+    }
+    if (YPos <= 0)
+    {
+        Camera->Position.Y -= CameraSpeed * Dt * ScrollingSpeed;
+    }
+    if (XPos >= CurrentWidth - 10)
+    {
+        Camera->Position.X -= CameraSpeed * Dt * ScrollingSpeed;
+    }
+    if (YPos >= CurrentHeight - 10)
+    {
+        Camera->Position.Y += CameraSpeed * Dt * ScrollingSpeed;
     }
 
     // if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
@@ -77,54 +98,54 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     //     Camera->Rotation -= 1.f;
     // }
 
-    static bool UpProcessed    = false;
-    static bool DownProcessed  = false;
-    static bool LeftProcessed  = false;
-    static bool RightProcessed = false;
-    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_PRESS && !UpProcessed)
+    static bool WProcessed    = false;
+    static bool SProcessed  = false;
+    static bool AProcessed  = false;
+    static bool DProcessed = false;
+    if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS && !WProcessed)
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.Y++;
-        UpProcessed = true;
+        WProcessed = true;
         PlayerMoved = true;
     }
-    else if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_PRESS && !DownProcessed)
+    else if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS && !SProcessed)
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.Y--;
-        DownProcessed = true;
+        SProcessed = true;
         PlayerMoved = true;
     }
-    if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_PRESS && !LeftProcessed)
+    if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS && !AProcessed)
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.X--;
-        LeftProcessed = true;
+        AProcessed = true;
         PlayerMoved = true;
     }
-    else if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_PRESS && !RightProcessed)
+    else if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS && !DProcessed)
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.X++;
-        RightProcessed = true;
+        DProcessed = true;
         PlayerMoved = true;
     }
 
-    if (glfwGetKey(Window, GLFW_KEY_UP) == GLFW_RELEASE)
+    if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_RELEASE)
     {
-        UpProcessed = false;
+        WProcessed = false;
     }
-    if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_RELEASE)
+    if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_RELEASE)
     {
-        DownProcessed = false;
+        SProcessed = false;
     }
-    if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_RELEASE)
+    if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_RELEASE)
     {
-        LeftProcessed = false;
+        AProcessed = false;
     }
-    if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_RELEASE)
+    if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_RELEASE)
     {
-        RightProcessed = false;
+        DProcessed = false;
     }
 }
 
@@ -154,9 +175,9 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
 
     game_world World = {};
-    for (int Y = 0; Y < 300; Y++)
+    for (int Y = 0; Y < WORLD_WIDTH; Y++)
     {
-        for (int X = 0; X < 300; X++)
+        for (int X = 0; X < WORLD_HEIGHT; X++)
         {
             World.Tiles[X][Y].Value = rand() % 2;
             World.Tiles[X][Y].Visible = false;
@@ -207,7 +228,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         {
             for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
             {
-                if (X < 0 || Y < 0 || X > 300 || Y > 300)
+                if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
                     continue;
 
                 int TileValue = World.Tiles[X][Y].Value;

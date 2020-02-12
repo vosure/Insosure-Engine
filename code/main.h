@@ -43,7 +43,13 @@ global_variable const int WINDOW_HEIGHT = 1080;
 global_variable int SCREEN_WIDTH;
 global_variable int SCREEN_HEIGHT;
 
+global_variable int CurrentWidth;
+global_variable int CurrentHeight;
+
 global_variable bool IsFullscreen = false;
+
+global_variable const int WORLD_WIDTH = 300;
+global_variable const int WORLD_HEIGHT = 300;
 
 struct player
 {
@@ -61,6 +67,6 @@ struct tile
 // NOTE(insolence): Game state
 struct game_world
 {
-    tile Tiles[300][300];
+    tile Tiles[WORLD_WIDTH][WORLD_HEIGHT];
     player Player;
 };

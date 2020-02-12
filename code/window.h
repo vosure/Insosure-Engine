@@ -14,7 +14,7 @@ SetUpWindow(int Width, int Height, char *WindowName, bool SetFullScreen)
         GLFWmonitor *Primary = glfwGetPrimaryMonitor();
         const GLFWvidmode *Mode = glfwGetVideoMode(Primary);
 
-        Window = glfwCreateWindow(Width, Height, WindowName, Primary, NULL);	
+        Window = glfwCreateWindow(Width, Height, WindowName, Primary, NULL);
         glfwSetWindowMonitor(Window, Primary, 0, 0, Mode->width, Mode->height, Mode->refreshRate);
         Width = Mode->width;
         Height = Mode->height;
@@ -28,11 +28,14 @@ SetUpWindow(int Width, int Height, char *WindowName, bool SetFullScreen)
     }
     glfwMakeContextCurrent(Window);
 
+    CurrentWidth = Width;
+    CurrentHeight = Height;
+
     return Window;
 }
 
 // NOTE(insolence): If fullscreen, then switch to windowed, and vice versa
-internal void 
+internal void
 SwitchFullscreen(GLFWwindow *Window)
 {
     glfwDestroyWindow(Window);
@@ -52,6 +55,8 @@ SwitchFullscreen(GLFWwindow *Window)
         // Window = SetUpWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Insosure Engine", false);
         // glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         // MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
+        CurrentWidth = SCREEN_WIDTH;
+        CurrentHeight = SCREEN_HEIGHT;
     }
     IsFullscreen = !IsFullscreen;
 

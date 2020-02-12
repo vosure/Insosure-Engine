@@ -11,7 +11,9 @@ pushd ..\build
 
 XCOPY ..\dependencies\glfw\lib\glfw3.dll W:\Insosure-Engine\build /Y
 XCOPY ..\dependencies\freetype\lib\freetype.dll W:\Insosure-Engine\build /Y
+XCOPY ..\dependencies\irrKlang\lib\irrKlang.dll W:\Insosure-Engine\build /Y
+XCOPY ..\dependencies\irrKlang\lib\ikpMP3.dll W:\Insosure-Engine\build /Y
 
-cl /EHsc %IncludePaths% %CommonCompilerFlags% ..\code\Engine\main.cpp /Zi /link %CommonLinkerFlags% %CommonOpenGLLinkerFlags%
+cl /EHsc %IncludePaths% %CommonCompilerFlags% ..\code\main.cpp /Zi /link %CommonLinkerFlags% %CommonOpenGLLinkerFlags%
 
 popd
