@@ -17,7 +17,7 @@ SpawnParticle(vec2 ObjectPos, vec2 Offset, vec2 Velocity)
     Particle.Position = ObjectPos + Offset + Random;
     Particle.Lifetime = 2.5f;
     Particle.Velocity = Velocity;
-    Particle.Size = LehmerFloat() * 2.f;
+    Particle.Size = GetRandomFloat(0, 1) * 2.f; // NOTE(vosure) Random range?!?
 
     return Particle;
 }

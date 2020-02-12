@@ -13,6 +13,7 @@
 #include "utils/file_utils.h"
 #include "math/linear_math.h"
 #include "math/math.h"
+#include "random/random.h"
 #include "math/perlin.h"
 #include "utils/hash_map.cpp"
 #include "utils/array_list.h"
@@ -57,7 +58,7 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     }
     if (glfwGetKey(Window, GLFW_KEY_DOWN) == GLFW_PRESS)
     {
-        Camera->Position.Y += CameraSpeed * Dt;
+        Camera->Position.Y -= CameraSpeed * Dt;
     }
     if (glfwGetKey(Window, GLFW_KEY_LEFT) == GLFW_PRESS)
     {
@@ -65,7 +66,7 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     }
     if (glfwGetKey(Window, GLFW_KEY_RIGHT) == GLFW_PRESS)
     {
-        Camera->Position.X -= CameraSpeed * Dt;
+        Camera->Position.X += CameraSpeed * Dt;
     }
 
     // NOTE(insolence): Moving the camera with the mouse cursor

@@ -7,32 +7,6 @@
 #define DEG2RAD(Deg) ((Deg) / 180.0f * PI)
 #define RAD2DEG(Rad) ((Rad) / PI * 180.0f)
 
-// NOTE(insolence): Lehmer (linear congruential) random number generator
-uint32_t Lehmer = 0;
-uint32_t
-Lehmer32()
-{
-    Lehmer += 0xe120fc15;
-    uint64_t Temp;
-    Temp = (unsigned long)Lehmer * 0x4a39b70d;
-    uint32_t M1 = (Temp >> 32) ^ Temp;
-    Temp = (unsigned long)M1 * 0x12fad5c9;
-    uint32_t M2 = (Temp >> 32) ^ Temp;
-    return M2;
-}
-
-// returns a float from 0 to 1
-float
-LehmerFloat()
-{
-    return (float)Lehmer32() / (float)UINT32_MAX;
-}
-
-int RndInt(int Min, int Max)
-{
-    return (Lehmer32() % (Max - Min)) + Min;
-}
-
 inline float
 Max(float Left, float Right)
 {
@@ -100,6 +74,11 @@ TruncateFloatToInt(float Value)
 {
     return (int)Value;
 }
+inline unsigned int
+TruncateFloatToUInt(float Value)
+{
+    return (unsigned int)Value;
+}
 
 inline int
 RoundFloatToInt(float Value)
@@ -121,6 +100,21 @@ FloorFloatToInt(float Value)
     int Result = (int)floorf(Value);
     return Result;
 }
+
+inline int
+TranslateUIntToInt(unsigned int Value)
+{
+    int Result = (unsigned int)(Value);
+    return Result;
+}
+
+inline unsigned int
+TranslateIntToUInt(unsigned int Value)
+{
+    int Result = (unsigned int)(Value);
+    return Result;
+}
+
 
 inline float
 Sin(float Angle)
