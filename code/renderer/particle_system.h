@@ -6,18 +6,21 @@ struct particle
     vec2 Velocity;
     float Size;
     float Lifetime;
+    float InitialLifetime;
 };
 
-particle
-SpawnParticle(vec2 ObjectPos, vec2 Offset, vec2 Velocity)
-{
-    vec2 Random = vec2{GetRandomFloat(-1, 1), GetRandomFloat(-1, 1)};
 
+particle
+SpawnParticle(vec2 Pos, float RandomOffset, vec2 Velocity, float InitialLifetime, float Size)
+{
     particle Particle;
-    Particle.Position = ObjectPos + Offset + Random;
-    Particle.Lifetime = 2.5f;
+
+    vec2 Random = vec2{GetRandomFloat(-RandomOffset, RandomOffset), GetRandomFloat(-RandomOffset, RandomOffset)};
+    Particle.Position = Pos + Random;
     Particle.Velocity = Velocity;
-    Particle.Size = GetRandomFloat(0, 1) * 2.f; // NOTE(vosure) Random range?!?
+    Particle.Size = Size;
+    Particle.InitialLifetime = InitialLifetime;
+    Particle.Lifetime = InitialLifetime;
 
     return Particle;
 }
@@ -32,6 +35,5 @@ UpdateParticles(std::vector<particle> &Particles, float DeltaTime)
         Particles[i].Lifetime -= DeltaTime;
         if (Particles[i].Lifetime <= 0.f)
             Particles.erase(Particles.begin() + i);
-            //Particles[i].Lifetime = 0.f;
     }
 }

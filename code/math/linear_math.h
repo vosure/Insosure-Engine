@@ -149,7 +149,7 @@ PrintVec2(vec2 Vector)
     printf("Vec2: X = %.2f, Y = %.2f \n", Vector.X, Vector.Y);
 }
 
-//NOTE(vosure): vec3
+// NOTE(vosure): vec3
 union vec3 {
     struct
     {

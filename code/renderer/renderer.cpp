@@ -72,7 +72,7 @@ DrawTriangle(orthographic_camera *Camera, mat4 Transform, color Color)
 }
 
 void
-DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, color Color = {0.f, 0.f, 0.f})
+DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, directional_light Light = {0, 0, 0}, color Color = {0.f, 0.f, 0.f})
 {
     unsigned int TexturedVAO = 0, TexturedVBO = 0;
     glGenVertexArrays(1, &TexturedVAO);
@@ -101,6 +101,10 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
     SetMat4("ViewProjection", TexturedShader, Camera->ViewProjection);
     SetMat4("Transform", TexturedShader, Transform);
 
+    SetVec2("LightPos", TexturedShader, Light.Position);
+    SetVec3("LightColor", TexturedShader, Light.Color);
+    SetVec3("AmbientLight", TexturedShader, {2.f, 2.f, 2.f});
+
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     glBindVertexArray(0);
@@ -120,16 +124,9 @@ DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uin
     glGenVertexArrays(1, &ParticleVAO);
     glBindVertexArray(ParticleVAO);
 
-    float Vertices[] = {
-      // Vertices      TexCoords
-        -0.05f, -0.05f,  0, 0,
-        -0.05f,  0.05f,  0, 1,
-         0.05f, -0.05f,  1, 0,
-         0.05f,  0.05f,  1, 1
-    };
     glGenBuffers(1, &ParticleVBO);
     glBindBuffer(GL_ARRAY_BUFFER, ParticleVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 16, NULL, GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
@@ -143,10 +140,21 @@ DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uin
 
     for (int i = 0; i < Particles.size(); i++)
     {
-        // TODO(insolence): Probably map the Lifetime to a 0-1 range
-        SetFloat("Lifetime", ParticleShader, Particles[i].Lifetime > 1.f ? 1.f : Particles[i].Lifetime); // NOTE(insolence): If lifetime of a particle is > 1 sec, round it to 1 sec
+        float LifetimeLeft = Particles[i].Lifetime / Particles[i].InitialLifetime; // TODO(insolence): Mapping the Lifetime to a 0-1 range
+        SetFloat("Lifetime", ParticleShader, LifetimeLeft);
         SetVec2("Offset", ParticleShader, Particles[i].Position);
-        //SetFloat("Size", ParticleShader, Particles[i].Size);
+
+        float Vertices[16] = {
+             // Vertices                                                  TexCoords
+            -0.05f * Particles[i].Size, -0.05f * Particles[i].Size,       0, 0,
+            -0.05f * Particles[i].Size,  0.05f * Particles[i].Size,       0, 1,
+             0.05f * Particles[i].Size, -0.05f * Particles[i].Size,       1, 0,
+             0.05f * Particles[i].Size,  0.05f * Particles[i].Size,       1, 1
+        };
+        glBindBuffer(GL_ARRAY_BUFFER, ParticleVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 

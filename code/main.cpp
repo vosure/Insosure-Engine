@@ -19,13 +19,13 @@
 #include "utils/array_list.h"
 #include "utils/time.h"
 
-//#include <audio/audio.h>
 #include "debug.h"
 #include "renderer/texture.h"
 #include "renderer/sprite.h"
 #include "renderer/orthographic_camera.h"
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
+#include "renderer/directional_light.h"
 #include "renderer/text.h"
 #include "renderer/particle_system.h"
 #include "renderer/renderer.cpp"
@@ -37,10 +37,11 @@ void
 ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World, float Dt)
 {
     // NOTE(insolence): Fullscreen
-    //TODO(vosure): Change glfw key names to custom
-    if (IsKeyPressed(GLFW_KEY_F12))
+    // TODO(vosure): Change glfw key names to custom
+    if (IsKeyPressed(GLFW_KEY_F12) && !IsKeyProcessed(GLFW_KEY_F12))
     {
         SwitchFullscreen(Window);
+        KeyboardInput.KeysProcessed[GLFW_KEY_F12] = true;
     }
 
     if (IsKeyPressed(GLFW_KEY_ESCAPE))
@@ -153,7 +154,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
     irrklang::ISoundEngine *SoundEngine = irrklang::createIrrKlangDevice();
     SoundEngine->setSoundVolume(0.1f);
-    SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
+    //SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
 
     game_world World = {};
     for (int Y = 0; Y < WORLD_WIDTH; Y++)
@@ -170,12 +171,17 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     World.Tiles[3][3].Value = 3;
     World.Tiles[10][8].Value = 3;
     World.Tiles[2][4].Value = 3;
+    World.Tiles[1][3].Value = 4;
+    World.Tiles[5][4].Value = 4;
+    World.Tiles[2][4].Value = 4;
+    World.Tiles[1][7].Value = 4;
+    World.Tiles[5][2].Value = 4;
+
 
     World.Player.Pos = vec2{0, 0};
     World.Player.Power = 32;
     char PlayerPower[10];
     itoa(World.Player.Power, PlayerPower, 10); // Obtaining player power as a string
-
 
     std::vector<particle> Particles(100);
 
@@ -205,6 +211,10 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
         //printf("CurrentTilePos X: %.2f Y: %.2f \n", CurrentTilePos.X, CurrentTilePos.Y);
 
+        directional_light Light;
+        Light.Position = vec2{(float)2, (float)2};
+        Light.Color = vec3{0.001f, 0.45f, 0.2f};
+
         for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
         {
             for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
@@ -216,29 +226,35 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
                 bool TileVisible = World.Tiles[X][Y].Visible;
                 if (TileValue == 0 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"));
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"), Light);
                 }
                 else if (TileValue == 1 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Light);
                 }
                 else if (TileValue == 2 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.jpg"));
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.jpg"), Light);
                 }
                 else if (TileValue == 3 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.jpg"));
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.jpg"), Light);
+                }
+                else if (TileValue == 4 && TileVisible)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"), Light);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("chest.png"), Light);
                 }
                 else if (!TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("mist.jpg"));
+                    //DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("mist.jpg"));
+                    DrawRectangle(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), {0, 0, 0});
                 }
 
 
                 if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"));
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"), Light);
                 }
             }
         }
@@ -247,7 +263,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         {
             for (int i = 0; i < 15; i++)
             {
-                Particles.push_back(SpawnParticle(World.Player.OldPos, {0.f, 0.f}, {0.f, 0.f}));
+                Particles.push_back(SpawnParticle(World.Player.OldPos, 0.5f, {0.f, 0.f}, 2.5f, GetRandomFloat(0, 1) * 2.f));
                 PlayerMoved = false;
             }
         }
