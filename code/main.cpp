@@ -183,10 +183,10 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     itoa(World.Player.Power, PlayerPower, 10); // Obtaining player power as a string
 
     std::vector<directional_light> Lights;
-    Lights.push_back(DirLight({2, 2, 1}, {3, 0.3f, 0.2f}));
-    //Lights.push_back(DirLight({4, 5, 1}, {0, 2.3f, 1.2f}));
+    Lights.push_back(DirLight({2, 2, 1}, {0.99f, 0.01f, 0.5f}));
+    Lights.push_back(DirLight({4, 5, 1}, {0.01, 2.3f, 1.2f}));
     //Lights.push_back(DirLight({1, 6, 1}, {0.2, 0.1f, 2.2f}));
-    Lights.push_back(DirLight({7, 4, 1}, {0, 1.9f, 0.01f}));
+    //Lights.push_back(DirLight({7, 4, 1}, {0, 1.9f, 0.01f}));
 
     std::vector<particle> Particles(100);
 
@@ -227,7 +227,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
                 bool TileVisible = World.Tiles[X][Y].Visible;
                 if (TileValue == 0 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
                 }
                 else if (TileValue == 1 && TileVisible)
                 {
@@ -243,8 +243,8 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
                 }
                 else if (TileValue == 4 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"), Lights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("chest.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("treasure.png"), Lights);
                 }
                 else if (!TileVisible)
                 {
@@ -344,8 +344,8 @@ void main()
     // glCullFace(GL_BACK);
     // glFrontFace(GL_CW);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 
     orthographic_camera Camera;
     Camera.Position = vec3{0, 0, 0}; //NOTE(vosure): check starting camera position
