@@ -177,11 +177,16 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     World.Tiles[1][7].Value = 4;
     World.Tiles[5][2].Value = 4;
 
-
     World.Player.Pos = vec2{0, 0};
     World.Player.Power = 32;
     char PlayerPower[10];
     itoa(World.Player.Power, PlayerPower, 10); // Obtaining player power as a string
+
+    std::vector<directional_light> Lights;
+    Lights.push_back(DirLight({2, 2, 1}, {3, 0.3f, 0.2f}));
+    //Lights.push_back(DirLight({4, 5, 1}, {0, 2.3f, 1.2f}));
+    //Lights.push_back(DirLight({1, 6, 1}, {0.2, 0.1f, 2.2f}));
+    Lights.push_back(DirLight({7, 4, 1}, {0, 1.9f, 0.01f}));
 
     std::vector<particle> Particles(100);
 
@@ -211,10 +216,6 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
         //printf("CurrentTilePos X: %.2f Y: %.2f \n", CurrentTilePos.X, CurrentTilePos.Y);
 
-        directional_light Light;
-        Light.Position = vec2{(float)2, (float)2};
-        Light.Color = vec3{0.001f, 0.45f, 0.2f};
-
         for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
         {
             for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
@@ -226,35 +227,34 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
                 bool TileVisible = World.Tiles[X][Y].Visible;
                 if (TileValue == 0 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"), Light);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"), Lights);
                 }
                 else if (TileValue == 1 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Light);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
                 }
                 else if (TileValue == 2 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.jpg"), Light);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.jpg"), Lights);
                 }
                 else if (TileValue == 3 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.jpg"), Light);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.jpg"), Lights);
                 }
                 else if (TileValue == 4 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"), Light);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("chest.png"), Light);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("grass.jpg"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("chest.png"), Lights);
                 }
                 else if (!TileVisible)
                 {
-                    //DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("mist.jpg"));
                     DrawRectangle(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), {0, 0, 0});
                 }
 
 
                 if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"), Light);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"), Lights);
                 }
             }
         }
@@ -345,6 +345,7 @@ void main()
     // glFrontFace(GL_CW);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
     orthographic_camera Camera;
     Camera.Position = vec3{0, 0, 0}; //NOTE(vosure): check starting camera position
