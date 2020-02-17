@@ -7,7 +7,8 @@ struct shader
 };
 
 shader Shader;
-shader TexturedShader;
+shader TexturedAmbientShader;
+shader TexturedDiffuseShader;
 shader PostprocessingShader;
 shader HDRShader;
 shader InstancedShader;
@@ -169,7 +170,8 @@ MakeShaders()
     if (Shader.ShaderProgram)
     {
         DeleteShader(&Shader);
-        DeleteShader(&TexturedShader);
+        DeleteShader(&TexturedDiffuseShader);
+        DeleteShader(&TexturedAmbientShader);
         DeleteShader(&PostprocessingShader);
         DeleteShader(&HDRShader);
         DeleteShader(&InstancedShader);
@@ -179,7 +181,8 @@ MakeShaders()
     }
 
     Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
-    TexturedShader = CreateShader("shaders/texture.vert", "shaders/texture.frag");
+    TexturedAmbientShader = CreateShader("shaders/texture_ambient.vert", "shaders/texture_ambient.frag");
+    TexturedDiffuseShader = CreateShader("shaders/texture_diffuse.vert", "shaders/texture_diffuse.frag");
     PostprocessingShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
     ParticleShader = CreateShader("shaders/particle.vert", "shaders/particle.frag");
 

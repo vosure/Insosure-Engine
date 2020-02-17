@@ -72,7 +72,7 @@ DrawTriangle(orthographic_camera *Camera, mat4 Transform, color Color)
 }
 
 void
-DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, std::vector<directional_light> Lights, color Color = {0.f, 0.f, 0.f})
+DrawRectangleTexturedAmbient(orthographic_camera *Camera, mat4 Transform, uint Texture) //, std::vector<directional_light> Lights, color Color = {0.f, 0.f, 0.f})
 {
     unsigned int TexturedVAO = 0, TexturedVBO = 0;
     glGenVertexArrays(1, &TexturedVAO);
@@ -94,21 +94,72 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
 
-    for (int i = 0; i < Lights.size(); i++)
-    {
-        glUseProgram(TexturedShader.ShaderProgram);
-        glBindVertexArray(TexturedVAO);
-        glBindTexture(GL_TEXTURE_2D, Texture);
-        //SetColor("CustomColor", TexturedShader, Color);
-        SetMat4("ViewProjection", TexturedShader, Camera->ViewProjection);
-        SetMat4("Transform", TexturedShader, Transform);
+    //glBlendFunc(GL_ONE, GL_ONE);
+    //glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_COLOR, GL_DST_COLOR);
 
-        SetVec3("LightPos", TexturedShader, Lights[i].Position);
-        SetVec3("LightColor", TexturedShader, Lights[i].Color);
-        SetVec3("AmbientLight", TexturedShader, {0.4f, 0.4f, 0.4f});
+    //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    }
+    glUseProgram(TexturedAmbientShader.ShaderProgram);
+    glBindVertexArray(TexturedVAO);
+    glBindTexture(GL_TEXTURE_2D, Texture);
+    SetMat4("ViewProjection", TexturedAmbientShader, Camera->ViewProjection);
+    SetMat4("Transform", TexturedAmbientShader, Transform);
+    SetVec3("AmbientLight", TexturedAmbientShader, {0.4f, 0.4f, 0.4f});
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glDeleteVertexArrays(1, &TexturedVAO);
+    glDeleteBuffers(1, &TexturedVBO);
+}
+
+
+void
+DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, directional_light Light, color Color = {0.f, 0.f, 0.f})
+{
+    unsigned int TexturedVAO = 0, TexturedVBO = 0;
+    glGenVertexArrays(1, &TexturedVAO);
+    glBindVertexArray(TexturedVAO);
+
+    float Vertices[] = {
+      // Vertices      TexCoords
+        -0.5f, -0.5f,  0, 0,
+        -0.5f,  0.5f,  0, 1,
+         0.5f, -0.5f,  1, 0,
+         0.5f,  0.5f,  1, 1
+    };
+    glGenBuffers(1, &TexturedVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
+
+    //glBlendFunc(GL_ONE, GL_ONE);
+    //glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_COLOR, GL_DST_COLOR);
+
+    //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+
+    glUseProgram(TexturedDiffuseShader.ShaderProgram);
+    glBindVertexArray(TexturedVAO);
+    glBindTexture(GL_TEXTURE_2D, Texture);
+
+    SetMat4("ViewProjection", TexturedDiffuseShader, Camera->ViewProjection);
+    SetMat4("Transform", TexturedDiffuseShader, Transform);
+    SetVec3("LightPos", TexturedDiffuseShader, Light.Position);
+    SetVec3("LightColor", TexturedDiffuseShader, Light.Color);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -170,45 +221,45 @@ DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uin
     glDeleteBuffers(1, &ParticleVBO);
 }
 
-void
-DrawTriangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, color Color = {0.f, 0.f, 0.f})
-{
-    unsigned int TexturedVAO = 0, TexturedVBO = 0;
-    glGenVertexArrays(1, &TexturedVAO);
-    glBindVertexArray(TexturedVAO);
+// void
+// DrawTriangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, color Color = {0.f, 0.f, 0.f})
+// {
+//     unsigned int TexturedVAO = 0, TexturedVBO = 0;
+//     glGenVertexArrays(1, &TexturedVAO);
+//     glBindVertexArray(TexturedVAO);
 
-    float Vertices[] = {
-        // Vertices   TexCoords
-        -1.0, 0.0,    0.0, 0.0,
-         0.0, 1.0,    0.5, 1.0,
-         1.0, 0.0,    1.0, 0.0
-    };
-    glGenBuffers(1, &TexturedVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+//     float Vertices[] = {
+//         // Vertices   TexCoords
+//         -1.0, 0.0,    0.0, 0.0,
+//          0.0, 1.0,    0.5, 1.0,
+//          1.0, 0.0,    1.0, 0.0
+//     };
+//     glGenBuffers(1, &TexturedVBO);
+//     glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
+//     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
+//     glEnableVertexAttribArray(0);
+//     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+//     glEnableVertexAttribArray(1);
+//     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
 
-    glUseProgram(TexturedShader.ShaderProgram);
-    glBindVertexArray(TexturedVAO);
-    glBindTexture(GL_TEXTURE_2D, Texture);
-    SetColor("CustomColor", TexturedShader, Color);
-    SetMat4("ViewProjection", TexturedShader, Camera->ViewProjection);
-    SetMat4("Transform", TexturedShader, Transform);
+//     glUseProgram(TexturedShader.ShaderProgram);
+//     glBindVertexArray(TexturedVAO);
+//     glBindTexture(GL_TEXTURE_2D, Texture);
+//     SetColor("CustomColor", TexturedShader, Color);
+//     SetMat4("ViewProjection", TexturedShader, Camera->ViewProjection);
+//     SetMat4("Transform", TexturedShader, Transform);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+//     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glUseProgram(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+//     glBindVertexArray(0);
+//     glBindBuffer(GL_ARRAY_BUFFER, 0);
+//     glUseProgram(0);
+//     glBindTexture(GL_TEXTURE_2D, 0);
 
-    glDeleteVertexArrays(1, &TexturedVAO);
-    glDeleteBuffers(1, &TexturedVBO);
-}
+//     glDeleteVertexArrays(1, &TexturedVAO);
+//     glDeleteBuffers(1, &TexturedVBO);
+// }
 
 void
 RenderTextOnScreen(std::string Text, float X, float Y, float Scale, color Color)

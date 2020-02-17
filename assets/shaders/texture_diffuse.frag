@@ -9,16 +9,14 @@ uniform sampler2D OurTexture;
 
 uniform vec3 LightPos;
 uniform vec3 LightColor;
-
 uniform vec3 AmbientLight;
 
 float LightRadius = 2.0; // 0 - 4
 
 void main()
 {
-
-	FragColor = texture(OurTexture, TexCoord);
-    if (FragColor.a < 0.1)
+	vec4 Color = texture(OurTexture, TexCoord);
+    if (Color.a < 0.1)
         discard;
 
     float Distance = distance(LightPos.xy, FragPos);
@@ -27,7 +25,8 @@ void main()
     if (Distance <= LightRadius)
         LightStrength =  1.0 - abs(Distance / LightRadius);
 
-    FragColor = vec4(min(FragColor.rgb * ((LightColor * LightStrength * 5) + AmbientLight), FragColor.rgb), 1.0);
+    FragColor = Color * (vec4(LightColor, 1.0) * LightStrength * 5);
+    // FragColor = min(FragColor * ((vec4(LightColor, 1.0) * LightStrength * 5) + vec4(AmbientLight, 1.0)), FragColor);
 
 	float Brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0222));
     if (Brightness > 1.0)
