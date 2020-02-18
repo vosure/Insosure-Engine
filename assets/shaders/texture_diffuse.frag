@@ -11,7 +11,7 @@ uniform vec3 LightPos;
 uniform vec3 LightColor;
 uniform vec3 AmbientLight;
 
-float LightRadius = 2.0; // 0 - 4
+float LightRadius = 4.0; // 0 - 4
 
 void main()
 {
@@ -23,12 +23,11 @@ void main()
     float LightStrength = 0.0;
 
     if (Distance <= LightRadius)
-        LightStrength =  1.0 - abs(Distance / LightRadius);
+        LightStrength =  (1.0 - abs(Distance / LightRadius)) * 0.5;
 
-    FragColor = Color * (vec4(LightColor, 1.0) * LightStrength * 5);
-    // FragColor = min(FragColor * ((vec4(LightColor, 1.0) * LightStrength * 5) + vec4(AmbientLight, 1.0)), FragColor);
+    FragColor = Color * (vec4(LightColor, 1.0) * LightStrength * 3.5);
 
-	float Brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0222));
+	float Brightness = dot(FragColor.rgb, vec3(0.4126, 0.7152, 0.3222));
     if (Brightness > 1.0)
         BrightColor = vec4(FragColor.rgb, 1.0);
     else

@@ -14,9 +14,8 @@ void main()
         discard;
 
     FragColor = Color * vec4(AmbientLight, 1.0);
-    // FragColor = min(FragColor * ((vec4(LightColor, 1.0) * LightStrength * 5) + vec4(AmbientLight, 1.0)), FragColor);
 
-	float Brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0222));
+	float Brightness = dot(FragColor.rgb, vec3(0.4126, 0.7152, 0.3222));
     if (Brightness > 1.0)
         BrightColor = vec4(FragColor.rgb, 1.0);
     else

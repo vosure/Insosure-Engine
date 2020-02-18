@@ -162,7 +162,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         for (int X = 0; X < WORLD_HEIGHT; X++)
         {
             World.Tiles[X][Y].Value = rand() % 2;
-            World.Tiles[X][Y].Visible = false;
+            World.Tiles[X][Y].Visible = true; // MAKE FALSE
         }
     }
     World.Tiles[4][3].Value = 2;
@@ -183,10 +183,10 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     itoa(World.Player.Power, PlayerPower, 10); // Obtaining player power as a string
 
     std::vector<directional_light> Lights;
-    Lights.push_back(DirLight({2, 2, 1}, {0.99f, 0.01f, 0.5f}));
-    Lights.push_back(DirLight({4, 5, 1}, {0.01, 2.3f, 1.2f}));
-    //Lights.push_back(DirLight({1, 6, 1}, {0.2, 0.1f, 2.2f}));
-    //Lights.push_back(DirLight({7, 4, 1}, {0, 1.9f, 0.01f}));
+    Lights.push_back(DirLight({8, 7, 1}, {0, 0.9f, 0.01f}));
+    Lights.push_back(DirLight({7, 9, 1}, {0.2, 0.1f, 0.9f}));
+    Lights.push_back(DirLight({4, 4, 1}, {0.99f, 0.01f, 0.5f}));
+    Lights.push_back(DirLight({1, 2, 1}, {0.01, 0.5f, 0.6f}));
 
     std::vector<particle> Particles(100);
 
@@ -214,109 +214,47 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         // NOTE(insolence): Actual drawing
         vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
         mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
-        //printf("CurrentTilePos X: %.2f Y: %.2f \n", CurrentTilePos.X, CurrentTilePos.Y);
 
-        // DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)3, (float)3}, 0.f, 1.f), GetTexture("rock.png"));
-        // DrawRectangleTextured(Camera, Transform(vec2{(float)3, (float)3}, 0.f, 1.f), GetTexture("rock.png"), Lights);
-        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-        //glBlendFunc(GL_ONE, GL_ZERO);
-
-        directional_light ZeroLight;
-        ZeroLight.Position = {-5, -5, -5};
-        ZeroLight.Color = {1, 1, 1};
-
-        // for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
-        // {
-        //     for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
-        //     {
-        //         if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
-        //             continue;
-
-        //         int TileValue = World.Tiles[X][Y].Value;
-        //         bool TileVisible = World.Tiles[X][Y].Visible;
-
-        //         if ((TileValue == 0 || TileValue == 1) && TileVisible)
-        //         {
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
-        //         }
-        //         else if (TileValue == 1 && TileVisible)
-        //         {
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
-        //         }
-        //         else if (TileValue == 2 && TileVisible)
-        //         {
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.png"));
-        //         }
-        //         else if (TileValue == 3 && TileVisible)
-        //         {
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.png"));
-        //         }
-        //         else if (TileValue == 4 && TileVisible)
-        //         {
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("treasure.png"));
-        //         }
-        //         else if (!TileVisible)
-        //         {
-        //             DrawRectangle(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), {0, 0, 0});
-        //         }
-
-        //         if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
-        //         {
-        //             //DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"));
-        //             DrawRectangleTexturedAmbient(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"));
-        //         }
-        //     }
-        // }
-
-        //for (int i = 0; i < Lights.size(); i++)
-        for (int i = 0; i < 1; i++)
+        for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
         {
-            for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
+            for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
             {
-                for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
+                if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
+                    continue;
+
+                int TileValue = World.Tiles[X][Y].Value;
+                bool TileVisible = World.Tiles[X][Y].Visible;
+
+                if ((TileValue == 0 || TileValue == 1) && TileVisible)
                 {
-                    if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
-                        continue;
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
+                }
+                else if (TileValue == 2 && TileVisible)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.png"), Lights);
+                }
+                else if (TileValue == 3 && TileVisible)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.png"), Lights);
+                }
+                else if (TileValue == 4 && TileVisible)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("treasure.png"), Lights);
+                }
+                else if (!TileVisible)
+                {
+                    DrawRectangle(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), {0, 0, 0});
+                }
 
-                    int TileValue = World.Tiles[X][Y].Value;
-                    bool TileVisible = World.Tiles[X][Y].Visible;
-
-                    if ((TileValue == 0 || TileValue == 1) && TileVisible)
-                    {
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights[i]);
-                    }
-                    else if (TileValue == 2 && TileVisible)
-                    {
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights[i]);
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.png"), Lights[i]);
-                    }
-                    else if (TileValue == 3 && TileVisible)
-                    {
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights[i]);
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.png"), Lights[i]);
-                    }
-                    else if (TileValue == 4 && TileVisible)
-                    {
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights[i]);
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("treasure.png"), Lights[i]);
-                    }
-                    else if (!TileVisible)
-                    {
-                        DrawRectangle(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), {0, 0, 0});
-                    }
-
-                    if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
-                    {
-                        //DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), ZeroLight);
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"), Lights[i]);
-                    }
+                if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
+                {
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"), Lights);
                 }
             }
         }
-
 
         if (PlayerMoved)
         {
@@ -403,8 +341,8 @@ void main()
     // glCullFace(GL_BACK);
     // glFrontFace(GL_CW);
     glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
     orthographic_camera Camera;
     Camera.Position = vec3{0, 0, 0}; //NOTE(vosure): check starting camera position
