@@ -18,6 +18,7 @@
 #include "utils/hash_map.cpp"
 #include "utils/array_list.h"
 #include "utils/time.h"
+#include "utils/colors.h"
 
 #include "debug.h"
 #include "renderer/texture.h"
@@ -25,7 +26,7 @@
 #include "renderer/orthographic_camera.h"
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
-#include "renderer/directional_light.h"
+#include "renderer/point_light.h"
 #include "renderer/text.h"
 #include "renderer/particle_system.h"
 #include "renderer/renderer.cpp"
@@ -182,11 +183,11 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     char PlayerPower[10];
     itoa(World.Player.Power, PlayerPower, 10); // Obtaining player power as a string
 
-    std::vector<directional_light> Lights;
-    Lights.push_back(DirLight({8, 7, 1}, {0, 0.9f, 0.01f}));
-    Lights.push_back(DirLight({7, 9, 1}, {0.2, 0.1f, 0.9f}));
-    Lights.push_back(DirLight({4, 4, 1}, {0.99f, 0.01f, 0.5f}));
-    Lights.push_back(DirLight({1, 2, 1}, {0.01, 0.5f, 0.6f}));
+    std::vector<point_light> Lights;
+    Lights.push_back(PointLight({8, 7, 1}, {0, 0.9f, 0.01f}, 3.f, 1.f));
+    Lights.push_back(PointLight({7, 9, 1}, {0.2, 0.1f, 0.9f}, 3.f, 1.f));
+    Lights.push_back(PointLight({4, 4, 1}, {0.99f, 0.01f, 0.5f}, 3.f, 1.3f));
+    Lights.push_back(PointLight({1, 2, 1}, {0.01, 0.5f, 0.6f}, 3.f, 1.2f));
 
     std::vector<particle> Particles(100);
 
@@ -258,14 +259,14 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
         if (PlayerMoved)
         {
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < 25; i++)
             {
-                Particles.push_back(SpawnParticle(World.Player.OldPos, 0.5f, {0.f, 0.f}, 2.5f, GetRandomFloat(0, 1) * 2.f));
+                Particles.push_back(SpawnParticle(World.Player.OldPos, 0.5f, {GetRandomFloat(-0.1f, 0.1f), GetRandomFloat(-0.1f, 0.1f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.9f, color{0.3f, 2.2f, 0.f}, color{0.7f, 0.3f, 2.2f}));
                 PlayerMoved = false;
             }
         }
         UpdateParticles(Particles, DeltaTime);
-        DrawParticles(Camera, Particles,  GetTexture("star.png"));
+        DrawParticles(Camera, Particles);
 
         RenderTextOnScreen("The legend has been born!!!", 20.f, 50.f, 1.f, {2, 4, 4});
 

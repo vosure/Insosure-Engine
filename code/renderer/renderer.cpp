@@ -115,7 +115,7 @@ DrawRectangleTexturedAmbient(orthographic_camera *Camera, mat4 Transform, uint T
 
 
 void
-DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, std::vector<directional_light> Lights, color Color = {0.f, 0.f, 0.f})
+DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, std::vector<point_light> Lights, color Color = {0.f, 0.f, 0.f})
 {
     unsigned int TexturedVAO = 0, TexturedVBO = 0;
     glGenVertexArrays(1, &TexturedVAO);
@@ -155,8 +155,11 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
 
         SetMat4("ViewProjection", TexturedDiffuseShader, Camera->ViewProjection);
         SetMat4("Transform", TexturedDiffuseShader, Transform);
-        SetVec3("LightPos", TexturedDiffuseShader, Lights[i].Position);
-        SetVec3("LightColor", TexturedDiffuseShader, Lights[i].Color);
+
+        SetVec3("Light.Position", TexturedDiffuseShader, Lights[i].Position);
+        SetVec3("Light.Color", TexturedDiffuseShader, Lights[i].Color);
+        SetFloat("Light.Radius", TexturedDiffuseShader, Lights[i].Radius);
+        SetFloat("Light.Intensity", TexturedDiffuseShader, Lights[i].Intensity);
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -172,8 +175,11 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
 
 // FIXME(insolence): Make this instanced rendering
 void
-DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uint Texture)
+DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uint Texture = 0)
 {
+    if (Texture == 0)
+        Texture = GetTexture("blank.jpg");
+
     unsigned int ParticleVAO = 0, ParticleVBO = 0;
     glGenVertexArrays(1, &ParticleVAO);
     glBindVertexArray(ParticleVAO);
@@ -198,12 +204,17 @@ DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uin
         SetFloat("Lifetime", ParticleShader, LifetimeLeft);
         SetVec2("Offset", ParticleShader, Particles[i].Position);
 
+        mat4 TransformMat = Transform(Particles[i].Position, Particles[i].Rotation, Particles[i].Size * LifetimeLeft);
+        SetMat4("Transform", ParticleShader, TransformMat);
+
+        color CurrentColor = Lerp(Particles[i].EndColor, Particles[i].InitialColor, LifetimeLeft);
+        SetColor("Color", ParticleShader, CurrentColor);
+
         float Vertices[16] = {
-             // Vertices                                                  TexCoords
-            -0.05f * Particles[i].Size, -0.05f * Particles[i].Size,       0, 0,
-            -0.05f * Particles[i].Size,  0.05f * Particles[i].Size,       0, 1,
-             0.05f * Particles[i].Size, -0.05f * Particles[i].Size,       1, 0,
-             0.05f * Particles[i].Size,  0.05f * Particles[i].Size,       1, 1
+            -0.05f, -0.05f,  0, 0,
+            -0.05f,  0.05f,  0, 1,
+             0.05f, -0.05f,  1, 0,
+             0.05f,  0.05f,  1, 1
         };
         glBindBuffer(GL_ARRAY_BUFFER, ParticleVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);

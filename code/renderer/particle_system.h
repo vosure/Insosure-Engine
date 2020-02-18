@@ -5,13 +5,32 @@ struct particle
     vec2 Position;
     vec2 Velocity;
     float Size;
+    float Rotation;
     float Lifetime;
     float InitialLifetime;
+    color InitialColor;
+    color EndColor;
 };
 
 
 particle
-SpawnParticle(vec2 Pos, float RandomOffset, vec2 Velocity, float InitialLifetime, float Size)
+SpawnParticle(vec2 Pos, float RandomOffset, vec2 Velocity, float Rotation, float InitialLifetime, float Size)
+{
+    particle Particle;
+
+    vec2 Random = vec2{GetRandomFloat(-RandomOffset, RandomOffset), GetRandomFloat(-RandomOffset, RandomOffset)};
+    Particle.Position = Pos + Random;
+    Particle.Velocity = Velocity;
+    Particle.Rotation = Rotation;
+    Particle.Size = Size;
+    Particle.InitialLifetime = InitialLifetime;
+    Particle.Lifetime = InitialLifetime;
+
+    return Particle;
+}
+
+particle
+SpawnParticle(vec2 Pos, float RandomOffset, vec2 Velocity, float Rotation, float InitialLifetime, float Size, color InitialColor, color EndColor)
 {
     particle Particle;
 
@@ -19,8 +38,11 @@ SpawnParticle(vec2 Pos, float RandomOffset, vec2 Velocity, float InitialLifetime
     Particle.Position = Pos + Random;
     Particle.Velocity = Velocity;
     Particle.Size = Size;
+    Particle.Rotation = Rotation;
     Particle.InitialLifetime = InitialLifetime;
     Particle.Lifetime = InitialLifetime;
+    Particle.InitialColor = InitialColor;
+    Particle.EndColor = EndColor;
 
     return Particle;
 }

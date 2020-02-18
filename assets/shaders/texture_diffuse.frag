@@ -7,11 +7,15 @@ in vec2 FragPos;
 
 uniform sampler2D OurTexture;
 
-uniform vec3 LightPos;
-uniform vec3 LightColor;
-uniform vec3 AmbientLight;
+struct point_light
+{
+    vec3 Position;
+    vec3 Color;
+    float Radius;
+    float Intensity;
+};
 
-float LightRadius = 4.0; // 0 - 4
+uniform point_light Light;
 
 void main()
 {
@@ -19,13 +23,13 @@ void main()
     if (Color.a < 0.1)
         discard;
 
-    float Distance = distance(LightPos.xy, FragPos);
+    float Distance = distance(Light.Position.xy, FragPos);
     float LightStrength = 0.0;
 
-    if (Distance <= LightRadius)
-        LightStrength =  (1.0 - abs(Distance / LightRadius)) * 0.5;
+    if (Distance <= Light.Radius)
+        LightStrength =  (1.0 - abs(Distance / Light.Radius)) * Light.Radius;
 
-    FragColor = Color * (vec4(LightColor, 1.0) * LightStrength * 3.5);
+    FragColor = Color * (vec4(Light.Color, 1.0) * LightStrength * Light.Intensity);
 
 	float Brightness = dot(FragColor.rgb, vec3(0.4126, 0.7152, 0.3222));
     if (Brightness > 1.0)

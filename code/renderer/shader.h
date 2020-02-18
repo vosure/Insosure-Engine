@@ -163,7 +163,6 @@ SetVec2(const char *Name, shader Shader, vec2 Vector)
     glUniform2f(Location, Vector.X, Vector.Y);
 }
 
-
 internal void
 MakeShaders()
 {

@@ -161,7 +161,6 @@ union vec3 {
     };
     float E[3];
 };
-typedef vec3 color;
 
 inline vec3
 operator+(vec3 A, vec3 B)
@@ -311,7 +310,6 @@ union vec4 {
     };
     float E[4];
 };
-typedef vec4 color4;
 
 inline vec4
 operator+(vec4 A, vec4 B)
