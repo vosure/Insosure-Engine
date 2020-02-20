@@ -5,13 +5,9 @@ global_variable hash_map<const char*, uint> *TextureCache;
 uint
 CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 {
-    // TODO(insolence): Size must be determined dynamically!!!
-    char Append[120];
-	strcpy(Append, "W:/Insosure-Engine/assets/textures/");
-	strcat(Append, Path);
+    string FullPath = String("W:/Insosure-Engine/assets/textures/") + Path;
 
     uint Texture;
-
     glGenTextures(1, &Texture);
     glBindTexture(GL_TEXTURE_2D, Texture);
 
@@ -25,9 +21,7 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
     GLenum InternalFormat = 0, DataFormat = 0;
 
     int Width, Height, Channels;
-    unsigned char *Data = stbi_load(Append, &Width, &Height, &Channels, 0);
-
-    //printf("Width: %d, Height: %d, Channels: %d \n", Width, Height, Channels);
+    unsigned char *Data = stbi_load(FullPath.Native, &Width, &Height, &Channels, 0);
 
     if (Data)
     {
@@ -57,6 +51,7 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
     }
 
     stbi_image_free(Data);
+    FreeString(FullPath);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     Insert(TextureCache, Path, Texture);

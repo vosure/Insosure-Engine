@@ -7,13 +7,11 @@
 // cause the app immediately crashes
 char *ReadFile(const char *FilePath)
 {
-	char Append[130];
-	strcpy(Append, "W:/Insosure-Engine/assets/");
-	strcat(Append, FilePath);
+	string Append = String("W:/Insosure-Engine/assets/") + FilePath;
 
-	FILE *File = fopen(Append, "rt");
+	FILE *File = fopen(Append.Native, "rt");
 	if (File == NULL)
-		return "NULL"; //could not open file
+		return "NULL";
 	fseek(File, 0, SEEK_END);
 	unsigned long Length = ftell(File);
 
@@ -23,6 +21,8 @@ char *ReadFile(const char *FilePath)
 	fseek(File, 0, SEEK_SET);
 	fread(Data, 1, Length, File);
 	fclose(File);
+
+	FreeString(Append);
 
 	return Data;
 }

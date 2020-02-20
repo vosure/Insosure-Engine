@@ -42,7 +42,7 @@ const color LAWN_GREEN   = {0.5f, 0.99f, 0};
 const color YELLOW_GREEN = {0.6f, 0.8f, 0.18f};
 
 
-//const color4 TRANSPARENT = {1, 1, 1, 0};
+const color4 TRANSPARENT4 = {1, 1, 1, 0};
 
 void
 ColorToString(color Color)

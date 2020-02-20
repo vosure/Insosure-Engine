@@ -10,6 +10,7 @@
 #include FT_FREETYPE_H
 #include <irrKlang/include/irrKlang.h>
 
+#include "utils/string.cpp"
 #include "utils/file_utils.h"
 #include "math/linear_math.h"
 #include "math/math.h"
@@ -154,8 +155,8 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     float LastFrame = 0.f;
 
     irrklang::ISoundEngine *SoundEngine = irrklang::createIrrKlangDevice();
-    SoundEngine->setSoundVolume(0.1f);
-    //SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
+    SoundEngine->setSoundVolume(0.13f);
+    SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
 
     game_world World = {};
     for (int Y = 0; Y < WORLD_WIDTH; Y++)
@@ -197,9 +198,6 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         float CurrentFrame = glfwGetTime();
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
-
-        // printf("Seconds/frame: %.3f, ", DeltaTime);
-        // printf("FPS: %.3f \n",  1.f/DeltaTime);
 
         ProcessInput(Window, Camera, &World, DeltaTime);
 
@@ -261,7 +259,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         {
             for (int i = 0; i < 25; i++)
             {
-                Particles.push_back(SpawnParticle(World.Player.OldPos, 0.5f, {GetRandomFloat(-0.1f, 0.1f), GetRandomFloat(-0.1f, 0.1f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.9f, color{0.3f, 2.2f, 0.f}, color{0.7f, 0.3f, 2.2f}));
+                Particles.push_back(SpawnParticle(World.Player.OldPos, 0.5f, {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.9f, color{4.3f, 2.2f, 0.f}, color{0.7f, 1.3f, 3.2f}));
                 PlayerMoved = false;
             }
         }
@@ -269,6 +267,14 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         DrawParticles(Camera, Particles);
 
         RenderTextOnScreen("The legend has been born!!!", 20.f, 50.f, 1.f, {2, 4, 4});
+
+        string FpsStr = "FPS: " + FloatToStr(1.f/DeltaTime, 2);
+        RenderTextOnScreen(FpsStr.Native, 20.f, 120.f, 1.f, {4, 1, 1});
+        FreeString(FpsStr);
+
+        string MSPerFrameStr = "MS per frame: " + FloatToStr(DeltaTime * 1000, 2);
+        RenderTextOnScreen(MSPerFrameStr.Native, 20.f, 180.f, 1.f, {4, 1, 1});
+        FreeString(MSPerFrameStr);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

@@ -146,7 +146,6 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-
     for (int i = 0; i < Lights.size(); i++)
     {
         glUseProgram(TexturedDiffuseShader.ShaderProgram);
@@ -207,7 +206,7 @@ DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uin
         mat4 TransformMat = Transform(Particles[i].Position, Particles[i].Rotation, Particles[i].Size * LifetimeLeft);
         SetMat4("Transform", ParticleShader, TransformMat);
 
-        color CurrentColor = Lerp(Particles[i].EndColor, Particles[i].InitialColor, LifetimeLeft);
+        color CurrentColor = Lerp(Particles[i].EndColor * 2, Particles[i].InitialColor, LifetimeLeft);
         SetColor("Color", ParticleShader, CurrentColor);
 
         float Vertices[16] = {

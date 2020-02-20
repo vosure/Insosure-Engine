@@ -38,10 +38,15 @@ struct postprocessing_effects
     bool Blur;
 };
 
-// NOTE(insolence): 1920 x 1080 is normal, 1440 x 900 (8 x 5 proportion) for NV.
-//NOTE(vosre): It's not fucking normal man, resolution of MY monitor is 1920x1080, lets use HD(1280x720)
-global_variable const int WINDOW_WIDTH = 1920; // NOTE(insolence): 1920 x 1080 is normal, 1440 x 900 (8 x 5 proportion) for NV
-global_variable const int WINDOW_HEIGHT = 1080;
+// NOTE(insolence): 1440 x 900 (8 x 5 proportion) for NV.
+#if INSOLENCE
+    global_variable int WINDOW_WIDTH = 1920;
+    global_variable int WINDOW_HEIGHT = 1080;
+#elif VOSURE
+    global_variable int WINDOW_WIDTH = 1280;
+    global_variable int WINDOW_HEIGHT = 720;
+#endif
+
 global_variable int SCREEN_WIDTH;
 global_variable int SCREEN_HEIGHT;
 
@@ -64,6 +69,7 @@ struct tile
 {
     int Value;
     bool Visible; // NOTE(insolence): Is it covered by the fog of war?
+    bool Accessible; // TODO(insolence): Rename
 };
 
 // NOTE(insolence): Game state
