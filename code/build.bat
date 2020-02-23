@@ -1,4 +1,4 @@
-set CommonCompilerFlags= -nologo -DDEBUG=1 -DINSOLENCE=1
+set CommonCompilerFlags= -nologo -DINSOLENCE=1
 set CommonLinkerFlags= -incremental:no -opt:ref opengl32.lib gdi32.lib user32.lib kernel32.lib winmm.lib "..\dependencies\freetype\lib\freetype.lib" "..\dependencies\irrklang\lib\irrKlang.lib"
 set CommonOpenGLLinkerFlags= "..\dependencies\glfw\lib\glfw3dll.lib"
 set IncludePaths= /I"W:\Insosure-Engine\dependencies" /I"W:\Insosure-Engine\dependencies\freetype\include"

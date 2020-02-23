@@ -34,6 +34,8 @@
 #include "input/input.h"
 #include "window.h"
 
+std::vector<point_light> Lights;
+
 global_variable bool PlayerMoved = false;
 void
 ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World, float Dt)
@@ -60,18 +62,23 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     if (IsKeyPressed(GLFW_KEY_UP))
     {
         Camera->Position.Y -= CameraSpeed * Dt;
+        Lights[0].Position.Y += CameraSpeed * Dt;
+
     }
     if (IsKeyPressed(GLFW_KEY_DOWN))
     {
         Camera->Position.Y += CameraSpeed * Dt;
+        Lights[0].Position.Y -= CameraSpeed * Dt;
     }
     if (IsKeyPressed(GLFW_KEY_LEFT))
     {
         Camera->Position.X += CameraSpeed * Dt;
+        Lights[0].Position.X -= CameraSpeed * Dt;
     }
     if (IsKeyPressed(GLFW_KEY_RIGHT))
     {
         Camera->Position.X -= CameraSpeed * Dt;
+        Lights[0].Position.X += CameraSpeed * Dt;
     }
 
     // NOTE(insolence): Moving the camera with the mouse cursor
@@ -110,14 +117,14 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         PlayerMoved = true;
         KeyboardInput.KeysProcessed[GLFW_KEY_W] = true;
     }
-    if (IsKeyPressed(GLFW_KEY_S) && !IsKeyProcessed(GLFW_KEY_S))
+    else if (IsKeyPressed(GLFW_KEY_S) && !IsKeyProcessed(GLFW_KEY_S))
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.Y--;
         PlayerMoved = true;
         KeyboardInput.KeysProcessed[GLFW_KEY_S] = true;
     }
-    else if (IsKeyPressed(GLFW_KEY_A) && !IsKeyProcessed(GLFW_KEY_A))
+    if (IsKeyPressed(GLFW_KEY_A) && !IsKeyProcessed(GLFW_KEY_A))
     {
         World->Player.OldPos = World->Player.Pos;
         World->Player.Pos.X--;
@@ -156,7 +163,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
     irrklang::ISoundEngine *SoundEngine = irrklang::createIrrKlangDevice();
     SoundEngine->setSoundVolume(0.13f);
-    SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
+    //SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
 
     game_world World = {};
     for (int Y = 0; Y < WORLD_WIDTH; Y++)
@@ -165,6 +172,8 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         {
             World.Tiles[X][Y].Value = rand() % 2;
             World.Tiles[X][Y].Visible = true; // MAKE FALSE
+
+            World.Tiles[X][Y].Value = (rand() % 30) == 2 ? 4 : 0;
         }
     }
     World.Tiles[4][3].Value = 2;
@@ -173,22 +182,17 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     World.Tiles[3][3].Value = 3;
     World.Tiles[10][8].Value = 3;
     World.Tiles[2][4].Value = 3;
-    World.Tiles[1][3].Value = 4;
-    World.Tiles[5][4].Value = 4;
-    World.Tiles[2][4].Value = 4;
-    World.Tiles[1][7].Value = 4;
-    World.Tiles[5][2].Value = 4;
+
 
     World.Player.Pos = vec2{0, 0};
     World.Player.Power = 32;
     char PlayerPower[10];
     itoa(World.Player.Power, PlayerPower, 10); // Obtaining player power as a string
 
-    std::vector<point_light> Lights;
-    Lights.push_back(PointLight({8, 7, 1}, {0, 0.9f, 0.01f}, 3.f, 1.f));
-    Lights.push_back(PointLight({7, 9, 1}, {0.2, 0.1f, 0.9f}, 3.f, 1.f));
-    Lights.push_back(PointLight({4, 4, 1}, {0.99f, 0.01f, 0.5f}, 3.f, 1.3f));
-    Lights.push_back(PointLight({1, 2, 1}, {0.01, 0.5f, 0.6f}, 3.f, 1.2f));
+    Lights.push_back(PointLight({1, 1, 1}, {0.1, 5, 1}, 3.f, 1.f));
+    //Lights.push_back(PointLight({7, 9, 1}, {0.2, 0.1f, 0.9f}, 3.f, 1.f));
+    //Lights.push_back(PointLight({4, 4, 1}, {0.99f, 0.01f, 0.5f}, 3.f, 1.3f));
+    //Lights.push_back(PointLight({1, 2, 1}, {0.01, 0.5f, 0.6f}, 3.f, 1.2f));
 
     std::vector<particle> Particles(100);
 
@@ -214,55 +218,59 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
         mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
 
-        for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
-        {
-            for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
-            {
-                if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
-                    continue;
+        //printf("LightPos: %.2f, %2f \n", Lights[0].Position.X, Lights[0].Position.Y);
 
-                int TileValue = World.Tiles[X][Y].Value;
-                bool TileVisible = World.Tiles[X][Y].Visible;
+        DrawRectangleTextured(Camera, Transform(vec2{1, 1}, 0, 8), GetTexture("brickwall.jpg"), GetTexture("brickwall_normal.png"), Lights);
 
-                if ((TileValue == 0 || TileValue == 1) && TileVisible)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
-                }
-                else if (TileValue == 2 && TileVisible)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.png"), Lights);
-                }
-                else if (TileValue == 3 && TileVisible)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.png"), Lights);
-                }
-                else if (TileValue == 4 && TileVisible)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), Lights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("treasure.png"), Lights);
-                }
-                else if (!TileVisible)
-                {
-                    DrawRectangle(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), {0, 0, 0});
-                }
+        // for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
+        // {
+        //     for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
+        //     {
+        //         if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
+        //             continue;
 
-                if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"), Lights);
-                }
-            }
-        }
+        //         int TileValue = World.Tiles[X][Y].Value;
+        //         bool TileVisible = World.Tiles[X][Y].Visible;
 
-        if (PlayerMoved)
-        {
-            for (int i = 0; i < 25; i++)
-            {
-                Particles.push_back(SpawnParticle(World.Player.OldPos, 0.5f, {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.9f, color{4.3f, 2.2f, 0.f}, color{0.7f, 1.3f, 3.2f}));
-                PlayerMoved = false;
-            }
-        }
+        //         if ((TileValue == 0 || TileValue == 1) && TileVisible)
+        //         {
+        //             DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), GetTexture("rock_normal.png"), Lights);
+        //         }
+        //         else if (TileValue == 2 && TileVisible)
+        //         {
+        //             DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), GetTexture("rock_normal.png"), Lights);
+        //             //DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy.png"), Lights);
+        //         }
+        //         else if (TileValue == 3 && TileVisible)
+        //         {
+        //             DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), GetTexture("rock_normal.png"), Lights);
+        //             //DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("enemy2.png"), Lights);
+        //         }
+        //         else if (TileValue == 4 && TileVisible)
+        //         {
+        //             DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("rock.png"), GetTexture("rock_normal.png"), Lights);
+        //             //DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("treasure.png"), Lights);
+        //         }
+        //         else if (!TileVisible)
+        //         {
+        //             //DrawRectangle(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), {0, 0, 0});
+        //         }
+
+        //         if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
+        //         {
+        //             //DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 1.f), GetTexture("roflanface.png"), Lights);
+        //         }
+        //     }
+        // }
+
+        // if (PlayerMoved)
+        // {
+        //     for (int i = 0; i < 40; i++)
+        //     {
+        //         Particles.push_back(SpawnParticle(World.Player.OldPos, 0.5f, {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.5f, color{4.3f, 2.2f, 0.f}, color{0.7f, 1.3f, 3.2f}));
+        //         PlayerMoved = false;
+        //     }
+        // }
         UpdateParticles(Particles, DeltaTime);
         DrawParticles(Camera, Particles);
 
@@ -354,7 +362,7 @@ void main()
     orthographic_camera Camera;
     Camera.Position = vec3{0, 0, 0}; //NOTE(vosure): check starting camera position
     float AspectRatio = 16.f / 9.f;
-    float ZoomLevel = 4.f;
+    float ZoomLevel = 6.f;
     SetViewProjection(&Camera, -ZoomLevel * AspectRatio, ZoomLevel * AspectRatio, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
 
     postprocessing_effects Effects;
