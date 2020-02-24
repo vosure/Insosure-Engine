@@ -189,7 +189,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     char PlayerPower[10];
     itoa(World.Player.Power, PlayerPower, 10); // Obtaining player power as a string
 
-    Lights.push_back(PointLight({1, 1, 1}, {0.1, 5, 1}, 3.f, 1.f));
+    Lights.push_back(PointLight({1.0f, 0.8f, 0.6f}, {1, 1, 0.75f}, 3.f, 1.f));
     //Lights.push_back(PointLight({7, 9, 1}, {0.2, 0.1f, 0.9f}, 3.f, 1.f));
     //Lights.push_back(PointLight({4, 4, 1}, {0.99f, 0.01f, 0.5f}, 3.f, 1.3f));
     //Lights.push_back(PointLight({1, 2, 1}, {0.01, 0.5f, 0.6f}, 3.f, 1.2f));
@@ -220,7 +220,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
         //printf("LightPos: %.2f, %2f \n", Lights[0].Position.X, Lights[0].Position.Y);
 
-        DrawRectangleTextured(Camera, Transform(vec2{1, 1}, 0, 8), GetTexture("brickwall.jpg"), GetTexture("brickwall_normal.png"), Lights);
+        DrawRectangleTextured(Camera, Transform(vec2{1, 1}, 0, 8), GetTexture("brickwall.jpg", true), GetTexture("brickwall_normal.png", true), Lights);
 
         // for (int Y = CurrentTilePos.Y - 6; Y < CurrentTilePos.Y + 6; Y++)
         // {
@@ -274,7 +274,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         UpdateParticles(Particles, DeltaTime);
         DrawParticles(Camera, Particles);
 
-        RenderTextOnScreen("The legend has been born!!!", 20.f, 50.f, 1.f, {2, 4, 4});
+        //RenderTextOnScreen("The legend has been born!!!", 20.f, 50.f, 1.f, {2, 4, 4});
 
         string FpsStr = "FPS: " + FloatToStr(1.f/DeltaTime, 2);
         RenderTextOnScreen(FpsStr.Native, 20.f, 120.f, 1.f, {4, 1, 1});

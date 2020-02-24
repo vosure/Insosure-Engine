@@ -24,14 +24,8 @@ void main()
 	vec4 Color = texture(OurTexture, TexCoord);
     if (Color.a < 0.1)
         discard;
-
     vec3 Normal = texture(NormalMap, TexCoord).rgb;
-    Normal = normalize(Normal * 2.0 - 1.0);
-    Normal = normalize(TBN * Normal);
-    //Normal.b = -Normal.b;
-    Normal.g = -1;
-    Normal.r = -1;
-    Normal = normalize(Normal);
+    //vec3 Normal = vec3(0, 0, 1);
     //Normal = vec3(0, 0, Normal.b);
 
 
@@ -41,15 +35,16 @@ void main()
 
     float D = length(LightDir);
     vec3 L = normalize(LightDir);
+    Normal = normalize(Normal * 2 - 1);
 
-    vec3 Diffuse = Light.Color * max(dot(Normal, L), 0);
-    vec3 Ambient = vec3(0.3, 0.3, 0.3);
+    vec3 Diffuse = (Light.Color) * max(dot(Normal, L), 0.0);
+    vec3 Ambient = vec3(0.1, 0.1, 0.1);
 
     float IntensityFloat = 2;
 
-    vec3 Falloff = vec3(1, 0, 0);
+    vec3 Falloff = vec3(1, 0.09, 0.032);
     float Attenuation = 1/(Falloff.x + Falloff.y*D + Falloff.z*D*D);
-    vec3 Intensity = (Ambient + Diffuse) * Attenuation * IntensityFloat;
+    vec3 Intensity = (Ambient + Diffuse) * Attenuation;
 
 
     //vec3 Intensity = Ambient + Diffuse;
