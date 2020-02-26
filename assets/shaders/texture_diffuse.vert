@@ -23,6 +23,4 @@ void main()
 	T = normalize(T - dot(T, N) * N);
     vec3 B = normalize(vec3(Transform * vec4(aBitangent, 0.0)));
     TBN = transpose(mat3(T, B, N));
-
-	//Normal = mat3(transpose(inverse(Transform))) * vec3(0, 0, 1);
 }

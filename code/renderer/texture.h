@@ -59,7 +59,7 @@ uint CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 
 uint CreateNormalMapTexture(const char *Path)
 {
-    string FullPath = String("W:/Insosure-Engine/assets/textures/") + Path;
+    string FullPath = String("W:/Insosure-Engine/assets/textures/normals/") + Path;
 
     uint Texture;
     glGenTextures(1, &Texture);
@@ -99,7 +99,7 @@ uint CreateNormalMapTexture(const char *Path)
     }
     else
     {
-        printf("Failed to load a texture! ");
+        printf("Failed to load a normal map! ");
         printf("Name: %s \n", Path);
         stbi_image_free(Data);
     }
@@ -120,7 +120,7 @@ uint GetTexture(const char *Path)
     return CreateTexture(Path, GL_NEAREST, GL_CLAMP_TO_EDGE);
 }
 // NOTE(insolence): Can return -1
-uint GetTexture(const char *Path, bool32 NormalMap)
+uint GetNormal(const char *Path)
 {
     // Query the TextureCache first
     if (Get(TextureCache, Path) != NULL)

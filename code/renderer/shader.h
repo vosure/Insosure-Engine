@@ -163,6 +163,25 @@ SetVec2(const char *Name, shader Shader, vec2 Vector)
     glUniform2f(Location, Vector.X, Vector.Y);
 }
 
+void
+SetPointLight(int i, shader Shader, point_light Light)
+{
+    char Buffer[40];
+
+    sprintf(Buffer, "Lights[%i].Position", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Position.X, Light.Position.Y, Light.Position.Z);
+
+
+    sprintf(Buffer, "Lights[%i].Color", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Color.X, Light.Color.Y, Light.Color.Z);
+
+    sprintf(Buffer, "Lights[%i].Radius", i);
+    glUniform1f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Radius);
+
+    sprintf(Buffer, "Lights[%i].Intensity", i);
+    glUniform1f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Intensity);
+}
+
 internal void
 MakeShaders()
 {

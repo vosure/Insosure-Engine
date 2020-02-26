@@ -72,50 +72,13 @@ DrawTriangle(orthographic_camera *Camera, mat4 Transform, color Color)
 }
 
 void
-DrawRectangleTexturedAmbient(orthographic_camera *Camera, mat4 Transform, uint Texture) //, std::vector<directional_light> Lights, color Color = {0.f, 0.f, 0.f})
-{
-    unsigned int TexturedVAO = 0, TexturedVBO = 0;
-    glGenVertexArrays(1, &TexturedVAO);
-    glBindVertexArray(TexturedVAO);
-
-    float Vertices[] = {
-      // Vertices      TexCoords
-        -0.5f, -0.5f,  0, 0,
-        -0.5f,  0.5f,  0, 1,
-         0.5f, -0.5f,  1, 0,
-         0.5f,  0.5f,  1, 1
-    };
-    glGenBuffers(1, &TexturedVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
-
-    glUseProgram(TexturedAmbientShader.ShaderProgram);
-    glBindVertexArray(TexturedVAO);
-    glBindTexture(GL_TEXTURE_2D, Texture);
-    SetMat4("ViewProjection", TexturedAmbientShader, Camera->ViewProjection);
-    SetMat4("Transform", TexturedAmbientShader, Transform);
-    SetVec3("AmbientLight", TexturedAmbientShader, {0.4f, 0.4f, 0.4f});
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glUseProgram(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glDeleteVertexArrays(1, &TexturedVAO);
-    glDeleteBuffers(1, &TexturedVBO);
-}
-
-void
 DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, uint NormalMap, std::vector<point_light> Lights, color Color = {0.f, 0.f, 0.f})
 {
+    if (!NormalMap)
+    {
+        NormalMap = GetNormal("default.png");
+    }
+
     unsigned int TexturedVAO = 0, TexturedVBO = 0;
 
     // positions
@@ -210,80 +173,20 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
     SetMat4("ViewProjection", TexturedDiffuseShader, Camera->ViewProjection);
     SetMat4("Transform", TexturedDiffuseShader, Transform);
 
-    SetVec3("Light.Position", TexturedDiffuseShader, Lights[0].Position);
-    SetVec3("Light.Color", TexturedDiffuseShader, Lights[0].Color);
-    SetFloat("Light.Radius", TexturedDiffuseShader, Lights[0].Radius);
-    SetFloat("Light.Intensity", TexturedDiffuseShader, Lights[0].Intensity);
+    for (int i = 0; i < Lights.size(); i++)
+    {
+        SetPointLight(i, TexturedDiffuseShader, Lights[i]);
+    }
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDeleteVertexArrays(1, &TexturedVAO);
+    glDeleteBuffers(1, &TexturedVBO);
 }
-
-
-// void
-// DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, uint NormalMap, std::vector<point_light> Lights, color Color = {0.f, 0.f, 0.f})
-// {
-//     unsigned int TexturedVAO = 0, TexturedVBO = 0;
-//     glGenVertexArrays(1, &TexturedVAO);
-//     glBindVertexArray(TexturedVAO);
-
-//     float Vertices[] = {
-//       // Vertices      TexCoords
-//         -0.5f, -0.5f,  0, 0,
-//         -0.5f,  0.5f,  0, 1,
-//          0.5f, -0.5f,  1, 0,
-//          0.5f,  0.5f,  1, 1
-//     };
-//     glGenBuffers(1, &TexturedVBO);
-//     glBindBuffer(GL_ARRAY_BUFFER, TexturedVBO);
-//     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
-
-//     glEnableVertexAttribArray(0);
-//     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-//     glEnableVertexAttribArray(1);
-//     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)8);
-
-//     // glUseProgram(TexturedAmbientShader.ShaderProgram);
-//     // glBindVertexArray(TexturedVAO);
-//     // glBindTexture(GL_TEXTURE_2D, Texture);
-//     // SetMat4("ViewProjection", TexturedAmbientShader, Camera->ViewProjection);
-//     // SetMat4("Transform", TexturedAmbientShader, Transform);
-//     // SetVec3("AmbientLight", TexturedAmbientShader, {0.4f, 0.4f, 0.4f});
-
-//     // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-//     for (int i = 0; i < Lights.size(); i++)
-//     {
-//         glUseProgram(TexturedDiffuseShader.ShaderProgram);
-//         glBindVertexArray(TexturedVAO);
-
-//         glActiveTexture(GL_TEXTURE1);
-//         glBindTexture(GL_TEXTURE_2D, Texture);
-//         SetInt("OurTexture", TexturedDiffuseShader, 1);
-//         glActiveTexture(GL_TEXTURE0);
-//         glBindTexture(GL_TEXTURE_2D, NormalMap);
-//         SetInt("NormalMap", TexturedDiffuseShader, 0);
-
-//         SetMat4("ViewProjection", TexturedDiffuseShader, Camera->ViewProjection);
-//         SetMat4("Transform", TexturedDiffuseShader, Transform);
-
-//         SetVec3("Light.Position", TexturedDiffuseShader, Lights[i].Position);
-//         SetVec3("Light.Color", TexturedDiffuseShader, Lights[i].Color);
-//         SetFloat("Light.Radius", TexturedDiffuseShader, Lights[i].Radius);
-//         SetFloat("Light.Intensity", TexturedDiffuseShader, Lights[i].Intensity);
-
-//         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-//     }
-
-//     glBindVertexArray(0);
-//     glBindBuffer(GL_ARRAY_BUFFER, 0);
-//     glUseProgram(0);
-//     glBindTexture(GL_TEXTURE_2D, 0);
-
-//     glDeleteVertexArrays(1, &TexturedVAO);
-//     glDeleteBuffers(1, &TexturedVBO);
-// }
 
 // FIXME(insolence): Make this instanced rendering
 void

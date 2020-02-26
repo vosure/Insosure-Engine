@@ -33,3 +33,11 @@ string IntToStr(int Num)
 
 	return String(NumToStr);
 }
+
+char* IntToStrStd(int Num)
+{
+    char *NumToStr = (char*)malloc(16);
+	_itoa(Num, NumToStr, 10);
+
+	return NumToStr;
+}

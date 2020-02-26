@@ -2,6 +2,8 @@
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 BrightColor;
 
+const int MAX_POINT_LIGHTS = 64;
+
 in vec2 TexCoord;
 in vec2 FragPos;
 in mat3 TBN;
@@ -17,7 +19,24 @@ struct point_light
     float Intensity;
 };
 
-uniform point_light Light;
+uniform point_light Lights[MAX_POINT_LIGHTS];
+
+vec3 CalcPointLight(point_light PointLight, vec2 FragPos, vec3 Normal)
+{
+    vec3 LightDir = vec3(PointLight.Position.xy - FragPos, PointLight.Position.z);
+
+    float D = length(LightDir);
+    vec3 L = normalize(LightDir);
+
+    vec3 Diffuse = PointLight.Color * max(dot(Normal, L), 0.0);
+
+    vec3 Falloff = vec3(1, 1, PointLight.Radius); // TODO(insolence): Fine-tune these
+    float Attenuation = 1/(Falloff.x + Falloff.y*D + Falloff.z*D*D);
+
+    Diffuse *=  Attenuation * PointLight.Intensity;
+
+    return Diffuse;
+}
 
 void main()
 {
@@ -25,38 +44,19 @@ void main()
     if (Color.a < 0.1)
         discard;
     vec3 Normal = texture(NormalMap, TexCoord).rgb;
-    //vec3 Normal = vec3(0, 0, 1);
-    //Normal = vec3(0, 0, Normal.b);
-
-
-    //vec3 Normal = normalize(vec3(0, 0, 1));
-    vec3 LightDir = vec3(Light.Position.xy - FragPos, Light.Position.z);
-    //LightDir = TBN * LightDir;
-
-    float D = length(LightDir);
-    vec3 L = normalize(LightDir);
     Normal = normalize(Normal * 2 - 1);
+    Normal = normalize(TBN * Normal);
 
-    vec3 Diffuse = (Light.Color) * max(dot(Normal, L), 0.0);
-    vec3 Ambient = vec3(0.1, 0.1, 0.1);
+    vec3 Ambient = vec3(0.25, 0.25, 0.25);
 
-    float IntensityFloat = 2;
+    vec3 ResultLightColor = Ambient;
+    for (int i = 0; i < MAX_POINT_LIGHTS; i++)
+    {
+        if (Lights[i].Intensity > 0)
+            ResultLightColor += CalcPointLight(Lights[i], FragPos, Normal);
+    }
 
-    vec3 Falloff = vec3(1, 0.09, 0.032);
-    float Attenuation = 1/(Falloff.x + Falloff.y*D + Falloff.z*D*D);
-    vec3 Intensity = (Ambient + Diffuse) * Attenuation;
-
-
-    //vec3 Intensity = Ambient + Diffuse;
-    FragColor = Color * vec4(Intensity, 1);
-
-    // float Distance = distance(Light.Position, vec3(FragPos, 0.0));
-    // float LightStrength = 0.0;
-
-    // if (Distance <= Light.Radius)
-    //     LightStrength =  (1.0 - abs(Distance / Light.Radius)) * Light.Radius;
-
-    //FragColor = Color * ((vec4(Light.Color, 1.0) * LightStrength * Light.Intensity) + vec4(0.3, 0.3, 0.3, 1.0));
+    FragColor = Color * vec4(ResultLightColor, 1);
 
 	float Brightness = dot(FragColor.rgb, vec3(0.4126, 0.7152, 0.3222));
     if (Brightness > 1.0)
