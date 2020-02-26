@@ -27,7 +27,7 @@
 #include "renderer/orthographic_camera.h"
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
-#include "renderer/point_light.h"
+#include "renderer/light.h"
 #include "renderer/text.h"
 #include "renderer/particle_system.h"
 #include "renderer/renderer.cpp"
@@ -180,11 +180,20 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     World.Player.Pos = vec2{0, 0};
     World.Player.Power = 32;
 
-    std::vector<point_light> Lights;
-    Lights.push_back(PointLight({2.f, 2.f, 1.f}, {3, 0.4f, 3.75f}, 1.3f, 2.f));
-    Lights.push_back(PointLight({10, 3, 1}, {0.01, 2.5f, 1.6f}, 2.7f, 5.2f));
-    Lights.push_back(PointLight({7, 9, 1}, {3.2, 2.3f, 0.4f}, 2.5f, 3.f));
-    Lights.push_back(PointLight({4, 4, 1}, {0.f, 2.7f, 0.2f}, 2.5f, 4.3f));
+    std::vector<dir_light> DirLights;
+    std::vector<point_light> PointLights;
+    std::vector<spotlight_light> SpotLights;
+
+    color Ambient = CORAL * 0.05f;
+    color Specular = WHITE_SMOKE;
+
+    vec3 CLQ = {1.0f, 0.09f, 0.032f};
+
+
+    PointLights.push_back(PointLight({5.0f, 5.0f, 1.0f}, Ambient, {0.8f, 0.8f, 0.8f}, Specular, CLQ));
+    //PointLights.push_back(PointLight({4.f, 4.f, 1.f}, Ambient, ORANGE, Specular, CLQ));
+    //PointLights.push_back(PointLight({6.f, 6.f, 1.f}, Ambient, AQUA, Specular, CLQ));
+    //PointLights.push_back(PointLight({2.f, 8.f, 1.f}, Ambient, LIME, Specular, CLQ));
 
     std::vector<particle> Particles(100);
 
@@ -214,30 +223,36 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         {
             for (int X = CurrentTilePos.X - 10; X < CurrentTilePos.X + 10; X++)
             {
-                if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
-                    continue;
+                if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)                    continue;
 
                 int TileValue = World.Tiles[X][Y].Value;
                 bool TileVisible = World.Tiles[X][Y].Visible;
 
                 if ((TileValue == 0 || TileValue == 1) && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f), GetTexture("rock.png"), GetNormal("rock_normal.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
                 }
                 else if (TileValue == 2 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f), GetTexture("rock.png"), GetNormal("rock_normal.png"), Lights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f), GetTexture("ghost.png"), GetNormal("ghost_normal.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("ghost.png"), GetNormal("ghost_normal.png"), DirLights, PointLights, SpotLights);
                 }
                 else if (TileValue == 3 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f), GetTexture("rock.png"), GetNormal("rock_normal.png"), Lights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f), GetTexture("enemy2.png"), GetNormal("enemy2_normal.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("enemy2.png"), GetNormal("enemy2_normal.png"), DirLights, PointLights, SpotLights);
                 }
                 else if (TileValue == 4 && TileVisible)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f), GetTexture("rock.png"), GetNormal("rock_normal.png"), Lights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f), GetTexture("treasure.png"), GetNormal("treasure_normal.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("treasure.png"), GetNormal("treasure_normal.png"), DirLights, PointLights, SpotLights);
                 }
                 else if (!TileVisible)
                 {
@@ -246,7 +261,8 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
                 if (X == World.Player.Pos.X && Y == World.Player.Pos.Y)
                 {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f), GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), Lights);
+                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights);
                 }
             }
         }

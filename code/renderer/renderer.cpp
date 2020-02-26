@@ -72,7 +72,8 @@ DrawTriangle(orthographic_camera *Camera, mat4 Transform, color Color)
 }
 
 void
-DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, uint NormalMap, std::vector<point_light> Lights, color Color = {0.f, 0.f, 0.f})
+DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, uint NormalMap,
+                      std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights)
 {
     if (!NormalMap)
     {
@@ -170,12 +171,24 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
     glBindTexture(GL_TEXTURE_2D, NormalMap);
     SetInt("NormalMap", TexturedDiffuseShader, 0);
 
+    vec3 ViewPos = {vec3{Camera->Position.X, Camera->Position.Y, 1.0}};
+    SetVec3("ViewPos", TexturedDiffuseShader, ViewPos);
+    SetFloat("Shininess", TexturedDiffuseShader, 32.0f);
+
     SetMat4("ViewProjection", TexturedDiffuseShader, Camera->ViewProjection);
     SetMat4("Transform", TexturedDiffuseShader, Transform);
 
-    for (int i = 0; i < Lights.size(); i++)
+    for (int i = 0; i < DirLights.size(); i++)
     {
-        SetPointLight(i, TexturedDiffuseShader, Lights[i]);
+        SetDirLight(i, TexturedDiffuseShader, DirLights[i]);
+    }
+        for (int i = 0; i < PointLights.size(); i++)
+    {
+        SetPointLight(i, TexturedDiffuseShader, PointLights[i]);
+    }
+        for (int i = 0; i < SpotLights.size(); i++)
+    {
+        SetSpotLight(i, TexturedDiffuseShader, SpotLights[i]);
     }
 
     glDrawArrays(GL_TRIANGLES, 0, 6);

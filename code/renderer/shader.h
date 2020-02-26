@@ -164,23 +164,74 @@ SetVec2(const char *Name, shader Shader, vec2 Vector)
 }
 
 void
+SetDirLight(int i, shader Shader, dir_light Light)
+{
+    char Buffer[40];
+
+    sprintf(Buffer, "DirLights[%i].Direction", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Direction.X, Light.Direction.Y, Light.Direction.Z);
+
+    sprintf(Buffer, "DirLights[%i].Ambient", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Ambient.X, Light.Ambient.Y, Light.Ambient.Z);
+
+    sprintf(Buffer, "DirLights[%i].Diffuse", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Diffuse.X, Light.Diffuse.Y, Light.Diffuse.Z);
+
+    sprintf(Buffer, "DirLights[%i].Specular", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Specular.X, Light.Specular.Y, Light.Specular.Z);
+}
+
+void
 SetPointLight(int i, shader Shader, point_light Light)
 {
     char Buffer[40];
 
-    sprintf(Buffer, "Lights[%i].Position", i);
+    sprintf(Buffer, "PointLights[%i].Position", i);
     glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Position.X, Light.Position.Y, Light.Position.Z);
 
+    sprintf(Buffer, "PointLights[%i].Ambient", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Ambient.X, Light.Ambient.Y, Light.Ambient.Z);
 
-    sprintf(Buffer, "Lights[%i].Color", i);
-    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Color.X, Light.Color.Y, Light.Color.Z);
+    sprintf(Buffer, "PointLights[%i].Diffuse", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Diffuse.X, Light.Diffuse.Y, Light.Diffuse.Z);
 
-    sprintf(Buffer, "Lights[%i].Radius", i);
-    glUniform1f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Radius);
+    sprintf(Buffer, "PointLights[%i].Specular", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Specular.X, Light.Specular.Y, Light.Specular.Z);
 
-    sprintf(Buffer, "Lights[%i].Intensity", i);
-    glUniform1f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Intensity);
+    sprintf(Buffer, "PointLights[%i].CLQ", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.CLQ.X, Light.CLQ.Y, Light.CLQ.Z);
 }
+
+void
+SetSpotLight(int i, shader Shader, spotlight_light Light)
+{
+    char Buffer[40];
+
+    sprintf(Buffer, "SpotLights[%i].Position", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Position.X, Light.Position.Y, Light.Position.Z);
+
+    sprintf(Buffer, "SpotLights[%i].Direction", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Direction.X, Light.Direction.Y, Light.Direction.Z);
+
+    sprintf(Buffer, "SpotLights[%i].CutOff", i);
+    SetFloat(Buffer, Shader, Light.CutOff);
+
+    sprintf(Buffer, "SpotLights[%i].OuterCutOff", i);
+    SetFloat(Buffer, Shader, Light.OuterCutOff);
+
+    sprintf(Buffer, "SpotLights[%i].Ambient", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Ambient.X, Light.Ambient.Y, Light.Ambient.Z);
+
+    sprintf(Buffer, "SpotLights[%i].Diffuse", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Diffuse.X, Light.Diffuse.Y, Light.Diffuse.Z);
+
+    sprintf(Buffer, "SpotLights[%i].Specular", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Specular.X, Light.Specular.Y, Light.Specular.Z);
+
+    sprintf(Buffer, "PointLights[%i].CLQ", i);
+    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.CLQ.X, Light.CLQ.Y, Light.CLQ.Z);
+}
+
 
 internal void
 MakeShaders()
