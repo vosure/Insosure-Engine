@@ -9,6 +9,7 @@ struct orthographic_camera
 
     vec3 Position = {};
     float Rotation = 0.f;
+    float ZoomLevel;
 };
 typedef orthographic_camera camera_2D;
 

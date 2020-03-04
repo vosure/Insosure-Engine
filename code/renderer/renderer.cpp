@@ -175,6 +175,10 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
     SetVec3("ViewPos", TexturedDiffuseShader, ViewPos);
     SetFloat("Shininess", TexturedDiffuseShader, 32.0f);
 
+    SetFloat("Constant", TexturedDiffuseShader, 1.0f);
+    SetFloat("Linear", TexturedDiffuseShader, 0.032f);
+    SetFloat("Quadratic", TexturedDiffuseShader, 0.09f);
+
     SetMat4("ViewProjection", TexturedDiffuseShader, Camera->ViewProjection);
     SetMat4("Transform", TexturedDiffuseShader, Transform);
 
@@ -182,11 +186,11 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
     {
         SetDirLight(i, TexturedDiffuseShader, DirLights[i]);
     }
-        for (int i = 0; i < PointLights.size(); i++)
+    for (int i = 0; i < PointLights.size(); i++)
     {
         SetPointLight(i, TexturedDiffuseShader, PointLights[i]);
     }
-        for (int i = 0; i < SpotLights.size(); i++)
+    for (int i = 0; i < SpotLights.size(); i++)
     {
         SetSpotLight(i, TexturedDiffuseShader, SpotLights[i]);
     }
@@ -362,69 +366,69 @@ RenderTextOnScreen(std::string Text, float X, float Y, float Scale, color Color)
     glDeleteBuffers(1, &TextVBO);
 }
 
-// // FIXME(insolence): Fix this to work properly with world coords
-// void
-// RenderText(orthographic_camera *Camera, std::string Text, float X, float Y, float Scale, color Color)
-// {
-//     uint TextVAO = 0, TextVBO = 0;
-//     if (!TextVAO)
-//     {
-//         glGenVertexArrays(1, &TextVAO);
-//         glGenBuffers(1, &TextVBO);
-//         glBindVertexArray(TextVAO);
-//         glBindBuffer(GL_ARRAY_BUFFER, TextVBO);
-//         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-//         glEnableVertexAttribArray(0);
-//         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
-//         glBindBuffer(GL_ARRAY_BUFFER, 0);
-//         glBindVertexArray(0);
-//     }
+void
+RenderText(orthographic_camera *Camera, std::string Text, float X, float Y, float Scale, color Color)
+{
+    float DefaultScale = 5.f; // NOTE(insolence): This must be removed or just self-adjusted
 
-//     X *= SCREEN_WIDTH;
-//     Y *= SCREEN_HEIGHT;
+    uint TextVAO = 0, TextVBO = 0;
+    if (!TextVAO)
+    {
+        glGenVertexArrays(1, &TextVAO);
+        glGenBuffers(1, &TextVBO);
+        glBindVertexArray(TextVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, TextVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
 
-//     glUseProgram(TextShader.ShaderProgram);
-//     SetVec3("TextColor", TextShader, Color);
-//     SetMat4("ViewProjection", TextShader, Camera->ViewProjection);
-//     glBindVertexArray(TextVAO);
+    mat4 Projection = Ortho(0.f, SCREEN_WIDTH, 0.f, SCREEN_WIDTH, 0.f, 1.f);
 
-//     // Iterate through all characters
-//     std::string::const_iterator c;
-//     for (c = Text.begin(); c != Text.end(); c++)
-//     {
-//         Character Ch = Characters[*c];
+    glUseProgram(TextShader.ShaderProgram);
+    SetVec3("TextColor", TextShader, Color);
+    SetMat4("ViewProjection", TextShader, Camera->ViewProjection);
+    glBindVertexArray(TextVAO);
 
-//         GLfloat Xpos = (X + Ch.Bearing.X * Scale);
-//         GLfloat Ypos = (Y - (Ch.Size.Y - Ch.Bearing.Y) * Scale);
+    // Iterate through all characters
+    std::string::const_iterator c;
+    for (c = Text.begin(); c != Text.end(); c++)
+    {
+        Character Ch = Characters[*c];
 
-//         GLfloat W = (Ch.Size.X * Scale);
-//         GLfloat H = (Ch.Size.Y * Scale);
-//         // Update VBO for each character
-//         GLfloat Vertices[6][4] = {
-//             { Xpos,     Ypos + H,   0.0, 0.0 },
-//             { Xpos,     Ypos,       0.0, 1.0 },
-//             { Xpos + W, Ypos,       1.0, 1.0 },
+        GLfloat Xpos = X + (Ch.Bearing.X * (DefaultScale + Scale) / SCREEN_WIDTH) - 0.49f;
+        GLfloat Ypos = Y - ((Ch.Size.Y - Ch.Bearing.Y) * (DefaultScale + Scale) / SCREEN_HEIGHT) - 0.49f;
 
-//             { Xpos,     Ypos + H,   0.0, 0.0 },
-//             { Xpos + W, Ypos,       1.0, 1.0 },
-//             { Xpos + W, Ypos + H,   1.0, 0.0 }
-//         };
-//         glBindTexture(GL_TEXTURE_2D, Ch.TextureID);
-//         glBindBuffer(GL_ARRAY_BUFFER, TextVBO);
-//         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);
-//         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        GLfloat W = (Ch.Size.X * DefaultScale * Scale)/SCREEN_WIDTH;
+        GLfloat H = (Ch.Size.Y * DefaultScale * Scale)/SCREEN_HEIGHT;
+        // Update VBO for each character
+        GLfloat Vertices[6][4] = {
+            { Xpos,     Ypos + H,   0.0, 0.0 },
+            { Xpos,     Ypos,       0.0, 1.0 },
+            { Xpos + W, Ypos,       1.0, 1.0 },
 
-//         glDrawArrays(GL_TRIANGLES, 0, 6);
-//         // NOTE(insolence): Advance cursors for next glyph
-//         X += (Ch.Advance >> 6) * Scale; // NOTE(insolence): Bitshift by 6 to get value in pixels (2^6 = 64)
-//     }
-//     glBindVertexArray(0);
-//     glBindTexture(GL_TEXTURE_2D, 0);
-//     glUseProgram(0);
+            { Xpos,     Ypos + H,   0.0, 0.0 },
+            { Xpos + W, Ypos,       1.0, 1.0 },
+            { Xpos + W, Ypos + H,   1.0, 0.0 }
+        };
+        glBindTexture(GL_TEXTURE_2D, Ch.TextureID);
+        glBindBuffer(GL_ARRAY_BUFFER, TextVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-//     glDeleteVertexArrays(1, &TextVAO);
-//     glDeleteBuffers(1, &TextVBO);
-// }
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // NOTE(insolence): Advance cursors for next glyph
+        X += (Ch.Advance >> 6) * DefaultScale * Scale / SCREEN_WIDTH; // NOTE(insolence): Bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+
+    glDeleteVertexArrays(1, &TextVAO);
+    glDeleteBuffers(1, &TextVBO);
+}
 
 void
 RenderScreenTexture()
@@ -457,10 +461,6 @@ RenderScreenTexture()
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
-    //glActiveTexture(0);
-    //glBindTexture(GL_TEXTURE_2D, 0);
-    //glActiveTexture(1);
-    //glBindTexture(GL_TEXTURE_2D, 0);
 
     glDeleteVertexArrays(1, &ScreenVAO);
     glDeleteBuffers(1, &ScreenVBO);
@@ -486,12 +486,12 @@ void
 ApplyHDR(int ScreenTexture, int BloomTexture, float Exposure)
 {
     glUseProgram(HDRShader.ShaderProgram);
-    //SetInt("Scene", HDRShader, 2);
+
     glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_2D, ScreenTexture);
-    //SetInt("BloomBlur", HDRShader, 0);
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_2D, BloomTexture);
+
     SetFloat("Exposure", HDRShader, Exposure);
 
     RenderScreenTexture();

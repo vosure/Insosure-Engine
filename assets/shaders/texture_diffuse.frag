@@ -28,8 +28,9 @@ struct point_light
     vec3 Diffuse;
     vec3 Specular;
 
-    vec3 CLQ; // NOTE(vosure): Constant, Linear, Quadratic coefs.
+    //vec3 CLQ; // NOTE(vosure): Constant, Linear, Quadratic coefs.
 };
+
 
 struct spotlight_light
 {
@@ -54,6 +55,10 @@ uniform vec3 ViewPos;
 
 uniform float Shininess;
 
+uniform float Constant;
+uniform float Linear;
+uniform float Quadratic;
+
 // calculates the color when using a directional light.
 vec3 CalcDirLight(dir_light Light, vec3 Normal, vec3 ViewDir)
 {
@@ -73,8 +78,7 @@ vec3 CalcDirLight(dir_light Light, vec3 Normal, vec3 ViewDir)
 // calculates the color when using a point light.
 vec3 CalcPointLight(point_light Light, vec3 Normal, vec2 FragPos, vec3 ViewDir)
 {
-
-    vec3 LightDir = normalize(vec3(Light.Position.xy - FragPos, 1));
+    vec3 LightDir = normalize(vec3(Light.Position.xy - FragPos, Light.Position.z));
     // diffuse shading
     float Diff = max(dot(Normal, LightDir), 0.0);
     // specular shading
@@ -82,7 +86,8 @@ vec3 CalcPointLight(point_light Light, vec3 Normal, vec2 FragPos, vec3 ViewDir)
     //float Spec = pow(max(dot(ViewDir, ReflectDir), 0.0), Shininess);
     // attenuation
     float Distance = length(vec3(Light.Position.xy - FragPos, Light.Position.z));
-    float Attenuation = 1.0 / (1 + Light.CLQ.y * Distance + Light.CLQ.z * (Distance * Distance));
+    float Attenuation = 1.0 / (Constant + Linear*Distance + Quadratic*Distance*Distance);
+    //float Attenuation = 1.0 / (Constant + Linear*Distance + Quadratic*Distance*Distance);
     // combine results
     vec3 Ambient = Light.Ambient;
     vec3 Diffuse = Light.Diffuse* Diff * vec3(texture(OurTexture, TexCoord));
@@ -124,6 +129,9 @@ void main()
     vec3 Normal = texture(NormalMap, TexCoord).rgb;
     Normal = normalize(Normal * 2 - 1);
     Normal = normalize(Normal);
+
+    if (texture(OurTexture, TexCoord).a < 0.125)
+        discard;
 
     vec3 ViewDir = normalize(ViewPos - vec3(FragPos, 0.0));
 

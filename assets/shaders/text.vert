@@ -1,5 +1,5 @@
 #version 330 core
-layout (location = 0) in vec4 Vertex; // <vec2 pos, vec2 tex>
+layout (location = 0) in vec4 Vertex; // NOTE(insolence): vec4<vec2 pos, vec2 tex>
 
 out vec2 TexCoords;
 

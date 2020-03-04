@@ -72,6 +72,12 @@ struct tile
     bool Accessible; // TODO(insolence): Rename
 };
 
+#define EMPTY_TILE 0
+#define GHOST 2
+#define MONSTER 3
+#define TREASURE 4
+#define OBSTACLE 5
+
 // NOTE(insolence): Game state
 struct game_world
 {

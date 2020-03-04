@@ -93,15 +93,17 @@ internal int
 GetLocation(const char *Name, shader Shader)
 {
     uint Location;
-    if (Get(Shader.UniformCache, Name) == NULL)
-    {
-        Location = glGetUniformLocation(Shader.ShaderProgram, Name);
-        Insert(Shader.UniformCache, Name, Location);
-    }
-    else
-    {
-       Location = Get(Shader.UniformCache, Name);
-    }
+    // if (Get(Shader.UniformCache, Name) == NULL)
+    // {
+    //     Location = glGetUniformLocation(Shader.ShaderProgram, Name);
+    //     Insert(Shader.UniformCache, Name, Location);
+    // }
+    // else
+    // {
+    //    Location = Get(Shader.UniformCache, Name);
+    // }
+
+    Location = glGetUniformLocation(Shader.ShaderProgram, Name);
 
     return Location;
 }
@@ -187,7 +189,8 @@ SetPointLight(int i, shader Shader, point_light Light)
     char Buffer[40];
 
     sprintf(Buffer, "PointLights[%i].Position", i);
-    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Position.X, Light.Position.Y, Light.Position.Z);
+    SetVec3(Buffer, Shader, Light.Position);
+    //glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Position.X, Light.Position.Y, Light.Position.Z);
 
     sprintf(Buffer, "PointLights[%i].Ambient", i);
     glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Ambient.X, Light.Ambient.Y, Light.Ambient.Z);
@@ -198,8 +201,9 @@ SetPointLight(int i, shader Shader, point_light Light)
     sprintf(Buffer, "PointLights[%i].Specular", i);
     glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Specular.X, Light.Specular.Y, Light.Specular.Z);
 
-    sprintf(Buffer, "PointLights[%i].CLQ", i);
-    glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.CLQ.X, Light.CLQ.Y, Light.CLQ.Z);
+    //sprintf(Buffer, "PointLights[%i].CLQ", i);
+    //glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.CLQ.X, Light.CLQ.Y, Light.CLQ.Z);
+    //SetVec3(Buffer, Shader, Light.CLQ);
 }
 
 void
