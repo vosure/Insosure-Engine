@@ -59,6 +59,8 @@ uniform float Constant;
 uniform float Linear;
 uniform float Quadratic;
 
+uniform vec3 CustomColor;
+
 // calculates the color when using a directional light.
 vec3 CalcDirLight(dir_light Light, vec3 Normal, vec3 ViewDir)
 {
@@ -149,6 +151,7 @@ void main()
     // {
     //     ResultLightColor += CalcSpotLight(SpotLights[i], Normal, FragPos, ViewDir);
     // }
+    ResultLightColor += CustomColor;
 
     FragColor = vec4(ResultLightColor, 1);
 

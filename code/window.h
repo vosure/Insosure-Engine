@@ -1,3 +1,4 @@
+#pragma once
 
 internal GLFWwindow*
 SetUpWindow(int Width, int Height, char *WindowName, bool SetFullScreen)
@@ -30,6 +31,8 @@ SetUpWindow(int Width, int Height, char *WindowName, bool SetFullScreen)
     SetInputCallbacks(Window);
     CurrentWidth = Width;
     CurrentHeight = Height;
+
+    glfwSetCursorPos(Window, CurrentWidth/2, CurrentHeight/2);
 
     return Window;
 }
@@ -66,4 +69,16 @@ SwitchFullscreen(GLFWwindow *Window)
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+vec2 GetCursorPos(GLFWwindow *Window)
+{
+    vec2 CursorPos;
+
+    double X, Y;
+    glfwGetCursorPos(Window, &X, &Y);
+    CursorPos.X = (float)X;
+    CursorPos.Y = (float)Y;
+
+    return CursorPos;
 }

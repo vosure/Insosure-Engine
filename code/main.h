@@ -1,7 +1,9 @@
 #pragma once
-#include <iostream>
 
+#include <iostream>
+#include <vector>
 #include <stdio.h>
+
 #include "math/linear_math.h"
 
 #define internal static
@@ -9,6 +11,11 @@
 #define global_variable static
 #define bool32 int
 #define uint unsigned int
+
+#if 0
+    #define real32 float
+    #define real64 double
+#endif
 
 // NOTE(insolence): Useful Macros
 #define Assert(Expression) if (!(Expression)) { *(int*)0 = 0; }
@@ -47,6 +54,8 @@ struct postprocessing_effects
     global_variable int WINDOW_HEIGHT = 720;
 #endif
 
+global_variable const float RESOLUTION = 16.f/9.f;
+
 global_variable int SCREEN_WIDTH;
 global_variable int SCREEN_HEIGHT;
 
@@ -58,18 +67,46 @@ global_variable bool IsFullscreen = false;
 global_variable const int WORLD_WIDTH = 300;
 global_variable const int WORLD_HEIGHT = 300;
 
-struct player
+struct unit
 {
     vec2 Pos;
     vec2 OldPos;
     int Power;
+
+    // uint Texture;
 };
+
+struct player
+{
+    const static int UnitsNum = 2;
+    unit Units[UnitsNum];
+    int UnitChosen; // NOTE(insolence): Which unit we currently control, if -1 then no unit chosen
+};
+#define NO_UNIT -1
 
 struct tile
 {
     int Value;
-    bool Visible; // NOTE(insolence): Is it covered by the fog of war?
-    bool Accessible; // TODO(insolence): Rename
+    bool Occupied;
+};
+
+//struct orthographic_camera;
+
+// TODO(insolence): Later make these little mini-maps of their own
+struct battleground
+{
+    //orthographic_camera *BattleCamera;
+
+    tile Field[10][10];
+    vec2 PlayerPos;
+    vec2 OldPlayerPos;
+};
+
+enum game_mode
+{
+    MENU = 0,
+    GLOBAL = 1,
+    BATTLE = 2,
 };
 
 #define EMPTY_TILE 0
@@ -83,4 +120,8 @@ struct game_world
 {
     tile Tiles[WORLD_WIDTH][WORLD_HEIGHT];
     player Player;
+
+    game_mode Mode;
+    std::vector<battleground> ActiveBattlegrounds;
+    int ActiveBattleNum; // NOTE(insolence): -1 if no battle
 };

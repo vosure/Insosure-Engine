@@ -3,8 +3,8 @@
 
 struct mouse_input
 {
-    bool MouseButtons[MAX_MOUSE_BUTTONS];
-    bool MouseButtonsProcessed[MAX_MOUSE_BUTTONS];
+    bool Buttons[MAX_MOUSE_BUTTONS];
+    bool ButtonsProcessed[MAX_MOUSE_BUTTONS];
     vec2 Position;
 };
 
@@ -32,8 +32,15 @@ IsKeyProcessed(unsigned int Keycode)
 internal bool
 IsMouseButtonPressed(unsigned int Button)
 {
-    return MouseInput.MouseButtons[Button];
+    return MouseInput.Buttons[Button];
 }
+
+internal bool
+IsMouseButtonProcessed(unsigned int Button)
+{
+    return MouseInput.ButtonsProcessed[Button];
+}
+
 internal vec2
 GetMousePosition()
 {
@@ -41,12 +48,12 @@ GetMousePosition()
 }
 
 void
-keyboard_callback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mods)
+KeyboardCallback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mods)
 {
     if (Key >= 0 && Key < MAX_KEYBOARD_KEYS)
     {
         if (Action == GLFW_PRESS)
-            KeyboardInput.Keys[Key] = true;      
+            KeyboardInput.Keys[Key] = true;
         else if (Action == GLFW_RELEASE)
         {
             KeyboardInput.Keys[Key] = false;
@@ -55,31 +62,31 @@ keyboard_callback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mod
     }
 }
 
-void 
-mouse_button_callback(GLFWwindow *Window, int Button, int Action, int Mods)
+void
+MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int Mods)
 {
     if (Button >= 0 && Button < MAX_KEYBOARD_KEYS)
     {
         if (Action == GLFW_PRESS)
-            MouseInput.MouseButtons[Button] = true;
+            MouseInput.Buttons[Button] = true;
         else if (Action == GLFW_RELEASE)
         {
-            MouseInput.MouseButtons[Button] = false;
-            MouseInput.MouseButtonsProcessed[Button] = false;
+            MouseInput.Buttons[Button] = false;
+            MouseInput.ButtonsProcessed[Button] = false;
         }
     }
 }
 
-void 
-mouse_cursor_callback(GLFWwindow *Window, double XPos, double YPos)
+void
+MouseCursorCallback(GLFWwindow *Window, double XPos, double YPos)
 {
     MouseInput.Position = vec2{(float)XPos, (float)YPos};
 }
 
-internal void 
+internal void
 SetInputCallbacks(GLFWwindow *Window)
 {
-    glfwSetKeyCallback(Window, keyboard_callback);
-    glfwSetMouseButtonCallback(Window, mouse_button_callback);
-    glfwSetCursorPosCallback(Window, mouse_cursor_callback);
+    glfwSetKeyCallback(Window, KeyboardCallback);
+    glfwSetMouseButtonCallback(Window, MouseButtonCallback);
+    glfwSetCursorPosCallback(Window, MouseCursorCallback);
 }

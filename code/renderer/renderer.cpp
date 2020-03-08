@@ -73,7 +73,7 @@ DrawTriangle(orthographic_camera *Camera, mat4 Transform, color Color)
 
 void
 DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, uint NormalMap,
-                      std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights)
+                      std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights, color Color = vec3{0, 0, 0})
 {
     if (!NormalMap)
     {
@@ -181,6 +181,7 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
 
     SetMat4("ViewProjection", TexturedDiffuseShader, Camera->ViewProjection);
     SetMat4("Transform", TexturedDiffuseShader, Transform);
+    SetVec3("CustomColor", TexturedDiffuseShader, Color);
 
     for (int i = 0; i < DirLights.size(); i++)
     {

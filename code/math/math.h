@@ -174,3 +174,8 @@ Hash(unsigned char *Str)
 
     return Hash;
 }
+
+float MapFloat(float InMin, float InMax, float OutMin, float OutMax, float NumToMap)
+{
+  return (NumToMap - InMin) * (OutMax - OutMin) / (InMax - InMin) + OutMin;
+}
