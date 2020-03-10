@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "math/linear_math.h"
+#include "renderer/orthographic_camera.h"
 
 #define internal static
 #define local_persist static
@@ -89,13 +90,17 @@ struct tile
     int Value;
     bool Occupied;
 };
-
-//struct orthographic_camera;
+#define EMPTY_TILE 0
+#define GHOST 2
+#define MONSTER 3
+#define TREASURE 4
+#define OBSTACLE 5
 
 // TODO(insolence): Later make these little mini-maps of their own
-struct battleground
+struct battlefield
 {
-    //orthographic_camera *BattleCamera;
+    orthographic_camera BattleCamera;
+    vec2 BattleLocation; // NOTE(insolence): Position of a battlefield on a global map
 
     tile Field[10][10];
     vec2 PlayerPos;
@@ -109,19 +114,14 @@ enum game_mode
     BATTLE = 2,
 };
 
-#define EMPTY_TILE 0
-#define GHOST 2
-#define MONSTER 3
-#define TREASURE 4
-#define OBSTACLE 5
-
 // NOTE(insolence): Game state
 struct game_world
 {
+    game_mode Mode;
     tile Tiles[WORLD_WIDTH][WORLD_HEIGHT];
     player Player;
 
-    game_mode Mode;
-    std::vector<battleground> ActiveBattlegrounds;
+    std::vector<battlefield> ActiveBattlefields;
     int ActiveBattleNum; // NOTE(insolence): -1 if no battle
 };
+#define NO_BATTLE -1

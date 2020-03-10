@@ -10,7 +10,6 @@
 
 #include "utils/string.cpp"
 #include "utils/file_utils.h"
-#include "math/linear_math.h"
 #include "math/math.h"
 #include "random/random.h"
 #include "math/perlin.h"
@@ -22,7 +21,6 @@
 #include "debug.h"
 #include "renderer/texture.h"
 #include "renderer/sprite.h"
-#include "renderer/orthographic_camera.h"
 #include "physics/physics.h"
 #include "renderer/framebuffer.h"
 #include "renderer/light.h"
@@ -59,140 +57,141 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         KeyboardInput.KeysProcessed[GLFW_KEY_F12] = true;
     }
 
-    if (IsKeyPressed(GLFW_KEY_ESCAPE))
-    {
-        glfwSetWindowShouldClose(Window, true);
-    }
 
-    float CameraSpeed = 4.f;
-    if (IsKeyPressed(GLFW_KEY_UP))
+    if (World->Mode == GLOBAL)
     {
-        Camera->Position.Y -= CameraSpeed * Dt;
-    }
-    if (IsKeyPressed(GLFW_KEY_DOWN))
-    {
-        Camera->Position.Y += CameraSpeed * Dt;
-    }
-    if (IsKeyPressed(GLFW_KEY_LEFT))
-    {
-        Camera->Position.X += CameraSpeed * Dt;
-    }
-    if (IsKeyPressed(GLFW_KEY_RIGHT))
-    {
-        Camera->Position.X -= CameraSpeed * Dt;
-    }
-
-    // NOTE(insolence): Moving the camera with the mouse cursor
-    float ScrollingSpeed = 1.f;
-    vec2 MousePosition = GetCursorPos(Window);
-    if (MousePosition.X <= 75)
-    {
-        Camera->Position.X += CameraSpeed * Dt * ScrollingSpeed;
-    }
-    if (MousePosition.Y <= 75)
-    {
-        Camera->Position.Y -= CameraSpeed * Dt * ScrollingSpeed;
-    }
-    if (MousePosition.X >= CurrentWidth - 75)
-    {
-        Camera->Position.X -= CameraSpeed * Dt * ScrollingSpeed;
-    }
-    if (MousePosition.Y >= CurrentHeight - 75)
-    {
-        Camera->Position.Y += CameraSpeed * Dt * ScrollingSpeed;
-    }
-
-    // if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
-    // {
-    //     Camera->Rotation += 1.f;
-    // }
-    // else if (glfwGetKey(Window, GLFW_KEY_E) == GLFW_PRESS)
-    // {
-    //     Camera->Rotation -= 1.f;
-    // }
-
-    // int PlayerX = World->Player.Pos.X;
-    // int PlayerY = World->Player.Pos.Y;
-    // if (IsKeyPressed(GLFW_KEY_W) && !IsKeyProcessed(GLFW_KEY_W))
-    // {
-    //     if (World->Tiles[PlayerX][PlayerY+1].Value != OBSTACLE)
-    //     {
-    //         World->Player.OldPos = World->Player.Pos;
-    //         World->Player.Pos.Y++;
-    //         PlayerMoved = true;
-    //         KeyboardInput.KeysProcessed[GLFW_KEY_W] = true;
-    //     }
-    // }
-    // else if (IsKeyPressed(GLFW_KEY_S) && !IsKeyProcessed(GLFW_KEY_S))
-    // {
-    //     if (World->Tiles[PlayerX][PlayerY-1].Value != OBSTACLE)
-    //     {
-    //         World->Player.OldPos = World->Player.Pos;
-    //         World->Player.Pos.Y--;
-    //         PlayerMoved = true;
-    //         KeyboardInput.KeysProcessed[GLFW_KEY_S] = true;
-    //     }
-    // }
-    // if (IsKeyPressed(GLFW_KEY_A) && !IsKeyProcessed(GLFW_KEY_A))
-    // {
-    //     if (World->Tiles[PlayerX-1][PlayerY].Value != OBSTACLE)
-    //     {
-    //         World->Player.OldPos = World->Player.Pos;
-    //         World->Player.Pos.X--;
-    //         PlayerMoved = true;
-    //         KeyboardInput.KeysProcessed[GLFW_KEY_A] = true;
-    //     }
-    // }
-    // else if (IsKeyPressed(GLFW_KEY_D) && !IsKeyProcessed(GLFW_KEY_D))
-    // {
-    //     if (World->Tiles[PlayerX+1][PlayerY].Value != OBSTACLE)
-    //     {
-    //         World->Player.OldPos = World->Player.Pos;
-    //         World->Player.Pos.X++;
-    //         PlayerMoved = true;
-    //         KeyboardInput.KeysProcessed[GLFW_KEY_D] = true;
-    //     }
-    // }
-
-    // NOTE(insolence): Mouse input
-    if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_LEFT))
-    {
-        vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
-        for (int i = 0; i < World->Player.UnitsNum; i++)
+        float CameraSpeed = 4.f;
+        if (IsKeyPressed(GLFW_KEY_UP))
         {
-            if ((int)World->Player.Units[i].Pos.X == (int)CursorWorldPos.X &&
-                (int)World->Player.Units[i].Pos.Y == (int)CursorWorldPos.Y)
-            {
-                World->Player.UnitChosen = i;
-                break;
-            }
-            else
-            {
-                World->Player.UnitChosen = NO_UNIT;
-            }
+            Camera->Position.Y -= CameraSpeed * Dt;
         }
-    }
+        else if (IsKeyPressed(GLFW_KEY_DOWN))
+        {
+            Camera->Position.Y += CameraSpeed * Dt;
+        }
+        if (IsKeyPressed(GLFW_KEY_LEFT))
+        {
+            Camera->Position.X += CameraSpeed * Dt;
+        }
+        else if (IsKeyPressed(GLFW_KEY_RIGHT))
+        {
+            Camera->Position.X -= CameraSpeed * Dt;
+        }
 
-    if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_RIGHT))
-    {
-        int CurrentUnit = World->Player.UnitChosen;
-        if (CurrentUnit != NO_UNIT)
+        // NOTE(insolence): Moving the camera with the mouse cursor
+        float ScrollingSpeed = 1.5f;
+        vec2 MousePosition = GetCursorPos(Window);
+        if (MousePosition.X <= 75)
+        {
+            Camera->Position.X += CameraSpeed * Dt * ScrollingSpeed;
+        }
+        if (MousePosition.Y <= 75)
+        {
+            Camera->Position.Y -= CameraSpeed * Dt * ScrollingSpeed;
+        }
+        if (MousePosition.X >= CurrentWidth - 75)
+        {
+            Camera->Position.X -= CameraSpeed * Dt * ScrollingSpeed;
+        }
+        if (MousePosition.Y >= CurrentHeight - 75)
+        {
+            Camera->Position.Y += CameraSpeed * Dt * ScrollingSpeed;
+        }
+
+        // TODO(insolence): Consider enabling camera rotation
+        // if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
+        // {
+        //     Camera->Rotation += 1.f;
+        // }
+        // else if (glfwGetKey(Window, GLFW_KEY_E) == GLFW_PRESS)
+        // {
+        //     Camera->Rotation -= 1.f;
+        // }
+
+        // NOTE(insolence): Mouse input
+        if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_LEFT))
         {
             vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
-            if (World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Value != OBSTACLE) //&&
-                //World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Occupied == false)
+            for (int i = 0; i < World->Player.UnitsNum; i++)
             {
-                //World->Tiles[(int)World->Player.Units[CurrentUnit].Pos.X][(int)World->Player.Units[CurrentUnit].Pos.X].Occupied = false;
-                World->Player.Units[CurrentUnit].Pos = vec2{CursorWorldPos.X, CursorWorldPos.Y};
-
-                MouseInput.ButtonsProcessed[GLFW_MOUSE_BUTTON_RIGHT] = true;
-                //World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Occupied = true;
-             }
+                if ((int)World->Player.Units[i].Pos.X == (int)CursorWorldPos.X &&
+                    (int)World->Player.Units[i].Pos.Y == (int)CursorWorldPos.Y)
+                {
+                    World->Player.UnitChosen = i;
+                    break;
+                }
+                else
+                {
+                    World->Player.UnitChosen = NO_UNIT;
+                }
+            }
         }
+        if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_RIGHT))
+        {
+            int CurrentUnit = World->Player.UnitChosen;
+            if (CurrentUnit != NO_UNIT)
+            {
+                vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
+                if (World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Value != OBSTACLE) //&&
+                    //World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Occupied == false)
+                {
+                    //World->Tiles[(int)World->Player.Units[CurrentUnit].Pos.X][(int)World->Player.Units[CurrentUnit].Pos.X].Occupied = false;
+                    World->Player.Units[CurrentUnit].Pos = vec2{CursorWorldPos.X, CursorWorldPos.Y};
+
+                    MouseInput.ButtonsProcessed[GLFW_MOUSE_BUTTON_RIGHT] = true;
+                    //World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Occupied = true;
+                 }
+            }
+        }
+    }
+
+    if (World->Mode == BATTLE)
+    {
+        if (IsKeyPressed(GLFW_KEY_ESCAPE) && !IsKeyProcessed(GLFW_KEY_ESCAPE))
+        {
+            World->ActiveBattleNum = NO_BATTLE;
+            World->Mode = GLOBAL;
+        }
+
+        battlefield ActiveBattle = World->ActiveBattlefields[World->ActiveBattleNum];
+
+        if (IsKeyPressed(GLFW_KEY_W) && !IsKeyProcessed(GLFW_KEY_W))
+        {
+            World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
+            World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y++;
+            PlayerMoved = true;
+            KeyboardInput.KeysProcessed[GLFW_KEY_W] = true;
+        }
+        else if (IsKeyPressed(GLFW_KEY_S) && !IsKeyProcessed(GLFW_KEY_S))
+        {
+            World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
+            World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y--;
+            PlayerMoved = true;
+            KeyboardInput.KeysProcessed[GLFW_KEY_S] = true;
+        }
+        if (IsKeyPressed(GLFW_KEY_A) && !IsKeyProcessed(GLFW_KEY_A))
+        {
+            World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
+            World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X--;
+            PlayerMoved = true;
+            KeyboardInput.KeysProcessed[GLFW_KEY_A] = true;
+        }
+        else if (IsKeyPressed(GLFW_KEY_D) && !IsKeyProcessed(GLFW_KEY_D))
+        {
+            World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
+            World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X++;
+            PlayerMoved = true;
+            KeyboardInput.KeysProcessed[GLFW_KEY_D] = true;
+        }
+    }
+
+    if (World->Mode == MENU)
+    {
+        // TODO(insolence): Do smth here
     }
 }
 
-void UpdateGameState(game_world *World)
+void UpdateGlobalMapState(game_world *World)
 {
     for (int i = 0; i < World->Player.UnitsNum; i++)
     {
@@ -200,14 +199,49 @@ void UpdateGameState(game_world *World)
         int PlayerY = World->Player.Units[i].Pos.Y;
         int PlayerTileValue = World->Tiles[(int)PlayerX][(int)PlayerY].Value; // NOTE(insolence): Value of a tile on which a player currently is
 
-        if (PlayerTileValue == GHOST)
+        if (PlayerTileValue == GHOST || PlayerTileValue == MONSTER)
         {
-            //World->Tiles[PlayerX][PlayerY].Value = EMPTY_TILE;
-            World->Mode = BATTLE;
-        }
-        else if (PlayerTileValue == MONSTER)
-        {
-            //World->Tiles[PlayerX][PlayerY].Value = EMPTY_TILE;
+            World->Tiles[PlayerX][PlayerY].Value = EMPTY_TILE;
+
+            if (World->ActiveBattlefields.size() == 0)
+            {
+                battlefield NewBattlefield;
+                NewBattlefield.BattleLocation = vec2{(float)PlayerX, (float)PlayerY};
+                NewBattlefield.PlayerPos = {4.f, 4.f};
+                NewBattlefield.OldPlayerPos = {4.f, 4.f};
+
+                float ZoomLevel = 5.f;
+                NewBattlefield.BattleCamera.ZoomLevel = ZoomLevel;
+                SetViewProjection(&NewBattlefield.BattleCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel);
+                NewBattlefield.BattleCamera.Position = vec3{-5.2f, -5.f, 0};
+
+                World->ActiveBattlefields.push_back(NewBattlefield);
+
+                World->ActiveBattleNum = World->ActiveBattlefields.size() - 1;
+
+                World->Mode = BATTLE;
+
+                return;
+            }
+
+            for (battlefield Battlefield : World->ActiveBattlefields)
+            {
+                if ((int)Battlefield.BattleLocation.X != PlayerX && (int)Battlefield.BattleLocation.Y != PlayerY)
+                {
+                    battlefield NewBattlefield;
+                    NewBattlefield.BattleLocation = vec2{(float)PlayerX, (float)PlayerY};
+                    NewBattlefield.PlayerPos = {4.f, 4.f};
+                    NewBattlefield.OldPlayerPos = {4.f, 4.f};
+
+                    float ZoomLevel = 5.f;
+                    NewBattlefield.BattleCamera.ZoomLevel = ZoomLevel;
+                    SetViewProjection(&NewBattlefield.BattleCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel);
+                    NewBattlefield.BattleCamera.Position = vec3{-5.2f, -5.f, 0};
+                    World->ActiveBattlefields.push_back(NewBattlefield);
+
+                    World->ActiveBattleNum = World->ActiveBattlefields.size() - 1;
+                }
+            }
             World->Mode = BATTLE;
         }
         else if (PlayerTileValue == TREASURE)
@@ -216,6 +250,127 @@ void UpdateGameState(game_world *World)
             World->Player.Units[i].Power += 1;
         }
     }
+}
+
+void
+RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights)
+{
+    string GhostPowerStr = IntToStr(15);
+    string MonsterPowerStr = IntToStr(26);
+
+    // NOTE(insolence): Actual drawing
+    vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
+    mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
+
+    for (int Y = CurrentTilePos.Y - (Camera->ZoomLevel+3); Y < CurrentTilePos.Y + (Camera->ZoomLevel+3); Y++)
+    {
+        for (int X = CurrentTilePos.X - Camera->ZoomLevel*RESOLUTION*2; X < CurrentTilePos.X + Camera->ZoomLevel*RESOLUTION*2; X++)
+        {
+            if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
+                continue;
+
+            int TileValue = World->Tiles[X][Y].Value;
+            if (TileValue == EMPTY_TILE)
+            {
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+            }
+            else if (TileValue == GHOST)
+            {
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("ghost.png"), GetNormal("ghost_normal.png"), DirLights, PointLights, SpotLights);
+                RenderText(Camera, GhostPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
+            }
+            else if (TileValue == MONSTER)
+            {
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("monster.png"), GetNormal("monster_normal.png"), DirLights, PointLights, SpotLights);
+                RenderText(Camera, MonsterPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
+            }
+            else if (TileValue == TREASURE)
+            {
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("treasure.png"), GetNormal("treasure_normal.png"), DirLights, PointLights, SpotLights);
+            }
+            else if (TileValue == OBSTACLE)
+            {
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("rocks.png"), GetNormal("rocks_normal.png"), DirLights, PointLights, SpotLights);
+            }
+
+            for (int i = 0; i < World->Player.UnitsNum; i++)
+            {
+                if (X == (int)World->Player.Units[i].Pos.X && Y == (int)World->Player.Units[i].Pos.Y)
+                {
+                    if (World->Player.UnitChosen == i)
+                    {
+                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
+                    }
+                    else
+                    {
+                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                          GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights);
+                    }
+                    string PlayerPowerStr = IntToStr(World->Player.Units[i].Power);
+                    RenderText(Camera, PlayerPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
+                    FreeString(PlayerPowerStr);
+                }
+            }
+        }
+    }
+
+    FreeString(GhostPowerStr);
+    FreeString(MonsterPowerStr);
+}
+
+void RenderBattlefield(game_world *World,std::vector<particle> Particles)
+{
+    if (World->ActiveBattleNum == -1)
+        return;
+
+    battlefield ActiveBattle = World->ActiveBattlefields[World->ActiveBattleNum];
+
+    std::vector<dir_light> DirLights;
+    std::vector<point_light> PointLights;
+    std::vector<spotlight_light> SpotLights;
+
+    float ZoomLevel = ActiveBattle.BattleCamera.ZoomLevel;
+    for (int Y = 0; Y < 10; Y++)
+    {
+        for (int X = 0; X < 10; X++)
+        {
+            float RightX = X + ZoomLevel/10;
+            float RightY = Y + ZoomLevel/10;
+
+            DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)RightX, (float)RightY}, 0.f, 0.5f),
+                                  GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+
+            if ((int)ActiveBattle.PlayerPos.X == X && (int)ActiveBattle.PlayerPos.Y == Y)
+            {
+                DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)RightX, (float)RightY}, 0.f, 0.5f),
+                                      GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights);
+            }
+        }
+    }
+
+    if (PlayerMoved)
+    {
+        for (int i = 0; i < 30; i++)
+        {
+            Particles.push_back(SpawnParticle(ActiveBattle.OldPlayerPos, 0.5f, {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.5f, color{4.3f, 2.2f, 0.f}, color{0.7f, 1.3f, 3.2f}));
+            PlayerMoved = false;
+        }
+    }
+    DrawParticles(&ActiveBattle.BattleCamera, Particles);
 }
 
 void
@@ -247,9 +402,6 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     World.Tiles[3][3].Value  = MONSTER;
     World.Tiles[10][8].Value = MONSTER;
     World.Tiles[2][4].Value  = MONSTER;
-
-    string GhostPowerStr = IntToStr(15);
-    string MonsterPowerStr = IntToStr(26);
 
     World.Player.Units[0].Pos = vec2{0, 0};
     World.Player.Units[0].Power = 32;
@@ -283,99 +435,24 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
         ProcessInput(Window, Camera, &World, DeltaTime);
 
-        UpdateGameState(&World);
+        UpdateParticles(Particles, DeltaTime);
 
         glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.01f, 0.01f, 0.01f, 1.f);
 
-        RecalculateViewMatrix(Camera);
-
-        // NOTE(insolence): Actual drawing
-        vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
-        mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
-
-        for (int Y = CurrentTilePos.Y - (Camera->ZoomLevel+3); Y < CurrentTilePos.Y + (Camera->ZoomLevel+3); Y++)
+        if (World.Mode == GLOBAL)
         {
-            for (int X = CurrentTilePos.X - Camera->ZoomLevel*3; X < CurrentTilePos.X + Camera->ZoomLevel*3; X++)
-            {
-                if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
-                    continue;
-
-                int TileValue = World.Tiles[X][Y].Value;
-
-                if (TileValue == EMPTY_TILE)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                }
-                else if (TileValue == GHOST)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("ghost.png"), GetNormal("ghost_normal.png"), DirLights, PointLights, SpotLights);
-                    RenderText(Camera, GhostPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
-                }
-                else if (TileValue == MONSTER)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("monster.png"), GetNormal("monster_normal.png"), DirLights, PointLights, SpotLights);
-                    RenderText(Camera, MonsterPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
-                }
-                else if (TileValue == TREASURE)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("treasure.png"), GetNormal("treasure_normal.png"), DirLights, PointLights, SpotLights);
-                }
-                else if (TileValue == OBSTACLE)
-                {
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                    DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("rocks.png"), GetNormal("rocks_normal.png"), DirLights, PointLights, SpotLights);
-                }
-
-                for (int i = 0; i < World.Player.UnitsNum; i++)
-                {
-                    if (X == (int)World.Player.Units[i].Pos.X && Y == (int)World.Player.Units[i].Pos.Y)
-                    {
-                        if (World.Player.UnitChosen == i)
-                        {
-                            DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                              GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
-
-                        }
-                        else
-                        {
-                            DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                              GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights);
-
-                        }
-
-                        string PlayerPowerStr = IntToStr(World.Player.Units[i].Power);
-                        RenderText(Camera, PlayerPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
-                        FreeString(PlayerPowerStr);
-                    }
-                }
-            }
+            RecalculateViewMatrix(Camera);
+            UpdateGlobalMapState(&World);
+            RenderGlobalMap(&World, Camera, DirLights, PointLights, SpotLights);
         }
-
-        // if (PlayerMoved)
-        // {
-        //     for (int i = 0; i < 30; i++)
-        //     {
-        //         Particles.push_back(SpawnParticle(World.Player.OldPos, 0.5f, {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.5f, color{4.3f, 2.2f, 0.f}, color{0.7f, 1.3f, 3.2f}));
-        //         PlayerMoved = false;
-        //     }
-        // }
-        // UpdateParticles(Particles, DeltaTime);
-        // DrawParticles(Camera, Particles);
+        else if (World.Mode == BATTLE)
+        {
+            RecalculateViewMatrix(&World.ActiveBattlefields[World.ActiveBattleNum].BattleCamera);
+            RenderBattlefield(&World, Particles);
+        }
 
         string FpsStr = "FPS: " + FloatToStr(1.f/DeltaTime, 2);
         string MSPerFrameStr = "MS per frame: " + FloatToStr(DeltaTime * 1000, 2);
