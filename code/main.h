@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "math/linear_math.h"
+#include "physics/physics.h"
 #include "renderer/orthographic_camera.h"
 
 #define internal static
@@ -65,16 +66,55 @@ global_variable int CurrentHeight;
 
 global_variable bool IsFullscreen = false;
 
-global_variable const int WORLD_WIDTH = 300;
-global_variable const int WORLD_HEIGHT = 300;
+// NOTE(insolence): Same as unit, mb unite somehow, make sprites
+struct enemy
+{
+    vec2 Pos;
+    vec2 TargetPos;
+    vec2 Velocity;
+    aabb Collider;
+
+    int Power;
+    float Size;
+
+    // Texture
+};
+
+struct obstacle
+{
+    vec2 Pos;
+    float Size;
+    aabb Collider;
+
+    // Texture;
+};
+
+struct chest
+{
+    vec2 Pos;
+    aabb Collider;
+    float Size;
+    int Value;
+};
+
+struct entity_system
+{
+    std::vector<enemy> Enemies;
+    std::vector<obstacle> Obstacles;
+    std::vector<chest> Chests;
+};
 
 struct unit
 {
     vec2 Pos;
-    vec2 OldPos;
-    int Power;
+    aabb Collider;
+    vec2 TargetPos;
+    vec2 Velocity;
 
-    // uint Texture;
+    int Power;
+    float Size;
+
+    //uint Texture;
 };
 
 struct player
@@ -88,21 +128,16 @@ struct player
 struct tile
 {
     int Value;
-    bool Occupied;
 };
-#define EMPTY_TILE 0
-#define GHOST 2
-#define MONSTER 3
-#define TREASURE 4
-#define OBSTACLE 5
 
-// TODO(insolence): Later make these little mini-maps of their own
+#define FIELD_WIDTH 25
+#define FIELD_HEIGHT 15
 struct battlefield
 {
     orthographic_camera BattleCamera;
     vec2 BattleLocation; // NOTE(insolence): Position of a battlefield on a global map
 
-    tile Field[10][10];
+    tile Field[FIELD_WIDTH][FIELD_HEIGHT];
     vec2 PlayerPos;
     vec2 OldPlayerPos;
 };
@@ -114,11 +149,12 @@ enum game_mode
     BATTLE = 2,
 };
 
-// NOTE(insolence): Game state
+global_variable const int WORLD_WIDTH = 300; // make float?
+global_variable const int WORLD_HEIGHT = 300;
 struct game_world
 {
     game_mode Mode;
-    tile Tiles[WORLD_WIDTH][WORLD_HEIGHT];
+    entity_system Objects;
     player Player;
 
     std::vector<battlefield> ActiveBattlefields;

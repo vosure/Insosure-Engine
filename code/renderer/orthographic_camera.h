@@ -8,7 +8,7 @@ struct orthographic_camera
     mat4 ViewProjection;
 
     vec3 Position = {};
-    float Rotation = 0.f;
+    //float Rotation = 0.f;
     float ZoomLevel;
 };
 typedef orthographic_camera camera_2D;
@@ -16,7 +16,7 @@ typedef orthographic_camera camera_2D;
 void
 RecalculateViewMatrix(orthographic_camera *Camera)
 {
-    Camera->ViewMatrix = Rotate(Camera->Rotation, {0.f, 0.f, 1.f}) * Translate(Camera->Position);
+    Camera->ViewMatrix = Translate(Camera->Position); //Rotate(Camera->Rotation, {0.f, 0.f, 1.f}) * Translate(Camera->Position);
 
     Camera->ViewProjection = Camera->ViewMatrix * Camera->ProjectionMatrix;
 }

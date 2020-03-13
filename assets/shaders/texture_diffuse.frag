@@ -132,7 +132,8 @@ void main()
     Normal = normalize(Normal * 2 - 1);
     Normal = normalize(Normal);
 
-    if (texture(OurTexture, TexCoord).a < 0.125)
+    vec4 Texture = texture(OurTexture, TexCoord);
+    if (Texture.a < 0.125)
         discard;
 
     vec3 ViewDir = normalize(ViewPos - vec3(FragPos, 0.0));
@@ -153,7 +154,7 @@ void main()
     // }
     ResultLightColor += CustomColor;
 
-    FragColor = vec4(ResultLightColor, 1);
+    FragColor = Texture * vec4(ResultLightColor, 1);
 
 	float Brightness = dot(FragColor.rgb, vec3(0.4126, 0.7152, 0.3222));
     if (Brightness > 1.0)

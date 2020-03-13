@@ -1,6 +1,5 @@
 #include "main.h"
 
-// All includes
 #include <glad/src/glad.c>
 #include <glfw/include/glfw3.h>
 #include <stb_image/stb_image.cpp>
@@ -29,6 +28,8 @@
 #include "renderer/renderer.cpp"
 #include "input/input.h"
 #include "window.h"
+
+global_variable bool MusicSwitched = false;
 
 global_variable orthographic_camera GlobalCamera;
 
@@ -112,10 +113,13 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_LEFT))
         {
             vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
+            printf("CursorWorldPos X: %.2f, Y: %.2f, \n", CursorWorldPos.X, CursorWorldPos.Y);
+            // CursorWorldPos.X -= 0.25f;
+            // CursorWorldPos.Y -= 0.25f;
             for (int i = 0; i < World->Player.UnitsNum; i++)
             {
-                if ((int)World->Player.Units[i].Pos.X == (int)CursorWorldPos.X &&
-                    (int)World->Player.Units[i].Pos.Y == (int)CursorWorldPos.Y)
+                // FIXME(insolence): Should be made floats
+                if (IsPointInsideAABB(CursorWorldPos, World->Player.Units[i].Collider))
                 {
                     World->Player.UnitChosen = i;
                     break;
@@ -132,15 +136,14 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
             if (CurrentUnit != NO_UNIT)
             {
                 vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
-                if (World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Value != OBSTACLE) //&&
-                    //World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Occupied == false)
+                if (CursorWorldPos.X >= 0 && CursorWorldPos.X < WORLD_WIDTH && CursorWorldPos.Y >= 0 && CursorWorldPos.Y < WORLD_HEIGHT)
                 {
-                    //World->Tiles[(int)World->Player.Units[CurrentUnit].Pos.X][(int)World->Player.Units[CurrentUnit].Pos.X].Occupied = false;
-                    World->Player.Units[CurrentUnit].Pos = vec2{CursorWorldPos.X, CursorWorldPos.Y};
+                    World->Player.Units[CurrentUnit].TargetPos = vec2{CursorWorldPos.X-0.5f, CursorWorldPos.Y-0.5f};
+                    // FIXME(insolence): Check when user clicks on the unit
+                    World->Player.Units[CurrentUnit].Velocity = Normalize(World->Player.Units[CurrentUnit].TargetPos - World->Player.Units[CurrentUnit].Pos);
+                }
 
-                    MouseInput.ButtonsProcessed[GLFW_MOUSE_BUTTON_RIGHT] = true;
-                    //World->Tiles[(int)CursorWorldPos.X][(int)CursorWorldPos.Y].Occupied = true;
-                 }
+                MouseInput.ButtonsProcessed[GLFW_MOUSE_BUTTON_RIGHT] = true;
             }
         }
     }
@@ -151,6 +154,7 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         {
             World->ActiveBattleNum = NO_BATTLE;
             World->Mode = GLOBAL;
+            MusicSwitched = false;
         }
 
         battlefield ActiveBattle = World->ActiveBattlefields[World->ActiveBattleNum];
@@ -158,29 +162,41 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         if (IsKeyPressed(GLFW_KEY_W) && !IsKeyProcessed(GLFW_KEY_W))
         {
             World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
-            World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y++;
-            PlayerMoved = true;
+            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y < FIELD_HEIGHT-1)
+            {
+                World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y++;
+                PlayerMoved = true;
+            }
             KeyboardInput.KeysProcessed[GLFW_KEY_W] = true;
         }
         else if (IsKeyPressed(GLFW_KEY_S) && !IsKeyProcessed(GLFW_KEY_S))
         {
             World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
-            World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y--;
-            PlayerMoved = true;
+            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y > 0)
+            {
+                World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y--;
+                PlayerMoved = true;
+            }
             KeyboardInput.KeysProcessed[GLFW_KEY_S] = true;
         }
         if (IsKeyPressed(GLFW_KEY_A) && !IsKeyProcessed(GLFW_KEY_A))
         {
             World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
-            World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X--;
-            PlayerMoved = true;
+            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X > 0)
+            {
+                World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X--;
+                PlayerMoved = true;
+            }
             KeyboardInput.KeysProcessed[GLFW_KEY_A] = true;
         }
         else if (IsKeyPressed(GLFW_KEY_D) && !IsKeyProcessed(GLFW_KEY_D))
         {
             World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
-            World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X++;
-            PlayerMoved = true;
+            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X < FIELD_WIDTH-1)
+            {
+                World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X++;
+                PlayerMoved = true;
+            }
             KeyboardInput.KeysProcessed[GLFW_KEY_D] = true;
         }
     }
@@ -191,65 +207,112 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
     }
 }
 
-void UpdateGlobalMapState(game_world *World)
+battlefield
+CreateBattlefield(vec2 BattleLocation)
+{
+    battlefield Battlefield;
+    Battlefield.BattleLocation = BattleLocation;
+    Battlefield.PlayerPos = {10.f, 7.f};
+    Battlefield.OldPlayerPos = {10.f, 7.f};
+
+    float ZoomLevel = 8.f;
+    Battlefield.BattleCamera.ZoomLevel = ZoomLevel;
+    SetViewProjection(&Battlefield.BattleCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel);
+    Battlefield.BattleCamera.Position = vec3{-12.7f, -7.3f, 0};
+
+    return Battlefield;
+}
+
+// HACK(insolence): Temp solution
+#define NULL_POS vec2{-40, -40}
+void
+NullifyEnemy(enemy *Enemy)
+{
+    Enemy->Pos = NULL_POS;
+}
+
+void
+CheckCollisions(game_world *World)
 {
     for (int i = 0; i < World->Player.UnitsNum; i++)
     {
-        int PlayerX = World->Player.Units[i].Pos.X;
-        int PlayerY = World->Player.Units[i].Pos.Y;
-        int PlayerTileValue = World->Tiles[(int)PlayerX][(int)PlayerY].Value; // NOTE(insolence): Value of a tile on which a player currently is
-
-        if (PlayerTileValue == GHOST || PlayerTileValue == MONSTER)
+        for (int EnemyIndex = 0; EnemyIndex < World->Objects.Enemies.size(); EnemyIndex++)
         {
-            World->Tiles[PlayerX][PlayerY].Value = EMPTY_TILE;
-
-            if (World->ActiveBattlefields.size() == 0)
+            if (World->Objects.Enemies[EnemyIndex].Pos != NULL_POS && Intersect(World->Player.Units[i].Collider, World->Objects.Enemies[EnemyIndex].Collider))
             {
-                battlefield NewBattlefield;
-                NewBattlefield.BattleLocation = vec2{(float)PlayerX, (float)PlayerY};
-                NewBattlefield.PlayerPos = {4.f, 4.f};
-                NewBattlefield.OldPlayerPos = {4.f, 4.f};
-
-                float ZoomLevel = 5.f;
-                NewBattlefield.BattleCamera.ZoomLevel = ZoomLevel;
-                SetViewProjection(&NewBattlefield.BattleCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel);
-                NewBattlefield.BattleCamera.Position = vec3{-5.2f, -5.f, 0};
-
+                battlefield NewBattlefield = CreateBattlefield(World->Player.Units[i].Pos);
                 World->ActiveBattlefields.push_back(NewBattlefield);
 
                 World->ActiveBattleNum = World->ActiveBattlefields.size() - 1;
 
                 World->Mode = BATTLE;
+                MusicSwitched = false;
 
-                return;
+                NullifyEnemy(&World->Objects.Enemies[EnemyIndex]);
             }
-
-            for (battlefield Battlefield : World->ActiveBattlefields)
-            {
-                if ((int)Battlefield.BattleLocation.X != PlayerX && (int)Battlefield.BattleLocation.Y != PlayerY)
-                {
-                    battlefield NewBattlefield;
-                    NewBattlefield.BattleLocation = vec2{(float)PlayerX, (float)PlayerY};
-                    NewBattlefield.PlayerPos = {4.f, 4.f};
-                    NewBattlefield.OldPlayerPos = {4.f, 4.f};
-
-                    float ZoomLevel = 5.f;
-                    NewBattlefield.BattleCamera.ZoomLevel = ZoomLevel;
-                    SetViewProjection(&NewBattlefield.BattleCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel);
-                    NewBattlefield.BattleCamera.Position = vec3{-5.2f, -5.f, 0};
-                    World->ActiveBattlefields.push_back(NewBattlefield);
-
-                    World->ActiveBattleNum = World->ActiveBattlefields.size() - 1;
-                }
-            }
-            World->Mode = BATTLE;
         }
-        else if (PlayerTileValue == TREASURE)
+
+        for (int ObstacleIndex = 0; ObstacleIndex < World->Objects.Obstacles.size(); ObstacleIndex++)
         {
-            World->Tiles[PlayerX][PlayerY].Value = EMPTY_TILE;
-            World->Player.Units[i].Power += 1;
+            if (Intersect(World->Player.Units[i].Collider, World->Objects.Obstacles[ObstacleIndex].Collider))
+            {
+                World->Player.Units[i].TargetPos = World->Player.Units[i].Pos;
+            }
+        }
+
+        for (int ChestIndex = 0; ChestIndex < World->Objects.Chests.size(); ChestIndex++)
+        {
+            if (Intersect(World->Player.Units[i].Collider, World->Objects.Chests[ChestIndex].Collider))
+            {
+                World->Player.Units[i].TargetPos = World->Player.Units[i].Pos;
+            }
         }
     }
+
+}
+
+void
+OnCollision()
+{
+    // TODO(insolence): Move some code from CheckCollisions there
+}
+
+void
+UpdatePositions(game_world *World, float DeltaTime)
+{
+    for (int i = 0; i < World->Player.UnitsNum; i++)
+    {
+        float AbsXDiff = Abs(World->Player.Units[i].TargetPos.X - World->Player.Units[i].Pos.X);
+        float AbsYDiff = Abs(World->Player.Units[i].TargetPos.Y - World->Player.Units[i].Pos.Y);
+
+        if (AbsXDiff <= 0.05f && AbsYDiff <= 0.05f)
+        {
+           World->Player.Units[i].Velocity = vec2{0.f, 0.f};
+           World->Player.Units[i].Pos = World->Player.Units[i].TargetPos;
+        }
+        else
+            World->Player.Units[i].Pos += World->Player.Units[i].Velocity * DeltaTime;
+
+        UpdateAABB(&World->Player.Units[i].Collider, World->Player.Units[i].Pos, World->Player.Units[i].Size);
+    }
+
+    // TODO(insolence): Update entities
+    for (int i = 0; i < World->Objects.Enemies.size(); i++)
+    {
+        float AbsXDiff = Abs(World->Objects.Enemies[i].TargetPos.X - World->Objects.Enemies[i].Pos.X);
+        float AbsYDiff = Abs(World->Objects.Enemies[i].TargetPos.Y - World->Objects.Enemies[i].Pos.Y);
+
+        if (AbsXDiff <= 0.05f && AbsYDiff <= 0.05f)
+        {
+           World->Objects.Enemies[i].Velocity = vec2{0.f, 0.f};
+           World->Objects.Enemies[i].Pos = World->Objects.Enemies[i].TargetPos;
+        }
+        else
+            World->Objects.Enemies[i].Pos += World->Objects.Enemies[i].Velocity * DeltaTime;
+
+        UpdateAABB(&World->Objects.Enemies[i].Collider, World->Objects.Enemies[i].Pos, World->Objects.Enemies[i].Size);
+    }
+
 }
 
 void
@@ -258,10 +321,9 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
     string GhostPowerStr = IntToStr(15);
     string MonsterPowerStr = IntToStr(26);
 
-    // NOTE(insolence): Actual drawing
     vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
-    mat4 CurrentTileTransform = Transform(CurrentTilePos, 0.f, 1.f);
 
+    // NOTE(insolence): Rendering the ground around the player depending on camera pos
     for (int Y = CurrentTilePos.Y - (Camera->ZoomLevel+3); Y < CurrentTilePos.Y + (Camera->ZoomLevel+3); Y++)
     {
         for (int X = CurrentTilePos.X - Camera->ZoomLevel*RESOLUTION*2; X < CurrentTilePos.X + Camera->ZoomLevel*RESOLUTION*2; X++)
@@ -269,63 +331,45 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
             if (X < 0 || Y < 0 || X > WORLD_WIDTH || Y > WORLD_HEIGHT)
                 continue;
 
-            int TileValue = World->Tiles[X][Y].Value;
-            if (TileValue == EMPTY_TILE)
-            {
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-            }
-            else if (TileValue == GHOST)
-            {
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("ghost.png"), GetNormal("ghost_normal.png"), DirLights, PointLights, SpotLights);
-                RenderText(Camera, GhostPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
-            }
-            else if (TileValue == MONSTER)
-            {
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("monster.png"), GetNormal("monster_normal.png"), DirLights, PointLights, SpotLights);
-                RenderText(Camera, MonsterPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
-            }
-            else if (TileValue == TREASURE)
-            {
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("treasure.png"), GetNormal("treasure_normal.png"), DirLights, PointLights, SpotLights);
-            }
-            else if (TileValue == OBSTACLE)
-            {
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
-                DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("rocks.png"), GetNormal("rocks_normal.png"), DirLights, PointLights, SpotLights);
-            }
-
-            for (int i = 0; i < World->Player.UnitsNum; i++)
-            {
-                if (X == (int)World->Player.Units[i].Pos.X && Y == (int)World->Player.Units[i].Pos.Y)
-                {
-                    if (World->Player.UnitChosen == i)
-                    {
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
-                    }
-                    else
-                    {
-                        DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                          GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights);
-                    }
-                    string PlayerPowerStr = IntToStr(World->Player.Units[i].Power);
-                    RenderText(Camera, PlayerPowerStr.Native, (float)X + 0.05f, (float)Y + 0.05f, 1.5f, RED);
-                    FreeString(PlayerPowerStr);
-                }
-            }
+            DrawRectangleTextured(Camera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                  GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
         }
+    }
+
+    for (int i = 0; i < World->Objects.Enemies.size(); i++)
+    {
+        enemy Enemy = World->Objects.Enemies[i];
+        DrawRectangleTextured(Camera, Transform(vec2{Enemy.Pos.X, Enemy.Pos.Y}, 0.f, Enemy.Size/2.f),
+                              GetTexture("monster.png"), GetNormal("monster_normal.png"), DirLights, PointLights, SpotLights);
+    }
+    for (int i = 0; i < World->Objects.Obstacles.size(); i++)
+    {
+        obstacle Obstacle = World->Objects.Obstacles[i];
+        DrawRectangleTextured(Camera, Transform(vec2{Obstacle.Pos.X, Obstacle.Pos.Y}, 0.f, Obstacle.Size/2.f),
+                              GetTexture("rocks.png"), GetNormal("rocks_normal.png"), DirLights, PointLights, SpotLights);
+    }
+    for (int i = 0; i < World->Objects.Chests.size(); i++)
+    {
+        chest Chest = World->Objects.Chests[i];
+        DrawRectangleTextured(Camera, Transform(vec2{Chest.Pos.X, Chest.Pos.Y}, 0.f, Chest.Size/2.f),
+                              GetTexture("treasure.png"), GetNormal("treasure_normal.png"), DirLights, PointLights, SpotLights);
+    }
+
+    for (int i = 0; i < World->Player.UnitsNum; i++)
+    {
+        if (World->Player.UnitChosen == i)
+        {
+            DrawRectangleTextured(Camera, Transform(vec2{World->Player.Units[i].Pos.X, World->Player.Units[i].Pos.Y}, 0.f, World->Player.Units[i].Size/2.f),
+                              GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
+        }
+        else
+        {
+            DrawRectangleTextured(Camera, Transform(vec2{World->Player.Units[i].Pos.X, World->Player.Units[i].Pos.Y}, 0.f, World->Player.Units[i].Size/2.f),
+                              GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights);
+        }
+        string PlayerPowerStr = IntToStr(World->Player.Units[i].Power);
+        RenderText(Camera, PlayerPowerStr.Native, World->Player.Units[i].Pos.X + 0.05f, World->Player.Units[i].Pos.Y + 0.05f, 1.5f, RED);
+        FreeString(PlayerPowerStr);
     }
 
     FreeString(GhostPowerStr);
@@ -337,39 +381,31 @@ void RenderBattlefield(game_world *World,std::vector<particle> Particles)
     if (World->ActiveBattleNum == -1)
         return;
 
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.01f, 0.01f, 0.01f, 1.f);
+
     battlefield ActiveBattle = World->ActiveBattlefields[World->ActiveBattleNum];
 
-    std::vector<dir_light> DirLights;
-    std::vector<point_light> PointLights;
-    std::vector<spotlight_light> SpotLights;
+    std::vector<dir_light> DirLights1;
+    std::vector<point_light> PointLights1;
+    std::vector<spotlight_light> SpotLights1;
 
     float ZoomLevel = ActiveBattle.BattleCamera.ZoomLevel;
-    for (int Y = 0; Y < 10; Y++)
+    for (int Y = 0; Y < 15; Y++)
     {
-        for (int X = 0; X < 10; X++)
+        for (int X = 0; X < 25; X++)
         {
-            float RightX = X + ZoomLevel/10;
-            float RightY = Y + ZoomLevel/10;
-
-            DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)RightX, (float)RightY}, 0.f, 0.5f),
-                                  GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights, PointLights, SpotLights);
+            DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                  GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights1, PointLights1, SpotLights1);
 
             if ((int)ActiveBattle.PlayerPos.X == X && (int)ActiveBattle.PlayerPos.Y == Y)
             {
-                DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)RightX, (float)RightY}, 0.f, 0.5f),
-                                      GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights);
+                DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
+                                      GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights1, PointLights1, SpotLights1);
             }
         }
     }
 
-    if (PlayerMoved)
-    {
-        for (int i = 0; i < 30; i++)
-        {
-            Particles.push_back(SpawnParticle(ActiveBattle.OldPlayerPos, 0.5f, {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.5f, color{4.3f, 2.2f, 0.f}, color{0.7f, 1.3f, 3.2f}));
-            PlayerMoved = false;
-        }
-    }
     DrawParticles(&ActiveBattle.BattleCamera, Particles);
 }
 
@@ -379,35 +415,53 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
     float DeltaTime = 0.f;
     float LastFrame = 0.f;
 
+    irrklang::ISound *MainMusic;
+    irrklang::ISound *BattleMusic;
+
     irrklang::ISoundEngine *SoundEngine = irrklang::createIrrKlangDevice();
     SoundEngine->setSoundVolume(0.08f);
-    SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
 
     game_world World = {};
     World.Mode = GLOBAL;
-    for (int Y = 0; Y < WORLD_WIDTH; Y++)
+
+    for (int i = 0; i < World.Player.UnitsNum; i++)
     {
-        for (int X = 0; X < WORLD_HEIGHT; X++)
-        {
-            World.Tiles[X][Y].Value = EMPTY_TILE;
+        World.Player.Units[i].Pos = vec2{(float)i, 0.f};
+        World.Player.Units[i].Power = 32;
+        World.Player.Units[i].Size = 1.f;
 
-            World.Tiles[X][Y].Value = (rand() % 30) == 2 ? TREASURE : EMPTY_TILE;
-
-            World.Tiles[X][Y].Value = (rand() % 40 == 7) ? OBSTACLE : World.Tiles[X][Y].Value;
-        }
+        UpdateAABB(&World.Player.Units[i].Collider, World.Player.Units[i].Pos, World.Player.Units[i].Size);
     }
-    World.Tiles[4][3].Value  = GHOST;
-    World.Tiles[6][8].Value  = GHOST;
-    World.Tiles[5][1].Value  = GHOST;
-    World.Tiles[3][3].Value  = MONSTER;
-    World.Tiles[10][8].Value = MONSTER;
-    World.Tiles[2][4].Value  = MONSTER;
+    World.Player.UnitChosen = NO_UNIT;
 
-    World.Player.Units[0].Pos = vec2{0, 0};
-    World.Player.Units[0].Power = 32;
-    World.Player.Units[1].Pos = vec2{2, 0};
-    World.Player.Units[1].Power = 20;
-    World.Player.UnitChosen = -1;
+    for (int i = 0; i < 10; i++)
+    {
+        enemy Enemy;
+        Enemy.Pos = vec2{GetRandomFloat(0, 50), GetRandomFloat(0, 50)};
+        Enemy.TargetPos = Enemy.Pos;
+        Enemy.Velocity = vec2{0.f, 0.f};
+        Enemy.Power = 25;
+        Enemy.Size = 1.f;
+        UpdateAABB(&Enemy.Collider, Enemy.Pos, Enemy.Size);
+        World.Objects.Enemies.push_back(Enemy);
+    }
+    for (int i = 0; i < 10; i++)
+    {
+        chest Chest;
+        Chest.Pos = vec2{GetRandomFloat(0, 50), GetRandomFloat(0, 50)};
+        Chest.Size = 1.f;
+        Chest.Value = 5;
+        UpdateAABB(&Chest.Collider, Chest.Pos, Chest.Size);
+        World.Objects.Chests.push_back(Chest);
+    }
+    for (int i = 0; i < 10; i++)
+    {
+        obstacle Obstacle;
+        Obstacle.Pos = vec2{GetRandomFloat(0, 50), GetRandomFloat(0, 50)};
+        Obstacle.Size = 1.f;
+        UpdateAABB(&Obstacle.Collider, Obstacle.Pos, Obstacle.Size);
+        World.Objects.Obstacles.push_back(Obstacle);
+    }
 
     std::vector<dir_light> DirLights;
     std::vector<point_light> PointLights;
@@ -435,21 +489,45 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
         ProcessInput(Window, Camera, &World, DeltaTime);
 
-        UpdateParticles(Particles, DeltaTime);
-
         glBindFramebuffer(GL_FRAMEBUFFER, HdrFB.ID);
 
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.01f, 0.01f, 0.01f, 1.f);
 
+        UpdatePositions(&World,  DeltaTime);
         if (World.Mode == GLOBAL)
         {
+            if (!MusicSwitched)
+            {
+                SoundEngine->stopAllSounds();
+                SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
+                MusicSwitched = true;
+            }
+
+
             RecalculateViewMatrix(Camera);
-            UpdateGlobalMapState(&World);
+            CheckCollisions(&World);
             RenderGlobalMap(&World, Camera, DirLights, PointLights, SpotLights);
         }
         else if (World.Mode == BATTLE)
         {
+            if (!MusicSwitched)
+            {
+                SoundEngine->stopAllSounds();
+                SoundEngine->play2D("W:/Insosure-Engine/assets/audio/battle.mp3", true);
+                MusicSwitched = true;
+            }
+
+            if (PlayerMoved)
+            {
+                for (int i = 0; i < 30; i++)
+                {
+                    Particles.push_back(SpawnParticle(World.ActiveBattlefields[World.ActiveBattleNum].OldPlayerPos, 0.5f, {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)}, GetRandomFloat(-45, 45), 2.5f, GetRandomFloat(0, 1) * 0.5f, color{4.3f, 2.2f, 0.f}, color{0.7f, 1.3f, 3.2f}));
+                    PlayerMoved = false;
+                }
+            }
+            UpdateParticles(Particles, DeltaTime);
+
             RecalculateViewMatrix(&World.ActiveBattlefields[World.ActiveBattleNum].BattleCamera);
             RenderBattlefield(&World, Particles);
         }
@@ -551,7 +629,7 @@ void main()
     float ZoomLevel = 4.f;
     GlobalCamera.ZoomLevel = ZoomLevel;
     SetViewProjection(&GlobalCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel); // NOTE(insolence): The ratio must be 16/9 in order to preserve the shapes
-    GlobalCamera.Position = vec3{0, 0, 0}; //NOTE(vosure): check starting camera position
+    GlobalCamera.Position = vec3{-4.5f, -3.f, 0}; //NOTE(vosure): check starting camera position
 
     glfwSetScrollCallback(Window, ScrollCallback);
 

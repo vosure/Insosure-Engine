@@ -190,7 +190,6 @@ SetPointLight(int i, shader Shader, point_light Light)
 
     sprintf(Buffer, "PointLights[%i].Position", i);
     SetVec3(Buffer, Shader, Light.Position);
-    //glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Position.X, Light.Position.Y, Light.Position.Z);
 
     sprintf(Buffer, "PointLights[%i].Ambient", i);
     glUniform3f(glGetUniformLocation(Shader.ShaderProgram, Buffer), Light.Ambient.X, Light.Ambient.Y, Light.Ambient.Z);

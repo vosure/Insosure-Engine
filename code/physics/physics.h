@@ -8,10 +8,12 @@
 
 // TODO(insolence): Add Ray-AABB and Ray-Sphere interscetion
 
+// NOTE(insolence): Point == vec2
+
 struct aabb
 {
-    int MinX, MinY;
-    int MaxX, MaxY;
+    vec2 Min;
+    vec2 Max;
     vec2 Velocity;
 };
 
@@ -19,14 +21,22 @@ struct bounding_circle
 {
     point Center;
     float Radius;
-    vec2 Velocity;
+    //vec2 Velocity;
 };
+
+void
+UpdateAABB(aabb *Box, vec2 NewPos, float Size)
+{
+    Box->Min = NewPos;
+    Box->Max.X = NewPos.X + Size;
+    Box->Max.Y = NewPos.Y + Size;
+}
 
 bool
 IsPointInsideAABB(point Point, aabb Box)
 {
-    return (Point.X <= Box.MaxX && Point.Y <= Box.MaxY &&
-            Point.X >= Box.MinX && Point.X >= Box.MinY);
+    return (Point.X <= Box.Max.X && Point.Y <= Box.Max.Y &&
+            Point.X >= Box.Min.X && Point.Y >= Box.Min.Y);
 }
 
 bool
@@ -42,20 +52,20 @@ IsPointInsideCircle(point Point, bounding_circle Circle)
 bool
 Intersect(aabb Left, aabb Right)
 {
-    return (Left.MinX <= Right.MaxX && Left.MaxX >= Right.MinX &&
-            Left.MinY <= Right.MaxY && Left.MaxY >= Right.MinY);
+    return (Left.Min.X <= Right.Max.X && Left.Max.X >= Right.Min.X &&
+            Left.Min.Y <= Right.Max.Y && Left.Max.Y >= Right.Min.Y);
 }
 
 bool
 Intersect(bounding_circle Circle, aabb Box)
 {
     point BoxHalfExtents;
-    BoxHalfExtents.X = Box.MaxX - Box.MinX;
-    BoxHalfExtents.Y = Box.MaxY - Box.MinY;
+    BoxHalfExtents.X = Box.Max.X - Box.Min.X;
+    BoxHalfExtents.Y = Box.Max.Y - Box.Min.Y;
 
     point BoxCenter;
-    BoxCenter.X = Box.MinX + BoxHalfExtents.X;
-    BoxCenter.Y = Box.MinY + BoxHalfExtents.Y;
+    BoxCenter.X = Box.Min.X + BoxHalfExtents.X;
+    BoxCenter.Y = Box.Min.Y + BoxHalfExtents.Y;
 
     vec2 Difference = Circle.Center - BoxCenter;
     vec2 Clamped = Clamp(Difference, -BoxHalfExtents, BoxHalfExtents);
@@ -80,16 +90,16 @@ void
 TestCollisions()
 {
     aabb Left = {};
-    Left.MinX = 10;
-    Left.MinY = 10;
-    Left.MaxX = 20;
-    Left.MaxY = 20;
+    Left.Min.X = 10;
+    Left.Min.Y = 10;
+    Left.Max.X = 20;
+    Left.Max.Y = 20;
 
     aabb Right = {};
-    Right.MinX = 10;
-    Right.MinY = 10;
-    Right.MaxX = 20;
-    Right.MaxY = 20;
+    Right.Min.X = 10;
+    Right.Min.Y = 10;
+    Right.Max.X = 20;
+    Right.Max.Y = 20;
 
     if (!Intersect(Left, Right))
         printf("Don't intersect");
