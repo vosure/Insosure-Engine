@@ -138,7 +138,8 @@ void main()
 
     vec3 ViewDir = normalize(ViewPos - vec3(FragPos, 0.0));
 
-    vec3 ResultLightColor;
+    vec3 DefaultAmbient = vec3(0.15, 0.15, 0.15);
+    vec3 ResultLightColor = DefaultAmbient;
 
     // for (int i = 0; i < MAX_LIGHTS; i++)
     // {

@@ -3,10 +3,11 @@
 #include <iostream>
 #include <vector>
 #include <stdio.h>
+#include "utils/string.cpp"
 
 #include "math/linear_math.h"
 #include "physics/physics.h"
-#include "renderer/orthographic_camera.h"
+#include "render/orthographic_camera.h"
 
 #define internal static
 #define local_persist static
@@ -72,6 +73,7 @@ struct enemy
     vec2 Pos;
     vec2 TargetPos;
     vec2 Velocity;
+    float Speed;
     aabb Collider;
 
     int Power;
@@ -95,6 +97,26 @@ struct chest
     aabb Collider;
     float Size;
     int Value;
+
+    // Texture
+};
+
+struct building
+{
+    vec2 Pos;
+    aabb Collider;
+    float Size;
+
+    bool InProduction;
+    float ProductionTimeLeft;
+
+    string Type;
+
+    // TODO(insolence): For god's sake replace with smth.
+    string Texture;
+    string NormalTexture;
+
+    bool Chosen;
 };
 
 struct entity_system
@@ -102,6 +124,7 @@ struct entity_system
     std::vector<enemy> Enemies;
     std::vector<obstacle> Obstacles;
     std::vector<chest> Chests;
+    std::vector<building> Buildings;
 };
 
 struct unit
@@ -110,17 +133,20 @@ struct unit
     aabb Collider;
     vec2 TargetPos;
     vec2 Velocity;
+    float Speed;
 
     int Power;
     float Size;
 
-    //uint Texture;
+    // TODO(insolence): For god's sake replace with smth.
+    string Texture;
+    string NormalTexture;
 };
 
 struct player
 {
-    const static int UnitsNum = 2;
-    unit Units[UnitsNum];
+    int UnitsNum = 2;
+    std::vector<unit> Units;
     int UnitChosen; // NOTE(insolence): Which unit we currently control, if -1 then no unit chosen
 };
 #define NO_UNIT -1
@@ -141,6 +167,9 @@ struct battlefield
     vec2 PlayerPos;
     vec2 OldPlayerPos;
 };
+// NOTE(insolence): Battlefields start from vec2{1000, 1000}
+#define XOFFSET 1000
+#define YOFFSET 1000
 
 enum game_mode
 {

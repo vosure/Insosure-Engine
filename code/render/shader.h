@@ -16,6 +16,9 @@ shader BlurShader;
 shader TextShader;
 shader ParticleShader;
 
+shader GuiTexturedShader;
+shader GuiBasicShader;
+
 internal void
 CheckCompileErrors(int Shader, const char *Type)
 {
@@ -250,6 +253,8 @@ MakeShaders()
         DeleteShader(&BlurShader);
         DeleteShader(&TextShader);
         DeleteShader(&ParticleShader);
+        DeleteShader(&GuiTexturedShader);
+        DeleteShader(&GuiBasicShader);
     }
 
     Shader = CreateShader("shaders/basic.vert", "shaders/basic.frag");
@@ -257,6 +262,9 @@ MakeShaders()
     TexturedDiffuseShader = CreateShader("shaders/texture_diffuse.vert", "shaders/texture_diffuse.frag");
     PostprocessingShader = CreateShader("shaders/postprocessing.vert", "shaders/postprocessing.frag");
     ParticleShader = CreateShader("shaders/particle.vert", "shaders/particle.frag");
+
+    GuiTexturedShader = CreateShader("shaders/gui/texture.vert", "shaders/gui/texture.frag");
+    GuiBasicShader = CreateShader("shaders/gui/basic.vert", "shaders/gui/basic.frag");
 
     HDRShader = CreateShader("shaders/hdr.vert", "shaders/hdr.frag");
     glUseProgram(HDRShader.ShaderProgram);

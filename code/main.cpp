@@ -7,7 +7,7 @@
 #include FT_FREETYPE_H
 #include <irrKlang/include/irrKlang.h>
 
-#include "utils/string.cpp"
+//#include "utils/string.cpp"
 #include "utils/file_utils.h"
 #include "math/math.h"
 #include "random/random.h"
@@ -18,14 +18,15 @@
 #include "utils/colors.h"
 
 #include "debug.h"
-#include "renderer/texture.h"
-#include "renderer/sprite.h"
+#include "render/texture.h"
+#include "render/sprite.h"
 #include "physics/physics.h"
-#include "renderer/framebuffer.h"
-#include "renderer/light.h"
-#include "renderer/text.h"
-#include "renderer/particle_system.h"
-#include "renderer/renderer.cpp"
+#include "render/framebuffer.h"
+#include "render/light.h"
+#include "render/text.h"
+#include "render/particle_system.h"
+#include "render/render.cpp"
+#include "render/gui_render.cpp"
 #include "input/input.h"
 #include "window.h"
 
@@ -113,12 +114,8 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_LEFT))
         {
             vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
-            printf("CursorWorldPos X: %.2f, Y: %.2f, \n", CursorWorldPos.X, CursorWorldPos.Y);
-            // CursorWorldPos.X -= 0.25f;
-            // CursorWorldPos.Y -= 0.25f;
             for (int i = 0; i < World->Player.UnitsNum; i++)
             {
-                // FIXME(insolence): Should be made floats
                 if (IsPointInsideAABB(CursorWorldPos, World->Player.Units[i].Collider))
                 {
                     World->Player.UnitChosen = i;
@@ -129,6 +126,16 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
                     World->Player.UnitChosen = NO_UNIT;
                 }
             }
+            for (int i = 0; i < World->Objects.Buildings.size(); i++)
+            {
+                World->Objects.Buildings[i].Chosen = false;
+
+                if (IsPointInsideAABB(CursorWorldPos, World->Objects.Buildings[i].Collider))
+                {
+                    World->Objects.Buildings[i].Chosen = true;
+                }
+            }
+
         }
         if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_RIGHT))
         {
@@ -136,14 +143,36 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
             if (CurrentUnit != NO_UNIT)
             {
                 vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
-                if (CursorWorldPos.X >= 0 && CursorWorldPos.X < WORLD_WIDTH && CursorWorldPos.Y >= 0 && CursorWorldPos.Y < WORLD_HEIGHT)
+                if (CursorWorldPos.X >= 0 && CursorWorldPos.X < WORLD_WIDTH && CursorWorldPos.Y >= 0 && CursorWorldPos.Y < WORLD_HEIGHT &&
+                    !IsPointInsideAABB(CursorWorldPos, World->Player.Units[CurrentUnit].Collider))
                 {
                     World->Player.Units[CurrentUnit].TargetPos = vec2{CursorWorldPos.X-0.5f, CursorWorldPos.Y-0.5f};
                     // FIXME(insolence): Check when user clicks on the unit
-                    World->Player.Units[CurrentUnit].Velocity = Normalize(World->Player.Units[CurrentUnit].TargetPos - World->Player.Units[CurrentUnit].Pos);
+                    World->Player.Units[CurrentUnit].Velocity = Normalize(World->Player.Units[CurrentUnit].TargetPos - World->Player.Units[CurrentUnit].Pos) *
+                                                                World->Player.Units[CurrentUnit].Speed;
                 }
 
                 MouseInput.ButtonsProcessed[GLFW_MOUSE_BUTTON_RIGHT] = true;
+            }
+        }
+        if (IsKeyPressed(GLFW_KEY_H) && !IsKeyProcessed(GLFW_KEY_H))
+        {
+            if (World->Player.UnitChosen != NO_UNIT)
+            {
+                World->Player.Units[World->Player.UnitChosen].Velocity = vec2{0, 0};
+                World->Player.Units[World->Player.UnitChosen].TargetPos = World->Player.Units[World->Player.UnitChosen].Pos;
+            }
+        }
+
+        if (IsKeyPressed(GLFW_KEY_B) && !IsKeyProcessed(GLFW_KEY_B))
+        {
+            for (int i = 0; i < World->Objects.Buildings.size(); i++)
+            {
+                if (World->Objects.Buildings[i].Chosen && !World->Objects.Buildings[i].InProduction)
+                {
+                    World->Objects.Buildings[i].InProduction = true;
+                    World->Objects.Buildings[i].ProductionTimeLeft = 10.f;
+                }
             }
         }
     }
@@ -162,7 +191,7 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         if (IsKeyPressed(GLFW_KEY_W) && !IsKeyProcessed(GLFW_KEY_W))
         {
             World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
-            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y < FIELD_HEIGHT-1)
+            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y < FIELD_HEIGHT-1 + YOFFSET)
             {
                 World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y++;
                 PlayerMoved = true;
@@ -172,7 +201,7 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         else if (IsKeyPressed(GLFW_KEY_S) && !IsKeyProcessed(GLFW_KEY_S))
         {
             World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
-            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y > 0)
+            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y > 0 + YOFFSET)
             {
                 World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.Y--;
                 PlayerMoved = true;
@@ -182,7 +211,7 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         if (IsKeyPressed(GLFW_KEY_A) && !IsKeyProcessed(GLFW_KEY_A))
         {
             World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
-            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X > 0)
+            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X > 0 + XOFFSET)
             {
                 World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X--;
                 PlayerMoved = true;
@@ -192,7 +221,7 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         else if (IsKeyPressed(GLFW_KEY_D) && !IsKeyProcessed(GLFW_KEY_D))
         {
             World->ActiveBattlefields[World->ActiveBattleNum].OldPlayerPos = World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos;
-            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X < FIELD_WIDTH-1)
+            if (World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X < FIELD_WIDTH-1 + XOFFSET)
             {
                 World->ActiveBattlefields[World->ActiveBattleNum].PlayerPos.X++;
                 PlayerMoved = true;
@@ -212,13 +241,13 @@ CreateBattlefield(vec2 BattleLocation)
 {
     battlefield Battlefield;
     Battlefield.BattleLocation = BattleLocation;
-    Battlefield.PlayerPos = {10.f, 7.f};
-    Battlefield.OldPlayerPos = {10.f, 7.f};
+    Battlefield.PlayerPos = {10.f + XOFFSET, 7.f + YOFFSET};
+    Battlefield.OldPlayerPos = {10.f + XOFFSET, 7.f + YOFFSET};
 
     float ZoomLevel = 8.f;
     Battlefield.BattleCamera.ZoomLevel = ZoomLevel;
     SetViewProjection(&Battlefield.BattleCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel);
-    Battlefield.BattleCamera.Position = vec3{-12.7f, -7.3f, 0};
+    Battlefield.BattleCamera.Position = vec3{-12.7f - XOFFSET, -7.3f - YOFFSET, 0};
 
     return Battlefield;
 }
@@ -236,6 +265,15 @@ CheckCollisions(game_world *World)
 {
     for (int i = 0; i < World->Player.UnitsNum; i++)
     {
+        for (int UnitIndex = i + 1; UnitIndex < World->Player.UnitsNum; UnitIndex++)
+        {
+            if (Intersect(World->Player.Units[i].Collider, World->Player.Units[UnitIndex].Collider))
+            {
+                World->Player.Units[i].TargetPos = World->Player.Units[i].Pos;
+                World->Player.Units[UnitIndex].TargetPos = World->Player.Units[UnitIndex].Pos;
+            }
+        }
+
         for (int EnemyIndex = 0; EnemyIndex < World->Objects.Enemies.size(); EnemyIndex++)
         {
             if (World->Objects.Enemies[EnemyIndex].Pos != NULL_POS && Intersect(World->Player.Units[i].Collider, World->Objects.Enemies[EnemyIndex].Collider))
@@ -262,7 +300,16 @@ CheckCollisions(game_world *World)
 
         for (int ChestIndex = 0; ChestIndex < World->Objects.Chests.size(); ChestIndex++)
         {
-            if (Intersect(World->Player.Units[i].Collider, World->Objects.Chests[ChestIndex].Collider))
+            if (World->Objects.Chests[ChestIndex].Pos != NULL_POS && Intersect(World->Player.Units[i].Collider, World->Objects.Chests[ChestIndex].Collider))
+            {
+                //World->Player.Units[i].TargetPos = World->Player.Units[i].Pos;
+                World->Player.Units[i].Power += World->Objects.Chests[ChestIndex].Value;
+                World->Objects.Chests[ChestIndex].Pos = NULL_POS;
+            }
+        }
+        for (int BuildingIndex = 0; BuildingIndex < World->Objects.Buildings.size(); BuildingIndex++)
+        {
+            if (Intersect(World->Player.Units[i].Collider, World->Objects.Buildings[BuildingIndex].Collider))
             {
                 World->Player.Units[i].TargetPos = World->Player.Units[i].Pos;
             }
@@ -308,18 +355,70 @@ UpdatePositions(game_world *World, float DeltaTime)
            World->Objects.Enemies[i].Pos = World->Objects.Enemies[i].TargetPos;
         }
         else
-            World->Objects.Enemies[i].Pos += World->Objects.Enemies[i].Velocity * DeltaTime;
+            World->Objects.Enemies[i].Pos += World->Objects.Enemies[i].Velocity * World->Objects.Enemies[i].Speed * DeltaTime;
 
         UpdateAABB(&World->Objects.Enemies[i].Collider, World->Objects.Enemies[i].Pos, World->Objects.Enemies[i].Size);
     }
 
+    // NOTE(insolence): Updating buildings, so rename a function
+    for (int i = 0; i < World->Objects.Buildings.size(); i++)
+    {
+        if (World->Objects.Buildings[i].InProduction)
+        {
+            World->Objects.Buildings[i].ProductionTimeLeft -= DeltaTime;
+            if (World->Objects.Buildings[i].ProductionTimeLeft <= 0.f)
+            {
+                World->Objects.Buildings[i].InProduction = false;
+                World->Player.UnitsNum++;
+
+                unit Unit;
+
+                Unit.Pos = vec2{World->Objects.Buildings[i].Pos.X - 1.f, World->Objects.Buildings[i].Pos.Y - 1.f};
+                Unit.Power = 32;
+                Unit.Size = 1.f;
+                Unit.Speed = 2.f;
+                UpdateAABB(&Unit.Collider, Unit.Pos, Unit.Size);
+                Unit.Texture = String("archer.png");
+                Unit.NormalTexture = String("archer_normal.png");
+
+                World->Player.Units.push_back(Unit);
+            }
+        }
+    }
+
+
+}
+
+// NOTE(insolence): Range is -1,1 -1,1
+void
+RenderGlobalMapGui(game_world *World)
+{
+    DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{1.f, -0.4f}, GetTexture("mist.jpg"));
+
+    if (World->Player.UnitChosen != NO_UNIT)
+    {
+        DrawRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, SILVER);
+        DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, GetTexture("frame.png"));
+        DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f}, GetTexture(World->Player.Units[World->Player.UnitChosen].Texture.Native));
+    }
+
+    for (int BuildingIndex = 0; BuildingIndex < World->Objects.Buildings.size(); BuildingIndex++)
+        {
+            if (World->Objects.Buildings[BuildingIndex].Chosen)
+            {
+                DrawRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, SILVER);
+                DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, GetTexture("frame.png"));
+                DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f}, GetTexture(World->Objects.Buildings[BuildingIndex].Texture.Native));
+            }
+        }
 }
 
 void
 RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights)
 {
-    string GhostPowerStr = IntToStr(15);
-    string MonsterPowerStr = IntToStr(26);
+    // FIXME(insolence): Change to dynamic
+    string EnemyPowerStr = IntToStr(26);
+    string ChestValueStr = IntToStr(5);
 
     vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
 
@@ -341,6 +440,8 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
         enemy Enemy = World->Objects.Enemies[i];
         DrawRectangleTextured(Camera, Transform(vec2{Enemy.Pos.X, Enemy.Pos.Y}, 0.f, Enemy.Size/2.f),
                               GetTexture("monster.png"), GetNormal("monster_normal.png"), DirLights, PointLights, SpotLights);
+        RenderText(Camera, EnemyPowerStr.Native, World->Objects.Enemies[i].Pos.X + 0.05f, World->Objects.Enemies[i].Pos.Y + 0.05f, 1.5f, RED);
+
     }
     for (int i = 0; i < World->Objects.Obstacles.size(); i++)
     {
@@ -353,6 +454,13 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
         chest Chest = World->Objects.Chests[i];
         DrawRectangleTextured(Camera, Transform(vec2{Chest.Pos.X, Chest.Pos.Y}, 0.f, Chest.Size/2.f),
                               GetTexture("treasure.png"), GetNormal("treasure_normal.png"), DirLights, PointLights, SpotLights);
+        RenderText(Camera, ChestValueStr.Native, World->Objects.Chests[i].Pos.X + 0.05f, World->Objects.Chests[i].Pos.Y + 0.05f, 1.5f, RED);
+    }
+    for (int i = 0; i < World->Objects.Buildings.size(); i++)
+    {
+        building Building = World->Objects.Buildings[i];
+        DrawRectangleTextured(Camera, Transform(vec2{Building.Pos.X, Building.Pos.Y}, 0.f, Building.Size/2.f),
+                              GetTexture(Building.Texture.Native), GetNormal(Building.NormalTexture.Native), DirLights, PointLights, SpotLights);
     }
 
     for (int i = 0; i < World->Player.UnitsNum; i++)
@@ -360,20 +468,28 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
         if (World->Player.UnitChosen == i)
         {
             DrawRectangleTextured(Camera, Transform(vec2{World->Player.Units[i].Pos.X, World->Player.Units[i].Pos.Y}, 0.f, World->Player.Units[i].Size/2.f),
-                              GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
+                              GetTexture(World->Player.Units[i].Texture.Native), GetNormal(World->Player.Units[i].NormalTexture.Native), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
         }
         else
         {
             DrawRectangleTextured(Camera, Transform(vec2{World->Player.Units[i].Pos.X, World->Player.Units[i].Pos.Y}, 0.f, World->Player.Units[i].Size/2.f),
-                              GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights, PointLights, SpotLights);
+                              GetTexture(World->Player.Units[i].Texture.Native), GetNormal(World->Player.Units[i].NormalTexture.Native), DirLights, PointLights, SpotLights);
         }
         string PlayerPowerStr = IntToStr(World->Player.Units[i].Power);
         RenderText(Camera, PlayerPowerStr.Native, World->Player.Units[i].Pos.X + 0.05f, World->Player.Units[i].Pos.Y + 0.05f, 1.5f, RED);
         FreeString(PlayerPowerStr);
     }
 
-    FreeString(GhostPowerStr);
-    FreeString(MonsterPowerStr);
+    RenderGlobalMapGui(World);
+
+    FreeString(EnemyPowerStr);
+    FreeString(ChestValueStr);
+}
+
+void
+RenderBattlefieldGui(battlefield *CurrentBattlefield)
+{
+    DrawRectangleOnScreen(vec2{-0.6f, -0.9f}, vec2{0.6f, -0.83f}, RED); // NOTE(insolence): Health bar for now
 }
 
 void RenderBattlefield(game_world *World,std::vector<particle> Particles)
@@ -381,30 +497,26 @@ void RenderBattlefield(game_world *World,std::vector<particle> Particles)
     if (World->ActiveBattleNum == -1)
         return;
 
-    glClear(GL_COLOR_BUFFER_BIT);
-    glClearColor(0.01f, 0.01f, 0.01f, 1.f);
-
     battlefield ActiveBattle = World->ActiveBattlefields[World->ActiveBattleNum];
 
-    std::vector<dir_light> DirLights1;
-    std::vector<point_light> PointLights1;
-    std::vector<spotlight_light> SpotLights1;
-
     float ZoomLevel = ActiveBattle.BattleCamera.ZoomLevel;
-    for (int Y = 0; Y < 15; Y++)
+    for (int Y = 0 + YOFFSET; Y < 15 + YOFFSET; Y++)
     {
-        for (int X = 0; X < 25; X++)
+        for (int X = 0 + XOFFSET; X < 25 + XOFFSET; X++)
         {
             DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                  GetTexture("rock.png"), GetNormal("rock_normal.png"), DirLights1, PointLights1, SpotLights1);
+                                  GetTexture("rock.png"), GetNormal("rock_normal.png"), std::vector<dir_light>(), std::vector<point_light>(), std::vector<spotlight_light>());
 
             if ((int)ActiveBattle.PlayerPos.X == X && (int)ActiveBattle.PlayerPos.Y == Y)
             {
                 DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture("roflanface.png"), GetNormal("roflanface_normal.png"), DirLights1, PointLights1, SpotLights1);
+                                      GetTexture(World->Player.Units[World->Player.UnitChosen].Texture.Native), GetNormal(World->Player.Units[World->Player.UnitChosen].NormalTexture.Native),
+                                      std::vector<dir_light>(), std::vector<point_light>(), std::vector<spotlight_light>());
             }
         }
     }
+
+    RenderBattlefieldGui(&ActiveBattle);
 
     DrawParticles(&ActiveBattle.BattleCamera, Particles);
 }
@@ -426,12 +538,19 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
     for (int i = 0; i < World.Player.UnitsNum; i++)
     {
-        World.Player.Units[i].Pos = vec2{(float)i, 0.f};
-        World.Player.Units[i].Power = 32;
-        World.Player.Units[i].Size = 1.f;
+        unit Unit;
+        Unit.Pos = vec2{(float)i, 0.f};
+        Unit.Power = 32;
+        Unit.Size = 1.f;
+        Unit.Speed = 2.f;
+        UpdateAABB(&Unit.Collider, Unit.Pos, Unit.Size);
 
-        UpdateAABB(&World.Player.Units[i].Collider, World.Player.Units[i].Pos, World.Player.Units[i].Size);
+        World.Player.Units.push_back(Unit);
     }
+    World.Player.Units[0].Texture = String("roflanface.png");
+    World.Player.Units[0].NormalTexture = String("roflanface_normal.png");
+    World.Player.Units[1].Texture = String("archer.png");
+    World.Player.Units[1].NormalTexture = String("archer_normal.png");
     World.Player.UnitChosen = NO_UNIT;
 
     for (int i = 0; i < 10; i++)
@@ -442,6 +561,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         Enemy.Velocity = vec2{0.f, 0.f};
         Enemy.Power = 25;
         Enemy.Size = 1.f;
+        Enemy.Speed = 2.f;
         UpdateAABB(&Enemy.Collider, Enemy.Pos, Enemy.Size);
         World.Objects.Enemies.push_back(Enemy);
     }
@@ -463,6 +583,17 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         World.Objects.Obstacles.push_back(Obstacle);
     }
 
+    building Building;
+    Building.Pos = vec2{7, 7};
+    Building.Size = 2.f;
+    Building.InProduction = false;
+    Building.ProductionTimeLeft = 15.f;
+    Building.Type = "Barracks";
+    Building.Texture = String("barracks.png");
+    Building.NormalTexture = String("barracks_normal.png");
+    UpdateAABB(&Building.Collider, Building.Pos, Building.Size);
+    World.Objects.Buildings.push_back(Building);
+
     std::vector<dir_light> DirLights;
     std::vector<point_light> PointLights;
     std::vector<spotlight_light> SpotLights;
@@ -472,10 +603,13 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
 
     vec3 CLQ = {1.0f, 0.09f, 0.032f};
 
-    PointLights.push_back(PointLight({5.0f, 5.0f, 1.0f}, Ambient, {0.8f, 0.8f, 0.8f}, Specular, CLQ));
-    PointLights.push_back(PointLight({4.f, 4.f, 1.f}, Ambient, ORANGE, Specular, CLQ));
-    PointLights.push_back(PointLight({6.f, 6.f, 1.f}, Ambient, AQUA, Specular, CLQ));
-    PointLights.push_back(PointLight({2.f, 8.f, 1.f}, Ambient, LIME, Specular, CLQ));
+    PointLights.push_back(PointLight({5.0f, 5.0f, 1.0f}, Ambient, MAGENTA*3, Specular, CLQ));
+    PointLights.push_back(PointLight({4.f, 4.f, 1.f}, Ambient, ORANGE*3, Specular, CLQ));
+    PointLights.push_back(PointLight({6.f, 6.f, 1.f}, Ambient, AQUA*3, Specular, CLQ));
+    PointLights.push_back(PointLight({2.f, 8.f, 1.f}, Ambient, LIME*3, Specular, CLQ));
+    PointLights.push_back(PointLight({15.f, 8.f, 1.f}, Ambient, VIOLET*3, Specular, CLQ));
+    PointLights.push_back(PointLight({3.f, 15.f, 1.f}, Ambient, GOLD*3, Specular, CLQ));
+
 
     std::vector<particle> Particles(100);
 
@@ -494,7 +628,8 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.01f, 0.01f, 0.01f, 1.f);
 
-        UpdatePositions(&World,  DeltaTime);
+        UpdatePositions(&World, DeltaTime);
+
         if (World.Mode == GLOBAL)
         {
             if (!MusicSwitched)
@@ -503,7 +638,6 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
                 SoundEngine->play2D("W:/Insosure-Engine/assets/audio/onward.mp3", true);
                 MusicSwitched = true;
             }
-
 
             RecalculateViewMatrix(Camera);
             CheckCollisions(&World);
@@ -526,16 +660,16 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera, postprocessing_
                     PlayerMoved = false;
                 }
             }
-            UpdateParticles(Particles, DeltaTime);
 
+            UpdateParticles(Particles, DeltaTime);
             RecalculateViewMatrix(&World.ActiveBattlefields[World.ActiveBattleNum].BattleCamera);
             RenderBattlefield(&World, Particles);
         }
 
         string FpsStr = "FPS: " + FloatToStr(1.f/DeltaTime, 2);
         string MSPerFrameStr = "MS per frame: " + FloatToStr(DeltaTime * 1000, 2);
-        RenderTextOnScreen(FpsStr.Native, 20.f, 40.f, 1.f, {4, 1, 1});
-        RenderTextOnScreen(MSPerFrameStr.Native, 20.f, 105.f, 1.f, {4, 1, 1});
+        RenderTextOnScreen(FpsStr.Native, 20.f, 2500.f, 1.f, {4, 1, 1});
+        RenderTextOnScreen(MSPerFrameStr.Native, 20.f, 2420.f, 1.f, {4, 1, 1});
         FreeString(FpsStr);
         FreeString(MSPerFrameStr);
 
@@ -623,8 +757,7 @@ void main()
     // glCullFace(GL_BACK);
     // glFrontFace(GL_CW);
     glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     float ZoomLevel = 4.f;
     GlobalCamera.ZoomLevel = ZoomLevel;
