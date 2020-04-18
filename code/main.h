@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <stdio.h>
+
+#include "utils/memory.h"
 #include "utils/string.cpp"
 
 #include "math/linear_math.h"
@@ -48,25 +50,6 @@ struct postprocessing_effects
     bool Blur;
 };
 
-// NOTE(insolence): 1440 x 900 (8 x 5 proportion) for NV.
-#if INSOLENCE
-    global_variable int WINDOW_WIDTH = 1920;
-    global_variable int WINDOW_HEIGHT = 1080;
-#elif VOSURE
-    global_variable int WINDOW_WIDTH = 1280;
-    global_variable int WINDOW_HEIGHT = 720;
-#endif
-
-global_variable const float RESOLUTION = 16.f/9.f;
-
-global_variable int SCREEN_WIDTH;
-global_variable int SCREEN_HEIGHT;
-
-global_variable int CurrentWidth;
-global_variable int CurrentHeight;
-
-global_variable bool IsFullscreen = false;
-
 // NOTE(insolence): Same as unit, mb unite somehow, make sprites
 struct enemy
 {
@@ -79,7 +62,7 @@ struct enemy
     int Power;
     float Size;
 
-    // Texture
+    string Texture;
 };
 
 struct obstacle
@@ -88,7 +71,7 @@ struct obstacle
     float Size;
     aabb Collider;
 
-    // Texture;
+    string Texture;
 };
 
 struct chest
@@ -98,7 +81,19 @@ struct chest
     float Size;
     int Value;
 
-    // Texture
+    string Texture;
+};
+
+#define STONE 0
+#define SAPPHIRE 1
+struct resource
+{
+    vec2 Pos;
+    aabb Collider;
+    float Size;
+
+    int Type; // NOTE(insolence): Stone or sapphire
+    int Amount;
 };
 
 struct building
@@ -112,9 +107,7 @@ struct building
 
     string Type;
 
-    // TODO(insolence): For god's sake replace with smth.
     string Texture;
-    string NormalTexture;
 
     bool Chosen;
 };
@@ -123,8 +116,16 @@ struct entity_system
 {
     std::vector<enemy> Enemies;
     std::vector<obstacle> Obstacles;
+    std::vector<resource> Resources;
     std::vector<chest> Chests;
     std::vector<building> Buildings;
+};
+
+enum unit_type
+{
+    WORKER = 0,
+    ARCHER = 1,
+    MELEE = 2,
 };
 
 struct unit
@@ -135,19 +136,23 @@ struct unit
     vec2 Velocity;
     float Speed;
 
+    unit_type Type;
+
     int Power;
     float Size;
 
     // TODO(insolence): For god's sake replace with smth.
     string Texture;
-    string NormalTexture;
 };
 
 struct player
 {
-    int UnitsNum = 2;
+    int UnitsNum = 1;
     std::vector<unit> Units;
     int UnitChosen; // NOTE(insolence): Which unit we currently control, if -1 then no unit chosen
+
+    int Stone;
+    int Sapphires;
 };
 #define NO_UNIT -1
 
@@ -178,8 +183,6 @@ enum game_mode
     BATTLE = 2,
 };
 
-global_variable const int WORLD_WIDTH = 300; // make float?
-global_variable const int WORLD_HEIGHT = 300;
 struct game_world
 {
     game_mode Mode;
@@ -190,3 +193,32 @@ struct game_world
     int ActiveBattleNum; // NOTE(insolence): -1 if no battle
 };
 #define NO_BATTLE -1
+
+
+/*
+    NOTE(insolence): All global vars, probably to be removed later
+*/
+
+// NOTE(insolence): 1440 x 900 (8 x 5 proportion) for NV.
+#if INSOLENCE
+    global_variable int WINDOW_WIDTH = 1920;
+    global_variable int WINDOW_HEIGHT = 1080;
+#elif VOSURE
+    global_variable int WINDOW_WIDTH = 1280;
+    global_variable int WINDOW_HEIGHT = 720;
+#endif
+
+global_variable const float RESOLUTION = 16.f/9.f;
+
+global_variable int SCREEN_WIDTH;
+global_variable int SCREEN_HEIGHT;
+
+global_variable int CurrentWidth;
+global_variable int CurrentHeight;
+
+global_variable const int WORLD_WIDTH = 300;
+global_variable const int WORLD_HEIGHT = 300;
+
+global_variable bool IsFullscreen = false;
+
+postprocessing_effects Effects;

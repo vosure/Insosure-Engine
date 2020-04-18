@@ -180,6 +180,7 @@ DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture,
 
     SetMat4("ViewProjection", TexturedDiffuseShader, Camera->ViewProjection);
     SetMat4("Transform", TexturedDiffuseShader, Transform);
+
     SetVec3("CustomColor", TexturedDiffuseShader, Color);
 
     for (int i = 0; i < DirLights.size(); i++)

@@ -7,7 +7,7 @@ string string::operator=(const char *Text)
 	{
 		if (this->Length == 0)
 		{
-			this->Native = (char*)malloc(strlen(Text) + 1);
+			this->Native = (char*)Malloc(strlen(Text) + 1);
 		}
 		else
 		{
@@ -26,7 +26,7 @@ string string::operator=(const string& Str)
 	{
 		if (this->Length == 0)
 		{
-			this->Native = (char*)malloc(Str.Length + 1);
+			this->Native = (char*)Malloc(Str.Length + 1);
 		}
 		else
 		{
@@ -48,7 +48,7 @@ string String(string& Str)
 {
 	string Result;
 	Result.Length = Str.Length;
-	Result.Native = (char*)malloc(Result.Length + 1);
+	Result.Native = (char*)Malloc(Result.Length + 1);
 	strncpy_s(Result.Native, Result.Length + 1, Str.Native, Str.Length);
 
 	return Result;
@@ -58,7 +58,7 @@ string String(const char *Text)
 {
 	string Result;
 	Result.Length = strlen(Text);
-	Result.Native = (char*)malloc(sizeof(char) * (Result.Length + 1));
+	Result.Native = (char*)Malloc(sizeof(char) * (Result.Length + 1));
 	strncpy_s(Result.Native, Result.Length + 1, Text, strlen(Text));
 
 	return Result;
@@ -100,7 +100,7 @@ string operator+(string String, const char *Text)
 {
 	string Result;
 	Result.Length = String.Length + strlen(Text);
-	Result.Native = (char*)malloc(Result.Length + 1);
+	Result.Native = (char*)Malloc(Result.Length + 1);
 	strncpy_s(Result.Native, Result.Length + 1, String.Native, String.Length);
 	strcat_s(Result.Native, Result.Length + 1, Text);
 

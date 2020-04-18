@@ -2,7 +2,8 @@
 
 global_variable hash_map<const char *, uint> *TextureCache;
 
-uint CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
+uint
+CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 {
     string FullPath = String("W:/Insosure-Engine/assets/textures/") + Path;
 
@@ -57,7 +58,8 @@ uint CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
     return Texture;
 }
 
-uint CreateNormalMapTexture(const char *Path)
+uint
+CreateNormalMapTexture(const char *Path)
 {
     string FullPath = String("W:/Insosure-Engine/assets/textures/normals/") + Path;
 
@@ -109,7 +111,8 @@ uint CreateNormalMapTexture(const char *Path)
 }
 
 // NOTE(insolence): Can return -1
-uint GetTexture(const char *Path)
+uint
+GetTexture(const char *Path)
 {
     // Query the TextureCache first
     if (Get(TextureCache, Path) != NULL)
@@ -120,7 +123,8 @@ uint GetTexture(const char *Path)
     return CreateTexture(Path, GL_NEAREST, GL_CLAMP_TO_EDGE);
 }
 // NOTE(insolence): Can return -1
-uint GetNormal(const char *Path)
+uint
+GetNormal(const char *Path)
 {
     // Query the TextureCache first
     if (Get(TextureCache, Path) != NULL)
@@ -131,9 +135,29 @@ uint GetNormal(const char *Path)
     return CreateNormalMapTexture(Path);
 }
 
+// NOTE(insolence): That's a very temporary and brute-force solution
+uint
+GetNormalFromTexture(string TextureStr)
+{
+    char NormalTextureStr[80];
+    int Index = 0;
+    while (TextureStr.Native[Index] != '.')
+    {
+        NormalTextureStr[Index] = TextureStr.Native[Index];
+        Index++;
+    }
+    NormalTextureStr[Index] = '\0';
+    strcat(NormalTextureStr, "_normal.png");
+
+    uint NormalTexture = GetNormal(NormalTextureStr);
+
+    return NormalTexture;
+}
+
 // NOTE(insolence): At window resize
 // TODO(insolence): Probably we should reupload all textures currently loaded
-void UpdateTextureCache()
+void
+UpdateTextureCache()
 {
     hash_map<const char *, uint> *Temp = CreateHashMap<const char *, uint>();
     hash_map<const char *, uint> *Swap = Temp;

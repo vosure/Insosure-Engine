@@ -19,10 +19,10 @@ template<typename T>
 array_list<T>*
 CreateList(int InitialCapacity = 20)
 {
-    array_list<T> *Result = (array_list<T>*)malloc(sizeof(array_list<T>));
+    array_list<T> *Result = (array_list<T>*)Malloc(sizeof(array_list<T>));
     Result->Capacity = InitialCapacity;
     Result->CurrentSize = 0;
-    Result->Elements = (T**)calloc(InitialCapacity, sizeof(T));
+    Result->Elements = (T**)Calloc(InitialCapacity, sizeof(T));
 
     return Result;
 }

@@ -29,7 +29,7 @@ template <typename K, typename V>
 internal hash_node<K, V>*
 NewNode(K Key, V Value)
 {
-	hash_node<K, V>* Node = (hash_node<K, V>*)malloc(sizeof(hash_node<K, V>));
+	hash_node<K, V>* Node = (hash_node<K, V>*)Malloc(sizeof(hash_node<K, V>));
 	Node->Key = Key;
 	Node->Value = Value;
 
@@ -142,13 +142,13 @@ template <typename K, typename V>
 hash_map<K, V>*
 CreateMapSized(const int BaseSize)
 {
-	hash_map<K, V>* HashMap = (hash_map<K, V>*)malloc(sizeof(hash_map<K, V>));
+	hash_map<K, V>* HashMap = (hash_map<K, V>*)Malloc(sizeof(hash_map<K, V>));
 	HashMap->BaseSize = BaseSize;
 
 	HashMap->Size = NextPrime(HashMap->BaseSize);
 
 	HashMap->Count = 0;
-	HashMap->Nodes = (hash_node<K, V>**)calloc(HashMap->Size, sizeof(hash_node<K, V>*));
+	HashMap->Nodes = (hash_node<K, V>**)Calloc(HashMap->Size, sizeof(hash_node<K, V>*));
 	return HashMap;
 }
 

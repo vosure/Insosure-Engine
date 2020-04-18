@@ -36,7 +36,7 @@ string IntToStr(int Num)
 
 char* IntToStrStd(int Num)
 {
-    char *NumToStr = (char*)malloc(16);
+    char *NumToStr = (char*)Malloc(16);
 	_itoa(Num, NumToStr, 10);
 
 	return NumToStr;

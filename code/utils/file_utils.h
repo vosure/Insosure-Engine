@@ -15,7 +15,7 @@ char *ReadFile(const char *FilePath)
 	fseek(File, 0, SEEK_END);
 	unsigned long Length = ftell(File);
 
-	char *Data = (char *)malloc(sizeof(char) * (Length + 1));
+	char *Data = (char *)Malloc(sizeof(char) * (Length + 1));
 	memset(Data, 0, Length + 1);
 
 	fseek(File, 0, SEEK_SET);
