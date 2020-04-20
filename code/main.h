@@ -1,11 +1,14 @@
 #pragma once
 
+#include <sstream>
 #include <iostream>
 #include <vector>
 #include <stdio.h>
 
 #include "utils/memory.h"
 #include "utils/string.cpp"
+
+#include <string>
 
 #include "math/linear_math.h"
 #include "physics/physics.h"
@@ -62,7 +65,7 @@ struct enemy
     int Power;
     float Size;
 
-    string Texture;
+    std::string Texture;
 };
 
 struct obstacle
@@ -71,7 +74,7 @@ struct obstacle
     float Size;
     aabb Collider;
 
-    string Texture;
+    std::string Texture;
 };
 
 struct chest
@@ -81,7 +84,7 @@ struct chest
     float Size;
     int Value;
 
-    string Texture;
+    std::string Texture;
 };
 
 #define STONE 0
@@ -96,6 +99,11 @@ struct resource
     int Amount;
 };
 
+enum building_type
+{
+    barracks, base
+};
+
 struct building
 {
     vec2 Pos;
@@ -105,9 +113,9 @@ struct building
     bool InProduction;
     float ProductionTimeLeft;
 
-    string Type;
+    building_type Type;
 
-    string Texture;
+    std::string Texture;
 
     bool Chosen;
 };
@@ -130,6 +138,7 @@ enum unit_type
 
 struct unit
 {
+
     vec2 Pos;
     aabb Collider;
     vec2 TargetPos;
@@ -141,8 +150,7 @@ struct unit
     int Power;
     float Size;
 
-    // TODO(insolence): For god's sake replace with smth.
-    string Texture;
+    std::string Texture;
 };
 
 struct player

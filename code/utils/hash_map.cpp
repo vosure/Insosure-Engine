@@ -64,7 +64,7 @@ Insert(hash_map<K, V> *HashMap, K Key, V Value)
 	// NOTE(insolence): Check if we can extend our table
 	const int Load = HashMap->Count * 100 / HashMap->Size;
 	if (Load > 70)
-		ResizeUp<const char*, uint>(HashMap);
+		ResizeUp<K, V>(HashMap);
 
 	hash_node<K, V>* Node = NewNode(Key, Value);
 	int Index = GetHash("Hello", HashMap->Size, 0); // FIXME(insolence): Fix this

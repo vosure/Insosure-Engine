@@ -5,6 +5,8 @@ struct string
 	int Length = 0;
 	char *Native;
 
+	//char Buffer[20]; // NOTE(insolence): Most strings are less than 20 characters anyway, so no need for dynamic allocation
+
 	string operator=(const char *Text);
 	string operator=(const string& Str);
 	char operator[](int Index);

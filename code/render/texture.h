@@ -1,11 +1,15 @@
 #pragma once
 
-global_variable hash_map<const char *, uint> *TextureCache;
+#include <unordered_map>
+
+std::unordered_map<std::string, uint> TextureCache;
+
+//global_variable hash_map<std::string, uint> *TextureCache;
 
 uint
-CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
+CreateTexture(std::string Path, int FilteringMode, int WrappingMode)
 {
-    string FullPath = String("W:/Insosure-Engine/assets/textures/") + Path;
+    std::string FullPath = "W:/Insosure-Engine/assets/textures/" + Path;
 
     uint Texture;
     glGenTextures(1, &Texture);
@@ -21,7 +25,7 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
     GLenum InternalFormat = 0, DataFormat = 0;
 
     int Width, Height, Channels;
-    unsigned char *Data = stbi_load(FullPath.Native, &Width, &Height, &Channels, 0);
+    unsigned char *Data = stbi_load(FullPath.c_str(), &Width, &Height, &Channels, 0);
 
     if (Data)
     {
@@ -42,32 +46,32 @@ CreateTexture(const char *Path, int FilteringMode, int WrappingMode)
 
         glTexImage2D(GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, DataFormat, GL_UNSIGNED_BYTE, Data);
         // glGenerateMipmap(GL_TEXTURE_2D);
+
+        TextureCache[Path] = Texture;
+
     }
     else
     {
         printf("Failed to load a texture! ");
-        printf("Name: %s \n", Path);
+        printf("Name: %s \n", FullPath.c_str());
     }
 
     stbi_image_free(Data);
-    FreeString(FullPath);
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    Insert(TextureCache, Path, Texture);
 
     return Texture;
 }
 
 uint
-CreateNormalMapTexture(const char *Path)
+CreateNormalMapTexture(std::string Path)
 {
-    string FullPath = String("W:/Insosure-Engine/assets/textures/normals/") + Path;
+    std::string FullPath = "W:/Insosure-Engine/assets/textures/normals/" + Path;
 
     uint Texture;
     glGenTextures(1, &Texture);
     int Width, Height, Channels;
 
-    unsigned char *Data = stbi_load(FullPath.Native, &Width, &Height, &Channels, 0);
+    unsigned char *Data = stbi_load(FullPath.c_str(), &Width, &Height, &Channels, 0);
 
     if (Data)
     {
@@ -94,7 +98,7 @@ CreateNormalMapTexture(const char *Path)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        Insert(TextureCache, Path, Texture);
+        TextureCache[Path] = Texture;
 
         stbi_image_free(Data);
 
@@ -102,48 +106,45 @@ CreateNormalMapTexture(const char *Path)
     else
     {
         printf("Failed to load a normal map! ");
-        printf("Name: %s \n", Path);
+        printf("Name: %s \n", FullPath.c_str());
         stbi_image_free(Data);
     }
 
-    FreeString(FullPath);
     return Texture;
 }
 
 // NOTE(insolence): Can return -1
 uint
-GetTexture(const char *Path)
+GetTexture(std::string Path)
 {
-    // Query the TextureCache first
-    if (Get(TextureCache, Path) != NULL)
-    {
-        return Get(TextureCache, Path);
-    }
+    if (TextureCache[Path])
+        return TextureCache[Path];
 
     return CreateTexture(Path, GL_NEAREST, GL_CLAMP_TO_EDGE);
 }
+
 // NOTE(insolence): Can return -1
 uint
-GetNormal(const char *Path)
+GetNormal(std::string Path)
 {
-    // Query the TextureCache first
-    if (Get(TextureCache, Path) != NULL)
-    {
-        return Get(TextureCache, Path);
-    }
+    if (TextureCache[Path])
+        return TextureCache[Path];
 
     return CreateNormalMapTexture(Path);
 }
 
+// FIXME(insolence):
 // NOTE(insolence): That's a very temporary and brute-force solution
 uint
-GetNormalFromTexture(string TextureStr)
+GetNormalFromTexture(std::string TextureStr)
 {
+    const char *TextureStrArr = TextureStr.c_str();
+
     char NormalTextureStr[80];
     int Index = 0;
-    while (TextureStr.Native[Index] != '.')
+    while (TextureStrArr[Index] != '.')
     {
-        NormalTextureStr[Index] = TextureStr.Native[Index];
+        NormalTextureStr[Index] = TextureStrArr[Index];
         Index++;
     }
     NormalTextureStr[Index] = '\0';
@@ -154,35 +155,43 @@ GetNormalFromTexture(string TextureStr)
     return NormalTexture;
 }
 
+
+// FIXME(insolence): Make this valid again!!!
 // NOTE(insolence): At window resize
 // TODO(insolence): Probably we should reupload all textures currently loaded
 void
 UpdateTextureCache()
 {
-    hash_map<const char *, uint> *Temp = CreateHashMap<const char *, uint>();
-    hash_map<const char *, uint> *Swap = Temp;
-    Temp = TextureCache;
-    TextureCache = Swap;
-
-    for (int i = 0; i < Temp->Size; i++)
-    {
-        if (Temp->Nodes[i] != NULL)
-        {
-            glDeleteTextures(1, &(uint)(Temp->Nodes[i]->Value));
-
-            //char *Name = Temp->Nodes[i]->Key;
-            //printf("Texture: %s \n", Name);
-            //CreateTexture(Name, GL_NEAREST, GL_CLAMP_TO_BORDER);
-        }
-    }
-
-    DeleteHashMap(Temp);
-
-    // for (int i = 0; i < TextureCache->Size; i++)
-    // {
-    //     if (TextureCache->Nodes[i] != NULL)
-    //     {
-    //         printf("Name: %s \n", TextureCache->Nodes[i]->Key);
-    //     }
-    // }
+    TextureCache.clear();
 }
+
+// void
+// UpdateTextureCache()
+// {
+//     hash_map<std::string, uint> *Temp = CreateHashMap<std::string, uint>();
+//     hash_map<std::string*, uint> *Swap = Temp;
+//     Temp = TextureCache;
+//     TextureCache = Swap;
+
+//     for (int i = 0; i < Temp->Size; i++)
+//     {
+//         if (Temp->Nodes[i] != NULL)
+//         {
+//             glDeleteTextures(1, &(uint)(Temp->Nodes[i]->Value));
+
+//             //char *Name = Temp->Nodes[i]->Key;
+//             //printf("Texture: %s \n", Name);
+//             //CreateTexture(Name, GL_NEAREST, GL_CLAMP_TO_BORDER);
+//         }
+//     }
+
+//     DeleteHashMap(Temp);
+
+//     // for (int i = 0; i < TextureCache->Size; i++)
+//     // {
+//     //     if (TextureCache->Nodes[i] != NULL)
+//     //     {
+//     //         printf("Name: %s \n", TextureCache->Nodes[i]->Key);
+//     //     }
+//     // }
+// }

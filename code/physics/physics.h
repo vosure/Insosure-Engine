@@ -24,12 +24,13 @@ struct bounding_circle
     //vec2 Velocity;
 };
 
+// FIXME(insolence): This 0.1f is probably wrong
 void
 UpdateAABB(aabb *Box, vec2 NewPos, float Size)
 {
-    Box->Min = NewPos;
-    Box->Max.X = NewPos.X + Size;
-    Box->Max.Y = NewPos.Y + Size;
+    Box->Min = NewPos + vec2{0.1f, 0.1f};
+    Box->Max.X = NewPos.X + Size - 0.1f;
+    Box->Max.Y = NewPos.Y + Size - 0.1f;
 }
 
 bool

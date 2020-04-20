@@ -388,6 +388,12 @@ UpdatePositions(game_world *World, float DeltaTime)
         float AbsXDiff = Abs(World->Player.Units[i].TargetPos.X - World->Player.Units[i].Pos.X);
         float AbsYDiff = Abs(World->Player.Units[i].TargetPos.Y - World->Player.Units[i].Pos.Y);
 
+        if (AbsXDiff <= 0.05f && AbsYDiff <= 0.05f)
+        {
+            World->Player.Units[i].TargetPos = World->Player.Units[i].Pos;
+            World->Player.Units[i].Velocity = {0.f, 0.f};
+        }
+
         unit TempUnit = World->Player.Units[i];
         World->Player.Units[i].Pos += World->Player.Units[i].Velocity * DeltaTime;
         if (CheckUnitCollisions(World, i))
@@ -437,13 +443,12 @@ UpdatePositions(game_world *World, float DeltaTime)
                 Unit.Size = 1.f;
                 Unit.Speed = 2.f;
                 UpdateAABB(&Unit.Collider, Unit.Pos, Unit.Size);
-                Unit.Texture = String("archer.png");
+                Unit.Texture = "archer.png";
 
                 World->Player.Units.push_back(Unit);
             }
         }
     }
-
 
 }
 
@@ -457,7 +462,7 @@ RenderGlobalMapGui(game_world *World)
     {
         DrawRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, SILVER);
         DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, GetTexture("frame.png"));
-        DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f}, GetTexture(World->Player.Units[World->Player.UnitChosen].Texture.Native));
+        DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f}, GetTexture(World->Player.Units[World->Player.UnitChosen].Texture));
     }
 
     for (int BuildingIndex = 0; BuildingIndex < World->Objects.Buildings.size(); BuildingIndex++)
@@ -466,30 +471,24 @@ RenderGlobalMapGui(game_world *World)
         {
             DrawRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, SILVER);
             DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, GetTexture("frame.png"));
-            DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f}, GetTexture(World->Objects.Buildings[BuildingIndex].Texture.Native));
+            DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f}, GetTexture(World->Objects.Buildings[BuildingIndex].Texture));
         }
     }
 
-    string StonesStr = IntToStr(World->Player.Stone);
-    string SapphiresStr = IntToStr(World->Player.Sapphires);
+    // NOTE(insolence): Display player resources
+    std::string PlayerStonesStr = std::to_string(World->Player.Stone);
+    std::string PlayerSapphiresStr = std::to_string(World->Player.Sapphires);
 
     DrawTexturedRectangleOnScreen(vec2{0.72f, 0.9f}, vec2{0.79f, 0.97f}, GetTexture("stone_resource.png"));
-    RenderTextOnScreen(StonesStr.Native, vec2{0.8f, 0.92f}, GOLD);
+    RenderTextOnScreen(PlayerStonesStr.c_str(), vec2{0.8f, 0.92f}, GOLD);
 
     DrawTexturedRectangleOnScreen(vec2{0.87f, 0.9f}, vec2{0.94f, 0.97f}, GetTexture("sapphire_resource.png"));
-    RenderTextOnScreen(SapphiresStr.Native, vec2{0.95f, 0.92f}, GOLD);
-
-    FreeString(StonesStr);
-    FreeString(SapphiresStr);
+    RenderTextOnScreen(PlayerSapphiresStr.c_str(), vec2{0.95f, 0.92f}, GOLD);
 }
 
 void
 RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights)
 {
-    // FIXME(insolence): Change to dynamic
-    string EnemyPowerStr = IntToStr(26);
-    string ChestValueStr = IntToStr(5);
-
     vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
 
     // NOTE(insolence): Rendering the ground around the player depending on camera pos
@@ -509,22 +508,24 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
     {
         enemy Enemy = World->Objects.Enemies[i];
         DrawRectangleTextured(Camera, Transform(vec2{Enemy.Pos.X, Enemy.Pos.Y}, 0.f, Enemy.Size/2.f),
-                              GetTexture(Enemy.Texture.Native), GetNormalFromTexture(Enemy.Texture), DirLights, PointLights, SpotLights);
-        RenderText(Camera, EnemyPowerStr.Native, World->Objects.Enemies[i].Pos.X + 0.05f, World->Objects.Enemies[i].Pos.Y + 0.05f, 1.5f, RED);
+                              GetTexture(Enemy.Texture), GetNormalFromTexture(Enemy.Texture), DirLights, PointLights, SpotLights);
+        std::string EnemyPowerStr = std::to_string(World->Objects.Enemies[i].Power);
+        RenderText(Camera, EnemyPowerStr.c_str(), World->Objects.Enemies[i].Pos.X + 0.05f, World->Objects.Enemies[i].Pos.Y + 0.05f, 1.5f, RED);
 
     }
     for (int i = 0; i < World->Objects.Obstacles.size(); i++)
     {
         obstacle Obstacle = World->Objects.Obstacles[i];
         DrawRectangleTextured(Camera, Transform(vec2{Obstacle.Pos.X, Obstacle.Pos.Y}, 0.f, Obstacle.Size/2.f),
-                              GetTexture(Obstacle.Texture.Native), GetNormalFromTexture(Obstacle.Texture), DirLights, PointLights, SpotLights);
+                              GetTexture(Obstacle.Texture), GetNormalFromTexture(Obstacle.Texture), DirLights, PointLights, SpotLights);
     }
     for (int i = 0; i < World->Objects.Chests.size(); i++)
     {
         chest Chest = World->Objects.Chests[i];
         DrawRectangleTextured(Camera, Transform(vec2{Chest.Pos.X, Chest.Pos.Y}, 0.f, Chest.Size/2.f),
-                              GetTexture(Chest.Texture.Native), GetNormalFromTexture(Chest.Texture), DirLights, PointLights, SpotLights);
-        RenderText(Camera, ChestValueStr.Native, World->Objects.Chests[i].Pos.X + 0.05f, World->Objects.Chests[i].Pos.Y + 0.05f, 1.5f, RED);
+                              GetTexture(Chest.Texture), GetNormalFromTexture(Chest.Texture), DirLights, PointLights, SpotLights);
+        std::string ChestValueStr = std::to_string(World->Objects.Chests[i].Value);
+        RenderText(Camera, ChestValueStr.c_str(), World->Objects.Chests[i].Pos.X + 0.05f, World->Objects.Chests[i].Pos.Y + 0.05f, 1.5f, RED);
     }
     for (int i = 0; i < World->Objects.Resources.size(); i++)
     {
@@ -544,13 +545,12 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
     {
         building Building = World->Objects.Buildings[i];
         DrawRectangleTextured(Camera, Transform(vec2{Building.Pos.X, Building.Pos.Y}, 0.f, Building.Size/2.f),
-                              GetTexture(Building.Texture.Native), GetNormalFromTexture(Building.Texture), DirLights, PointLights, SpotLights);
+                              GetTexture(Building.Texture), GetNormalFromTexture(Building.Texture), DirLights, PointLights, SpotLights);
 
         if (World->Objects.Buildings[i].InProduction)
         {
-            string ProductionTimeLeftStr = FloatToStr(Building.ProductionTimeLeft, 1);
-            RenderText(Camera, ProductionTimeLeftStr.Native, Building.Pos.X - 0.3f, Building.Pos.Y - 0.3f, 1.5f, BLUE);
-            FreeString(ProductionTimeLeftStr);
+            std::string ProductionTimeLeftStr = std::to_string(Building.ProductionTimeLeft);
+            RenderText(Camera, ProductionTimeLeftStr.c_str(), Building.Pos.X - 0.3f, Building.Pos.Y - 0.3f, 1.5f, BLUE);
         }
     }
 
@@ -559,22 +559,18 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
         if (World->Player.UnitChosen == i)
         {
             DrawRectangleTextured(Camera, Transform(vec2{World->Player.Units[i].Pos.X, World->Player.Units[i].Pos.Y}, 0.f, World->Player.Units[i].Size/2.f),
-                              GetTexture(World->Player.Units[i].Texture.Native), GetNormalFromTexture(World->Player.Units[i].Texture), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
+                              GetTexture(World->Player.Units[i].Texture), GetNormalFromTexture(World->Player.Units[i].Texture), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
         }
         else
         {
             DrawRectangleTextured(Camera, Transform(vec2{World->Player.Units[i].Pos.X, World->Player.Units[i].Pos.Y}, 0.f, World->Player.Units[i].Size/2.f),
-                              GetTexture(World->Player.Units[i].Texture.Native), GetNormalFromTexture(World->Player.Units[i].Texture), DirLights, PointLights, SpotLights);
+                              GetTexture(World->Player.Units[i].Texture), GetNormalFromTexture(World->Player.Units[i].Texture), DirLights, PointLights, SpotLights);
         }
-        string PlayerPowerStr = IntToStr(World->Player.Units[i].Power);
-        RenderText(Camera, PlayerPowerStr.Native, World->Player.Units[i].Pos.X + 0.05f, World->Player.Units[i].Pos.Y + 0.05f, 1.5f, RED);
-        FreeString(PlayerPowerStr);
+        std::string PlayerPowerStr = std::to_string(World->Player.Units[i].Power);
+        RenderText(Camera, PlayerPowerStr.c_str(), World->Player.Units[i].Pos.X + 0.05f, World->Player.Units[i].Pos.Y + 0.05f, 1.5f, RED);
     }
 
     RenderGlobalMapGui(World);
-
-    FreeString(EnemyPowerStr);
-    FreeString(ChestValueStr);
 }
 
 void
@@ -601,7 +597,7 @@ void RenderBattlefield(game_world *World,std::vector<particle> Particles)
             if ((int)ActiveBattle.PlayerPos.X == X && (int)ActiveBattle.PlayerPos.Y == Y)
             {
                 DrawRectangleTextured(&ActiveBattle.BattleCamera, Transform(vec2{(float)X, (float)Y}, 0.f, 0.5f),
-                                      GetTexture(World->Player.Units[World->Player.UnitChosen].Texture.Native), GetNormalFromTexture(World->Player.Units[World->Player.UnitChosen].Texture),
+                                      GetTexture(World->Player.Units[World->Player.UnitChosen].Texture), GetNormalFromTexture(World->Player.Units[World->Player.UnitChosen].Texture),
                                       std::vector<dir_light>(), std::vector<point_light>(), std::vector<spotlight_light>());
             }
         }
@@ -639,11 +635,11 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
 
         if (Unit.Type == WORKER)
         {
-            Unit.Texture = String("worker.png");
+            Unit.Texture = "worker.png";
         }
         else if (Unit.Type == ARCHER)
         {
-            Unit.Texture = String("archer.png");
+            Unit.Texture = "archer.png";
         }
         UpdateAABB(&Unit.Collider, Unit.Pos, Unit.Size);
 
@@ -663,7 +659,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
         Enemy.Power = 25;
         Enemy.Size = 1.f;
         Enemy.Speed = 2.f;
-        Enemy.Texture = String("monster.png");
+        Enemy.Texture = "monster.png";
         UpdateAABB(&Enemy.Collider, Enemy.Pos, Enemy.Size);
         World.Objects.Enemies.push_back(Enemy);
     }
@@ -673,7 +669,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
         Chest.Pos = vec2{GetRandomFloat(0, 50), GetRandomFloat(0, 50)};
         Chest.Size = 1.f;
         Chest.Value = 5;
-        Chest.Texture = String("treasure.png");
+        Chest.Texture = "treasure.png";
         UpdateAABB(&Chest.Collider, Chest.Pos, Chest.Size);
         World.Objects.Chests.push_back(Chest);
     }
@@ -682,7 +678,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
         obstacle Obstacle;
         Obstacle.Pos = vec2{GetRandomFloat(0, 50), GetRandomFloat(0, 50)};
         Obstacle.Size = 1.f;
-        Obstacle.Texture = String("rocks.png");
+        Obstacle.Texture = "rocks.png";
         UpdateAABB(&Obstacle.Collider, Obstacle.Pos, Obstacle.Size);
         World.Objects.Obstacles.push_back(Obstacle);
     }
@@ -692,7 +688,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
         obstacle Obstacle;
         Obstacle.Pos = vec2{(float)X, 10};
         Obstacle.Size = 1.f;
-        Obstacle.Texture = String("tree.png");
+        Obstacle.Texture = "tree.png";
         UpdateAABB(&Obstacle.Collider, Obstacle.Pos, Obstacle.Size);
         World.Objects.Obstacles.push_back(Obstacle);
     }
@@ -701,7 +697,7 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
         obstacle Obstacle;
         Obstacle.Pos = vec2{13, (float)Y};
         Obstacle.Size = 1.f;
-        Obstacle.Texture = String("tree.png");
+        Obstacle.Texture = "tree.png";
         UpdateAABB(&Obstacle.Collider, Obstacle.Pos, Obstacle.Size);
         World.Objects.Obstacles.push_back(Obstacle);
     }
@@ -722,8 +718,8 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
     Building.Size = 2.f;
     Building.InProduction = false;
     Building.ProductionTimeLeft = 15.f;
-    Building.Type = "Barracks";
-    Building.Texture = String("barracks.png");
+    Building.Type = barracks;
+    Building.Texture = "barracks.png";
     UpdateAABB(&Building.Collider, Building.Pos, Building.Size);
     World.Objects.Buildings.push_back(Building);
 
@@ -801,12 +797,14 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
             DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{1.f, 1.f}, GetTexture("intro.png"));
         }
 
-        string FpsStr = "FPS: " + FloatToStr(1.f/DeltaTime, 2);
-        string MSPerFrameStr = "MS per frame: " + FloatToStr(DeltaTime * 1000, 2);
-        RenderTextOnScreen(FpsStr.Native, vec2{-0.99f, 0.95f}, GOLD);
-        RenderTextOnScreen(MSPerFrameStr.Native, vec2{-0.99f, 0.9f}, GOLD);
-        FreeString(FpsStr);
-        FreeString(MSPerFrameStr);
+        // NOTE(insolence): Displaying FPS and MSPerFrame, maybe change back to floats later?
+        int Fps = 1.f/DeltaTime;
+        int MsPerFrame = DeltaTime * 1000.f;
+        std::string FpsStr = "FPS: " + std::to_string(Fps);
+        std::string MSPerFrameStr = "MS per frame: " + std::to_string(MsPerFrame);
+        RenderTextOnScreen(FpsStr.c_str(), vec2{-0.99f, 0.95f}, GOLD);
+        RenderTextOnScreen(MSPerFrameStr.c_str(), vec2{-0.99f, 0.9f}, GOLD);
+
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -882,7 +880,7 @@ void main()
 #endif
 
     LoadFreetype();
-    TextureCache = CreateHashMap<const char*, uint>();
+    //TextureCache = CreateHashMap<std::string, uint>();
     MakeFramebuffers(WINDOW_WIDTH, WINDOW_HEIGHT);
     MakeShaders();
 
