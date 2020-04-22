@@ -73,7 +73,7 @@ DrawTriangle(orthographic_camera *Camera, mat4 Transform, color Color)
 
 void
 DrawRectangleTextured(orthographic_camera *Camera, mat4 Transform, uint Texture, uint NormalMap,
-                      std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights, color Color = vec3{0, 0, 0})
+                      std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights, color Color)
 {
     if (!NormalMap)
     {

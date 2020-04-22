@@ -25,6 +25,11 @@
     #define real64 double
 #endif
 
+#include "utils/colors.h"
+#include "render/light.h"
+#include "ecs.h"
+
+
 // NOTE(insolence): Useful Macros
 #define Assert(Expression) if (!(Expression)) { *(int*)0 = 0; }
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
@@ -53,116 +58,123 @@ struct postprocessing_effects
     bool Blur;
 };
 
-// NOTE(insolence): Same as unit, mb unite somehow, make sprites
-struct enemy
-{
-    vec2 Pos;
-    vec2 TargetPos;
-    vec2 Velocity;
-    float Speed;
-    aabb Collider;
+// // NOTE(insolence): Same as unit, mb unite somehow, make sprites
+// struct enemy
+// {
+//     vec2 Pos;
+//     vec2 TargetPos;
+//     vec2 Velocity;
+//     float Speed;
+//     aabb Collider;
 
-    int Power;
-    float Size;
+//     int Power;
+//     float Size;
 
-    std::string Texture;
-};
+//     std::string Texture;
+// };
 
-struct obstacle
-{
-    vec2 Pos;
-    float Size;
-    aabb Collider;
+// struct obstacle
+// {
+//     vec2 Pos;
+//     float Size;
+//     aabb Collider;
 
-    std::string Texture;
-};
+//     std::string Texture;
+// };
 
-struct chest
-{
-    vec2 Pos;
-    aabb Collider;
-    float Size;
-    int Value;
+// struct chest
+// {
+//     vec2 Pos;
+//     aabb Collider;
+//     float Size;
+//     int Value;
 
-    std::string Texture;
-};
+//     std::string Texture;
+// };
 
-#define STONE 0
-#define SAPPHIRE 1
-struct resource
-{
-    vec2 Pos;
-    aabb Collider;
-    float Size;
+// #define STONE 0
+// #define SAPPHIRE 1
+// struct resource
+// {
+//     vec2 Pos;
+//     aabb Collider;
+//     float Size;
 
-    int Type; // NOTE(insolence): Stone or sapphire
-    int Amount;
-};
+//     int Type; // NOTE(insolence): Stone or sapphire
+//     int Amount;
+// };
 
-enum building_type
-{
-    barracks, base
-};
+// enum building_type
+// {
+//     barracks, base
+// };
 
-struct building
-{
-    vec2 Pos;
-    aabb Collider;
-    float Size;
+// struct building
+// {
+//     vec2 Pos;
+//     aabb Collider;
+//     float Size;
 
-    bool InProduction;
-    float ProductionTimeLeft;
+//     bool InProduction;
+//     float ProductionTimeLeft;
+//     //float ProductuonTime;
 
-    building_type Type;
+//     building_type Type;
 
-    std::string Texture;
+//     std::string Texture;
 
-    bool Chosen;
-};
+//     bool Chosen;
+// };
 
-struct entity_system
-{
-    std::vector<enemy> Enemies;
-    std::vector<obstacle> Obstacles;
-    std::vector<resource> Resources;
-    std::vector<chest> Chests;
-    std::vector<building> Buildings;
-};
+// struct entity_system
+// {
+//     std::vector<enemy> Enemies;
+//     std::vector<obstacle> Obstacles;
+//     std::vector<resource> Resources;
+//     std::vector<chest> Chests;
+//     std::vector<building> Buildings;
+// };
 
-enum unit_type
-{
-    WORKER = 0,
-    ARCHER = 1,
-    MELEE = 2,
-};
+// enum unit_type
+// {
+//     WORKER = 0,
+//     ARCHER = 1,
+//     MELEE = 2,
+// };
 
-struct unit
-{
+// struct unit
+// {
 
-    vec2 Pos;
-    aabb Collider;
-    vec2 TargetPos;
-    vec2 Velocity;
-    float Speed;
+//     vec2 Pos;
+//     aabb Collider;
+//     vec2 TargetPos;
+//     vec2 Velocity;
+//     float Speed;
 
-    unit_type Type;
+//     unit_type Type;
 
-    int Power;
-    float Size;
+//     int Power;
+//     float Size;
 
-    std::string Texture;
-};
+//     std::string Texture;
+// };
+
+// struct player
+// {
+//     int UnitsNum = 1;
+//     std::vector<unit> Units;
+//     int UnitChosen; // NOTE(insolence): Which unit we currently control, if -1 then no unit chosen
+
+//     int Stone;
+//     int Sapphires;
+// };
+// #define NO_UNIT -1
 
 struct player
 {
-    int UnitsNum = 1;
-    std::vector<unit> Units;
-    int UnitChosen; // NOTE(insolence): Which unit we currently control, if -1 then no unit chosen
-
     int Stone;
     int Sapphires;
 };
-#define NO_UNIT -1
 
 struct tile
 {
@@ -194,7 +206,10 @@ enum game_mode
 struct game_world
 {
     game_mode Mode;
-    entity_system Objects;
+
+    components Components;
+    std::vector<entity> Entities; // NOTE(insolence): We store all entities in case we may need them later
+
     player Player;
 
     std::vector<battlefield> ActiveBattlefields;
