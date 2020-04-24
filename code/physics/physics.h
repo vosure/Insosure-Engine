@@ -14,7 +14,7 @@ struct aabb
 {
     vec2 Min;
     vec2 Max;
-    vec2 Velocity;
+    //vec2 Velocity;
 };
 
 struct bounding_circle

@@ -306,7 +306,7 @@ DrawParticles(orthographic_camera *Camera, std::vector<particle> &Particles, uin
 // }
 
 void
-RenderText(orthographic_camera *Camera, std::string Text, float X, float Y, float Scale, color Color)
+RenderText(orthographic_camera *Camera, std::string Text, vec2 Pos, float Scale, color Color)
 {
     float DefaultScale = 5.f; // NOTE(insolence): This must be removed or just self-adjusted
 
@@ -337,8 +337,8 @@ RenderText(orthographic_camera *Camera, std::string Text, float X, float Y, floa
     {
         Character Ch = Characters[*c];
 
-        GLfloat Xpos = X + (Ch.Bearing.X * (DefaultScale + Scale) / SCREEN_WIDTH) - 0.49f;
-        GLfloat Ypos = Y - ((Ch.Size.Y - Ch.Bearing.Y) * (DefaultScale + Scale) / SCREEN_HEIGHT) - 0.49f;
+        GLfloat Xpos = Pos.X + (Ch.Bearing.X * (DefaultScale + Scale) / SCREEN_WIDTH) - 0.49f;
+        GLfloat Ypos = Pos.Y - ((Ch.Size.Y - Ch.Bearing.Y) * (DefaultScale + Scale) / SCREEN_HEIGHT) - 0.49f;
 
         GLfloat W = (Ch.Size.X * DefaultScale * Scale)/SCREEN_WIDTH;
         GLfloat H = (Ch.Size.Y * DefaultScale * Scale)/SCREEN_HEIGHT;
@@ -359,7 +359,7 @@ RenderText(orthographic_camera *Camera, std::string Text, float X, float Y, floa
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
         // NOTE(insolence): Advance cursors for next glyph
-        X += (Ch.Advance >> 6) * DefaultScale * Scale / SCREEN_WIDTH; // NOTE(insolence): Bitshift by 6 to get value in pixels (2^6 = 64)
+        Pos.X += (Ch.Advance >> 6) * DefaultScale * Scale / SCREEN_WIDTH; // NOTE(insolence): Bitshift by 6 to get value in pixels (2^6 = 64)
     }
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);

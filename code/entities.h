@@ -15,7 +15,7 @@ struct transform
 
 struct motion
 {
-    vec2 TargetPos;
+    vec2 TargetPos; // NOTE(insolence): if TargetPos == vec2{-1, -1}, then no TargetPos
     vec2 Velocity;
     float Speed;
 };
@@ -30,9 +30,14 @@ struct drawable
     std::string Texture;
 };
 
+enum resource_type
+{
+    stone, sapphires
+};
+
 struct resource
 {
-    int Type;
+    resource_type Type;
     int Amount;
 };
 

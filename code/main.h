@@ -170,12 +170,6 @@ struct postprocessing_effects
 // };
 // #define NO_UNIT -1
 
-struct player
-{
-    int Stone;
-    int Sapphires;
-};
-
 struct tile
 {
     int Value;
@@ -201,6 +195,12 @@ enum game_mode
     MENU = 0,
     GLOBAL = 1,
     BATTLE = 2,
+};
+
+struct player
+{
+    int Stone;
+    int Sapphires;
 };
 
 struct game_world

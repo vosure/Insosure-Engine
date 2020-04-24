@@ -136,86 +136,40 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
         //     Camera->Rotation -= 1.f;
         // }
 
-        // NOTE(insolence): Mouse input
-        // if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_LEFT))
-        // {
-        //     vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
-        //     for (int i = 0; i < World->Player.UnitsNum; i++)
-        //     {
-        //         if (IsPointInsideAABB(CursorWorldPos, World->Player.Units[i].Collider))
-        //         {
-        //             World->Player.UnitChosen = i;
-        //             break;
-        //         }
-        //         else
-        //         {
-        //             World->Player.UnitChosen = NO_UNIT;
-        //         }
-        //     }
-        //     for (int i = 0; i < World->Objects.Buildings.size(); i++)
-        //     {
-        //         World->Objects.Buildings[i].Chosen = false;
+        if (IsKeyPressed(GLFW_KEY_ESCAPE) && !IsKeyProcessed(GLFW_KEY_ESCAPE))
+        {
+            SetUntargetableAll(World->Components.Targetables);
+        }
 
-        //         if (IsPointInsideAABB(CursorWorldPos, World->Objects.Buildings[i].Collider))
-        //         {
-        //             World->Objects.Buildings[i].Chosen = true;
-        //         }
-        //     }
+        if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_LEFT))
+        {
+            vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
+            TryToSetTargetable(World->Components.Targetables, World->Components.Colliders, CursorWorldPos);
+        }
 
-        // }
-        // if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_RIGHT))
-        // {
-        //     int CurrentUnit = World->Player.UnitChosen;
-        //     if (CurrentUnit != NO_UNIT)
-        //     {
-        //         vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
-        //         if (CursorWorldPos.X >= 0 && CursorWorldPos.X < WORLD_WIDTH && CursorWorldPos.Y >= 0 && CursorWorldPos.Y < WORLD_HEIGHT &&
-        //             !IsPointInsideAABB(CursorWorldPos, World->Player.Units[CurrentUnit].Collider))
-        //         {
-        //             World->Player.Units[CurrentUnit].TargetPos = vec2{CursorWorldPos.X-0.5f, CursorWorldPos.Y-0.5f};
-        //             // FIXME(insolence): Check when user clicks on the unit
-        //             World->Player.Units[CurrentUnit].Velocity = Normalize(World->Player.Units[CurrentUnit].TargetPos - World->Player.Units[CurrentUnit].Pos) *
-        //                                                         World->Player.Units[CurrentUnit].Speed;
-        //         }
+        if (IsMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT) && !IsMouseButtonProcessed(GLFW_MOUSE_BUTTON_RIGHT))
+        {
+            vec2 CursorWorldPos = GetCursorWorldPos(Window, Camera);
 
-        //         MouseInput.ButtonsProcessed[GLFW_MOUSE_BUTTON_RIGHT] = true;
-        //     }
-        // }
-        // if (IsKeyPressed(GLFW_KEY_H) && !IsKeyProcessed(GLFW_KEY_H))
-        // {
-        //     if (World->Player.UnitChosen != NO_UNIT)
-        //     {
-        //         World->Player.Units[World->Player.UnitChosen].Velocity = vec2{0, 0};
-        //         World->Player.Units[World->Player.UnitChosen].TargetPos = World->Player.Units[World->Player.UnitChosen].Pos;
-        //     }
-        // }
-
+            if (CursorWorldPos.X >= 0 && CursorWorldPos.X < WORLD_WIDTH && CursorWorldPos.Y >= 0 && CursorWorldPos.Y < WORLD_HEIGHT)
+            {
+                ChangeTargetedDest(World->Components.Targetables, World->Components.Motions, World->Components.Units,
+                                   World->Components.Transforms, World->Components.Colliders, CursorWorldPos);
+            }
+        }
 
         // // NOTE(insolence): Buildings' events
-        // if (IsKeyPressed(GLFW_KEY_B) && !IsKeyProcessed(GLFW_KEY_B))
-        // {
-        //     // for (int i = 0; i < World->Objects.Buildings.size(); i++)
-        //     // {
-        //     //     if (World->Objects.Buildings[i].Chosen && !World->Objects.Buildings[i].InProduction && World->Player.Stone >= 30)
-        //     //     {
-        //     //         World->Objects.Buildings[i].InProduction = true;
-        //     //         World->Objects.Buildings[i].ProductionTimeLeft = 10.f;
-        //     //         World->Player.Stone -= 30;
-        //     //     }
-        //     // }
-        // }
-        // if(IsKeyPressed(GLFW_KEY_H) && !IsKeyProcessed(GLFW_KEY_H))
-        // {
-        //     //  for (int i = 0; i < World->Objects.Buildings.size(); i++)
-        //     // {
-        //     //     if (World->Objects.Buildings[i].Chosen && World->Objects.Buildings[i].InProduction)
-        //     //     {
-        //     //         World->Objects.Buildings[i].InProduction = false;
-        //     //         World->Objects.Buildings[i].ProductionTimeLeft = 0.f;
-        //     //         World->Player.Stone += 30;
-        //     //     }
-        //     // }
-        // }
+        if (IsKeyPressed(GLFW_KEY_B) && !IsKeyProcessed(GLFW_KEY_B))
+        {
+            StartUnitProduction(World->Components.Buildings, World->Components.Targetables);
+            KeyboardInput.KeysProcessed[GLFW_KEY_B] = true;
+
+        }
+        if(IsKeyPressed(GLFW_KEY_H) && !IsKeyProcessed(GLFW_KEY_H))
+        {
+            StopUnitProduction(World->Components.Buildings);
+            KeyboardInput.KeysProcessed[GLFW_KEY_H] = true;
+        }
     }
 
     else if (World->Mode == BATTLE)
@@ -286,20 +240,6 @@ CreateBattlefield(vec2 BattleLocation)
     Battlefield.BattleCamera.Position = vec3{-12.7f - XOFFSET, -7.3f - YOFFSET, 0};
 
     return Battlefield;
-}
-
-// HACK(insolence): Temp solution
-// #define NULL_POS vec2{-40, -40}
-// void
-// NullifyEnemy(enemy *Enemy)
-// {
-//     Enemy->Pos = NULL_POS;
-// }
-
-void
-OnCollision()
-{
-    // TODO(insolence): Move some code from CheckCollisions there
 }
 
 // bool
@@ -381,111 +321,30 @@ OnCollision()
 //     return false;
 // }
 
-// void
-// UpdatePositions(game_world *World, float DeltaTime)
-// {
-//     for (int i = 0; i < World->Player.UnitsNum; i++)
-//     {
-//         float AbsXDiff = Abs(World->Player.Units[i].TargetPos.X - World->Player.Units[i].Pos.X);
-//         float AbsYDiff = Abs(World->Player.Units[i].TargetPos.Y - World->Player.Units[i].Pos.Y);
+// NOTE(insolence): Range is from{-1,1} to{-1,1}
+void
+RenderGlobalMapGui(game_world *World)
+{
+    DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{1.f, -0.4f}, GetTexture("mist.jpg"));
 
-//         if (AbsXDiff <= 0.05f && AbsYDiff <= 0.05f)
-//         {
-//             World->Player.Units[i].TargetPos = World->Player.Units[i].Pos;
-//             World->Player.Units[i].Velocity = {0.f, 0.f};
-//         }
+    int TargetedIndex = GetTargetedIndex(World->Components.Targetables);
+    if (TargetedIndex != -1)
+    {
+        DrawRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, SILVER);
+        DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, GetTexture("frame.png"));
+        DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f},  GetTexture(World->Components.Drawables[TargetedIndex].Texture));
+    }
 
-//         unit TempUnit = World->Player.Units[i];
-//         World->Player.Units[i].Pos += World->Player.Units[i].Velocity * DeltaTime;
-//         if (CheckUnitCollisions(World, i))
-//         {
-//             World->Player.Units[i].Pos = TempUnit.Pos;
-//             World->Player.Units[i].Pos -= (DeltaTime * TempUnit.Velocity);
-//             World->Player.Units[i].TargetPos =  World->Player.Units[i].Pos;
-//             World->Player.Units[i].Velocity = {0, 0};
-//         }
+    // NOTE(insolence): Display player resources
+    std::string PlayerStonesStr = std::to_string(World->Player.Stone);
+    std::string PlayerSapphiresStr = std::to_string(World->Player.Sapphires);
 
-//         UpdateAABB(&World->Player.Units[i].Collider, World->Player.Units[i].Pos, World->Player.Units[i].Size);
-//     }
+    DrawTexturedRectangleOnScreen(vec2{0.72f, 0.9f}, vec2{0.79f, 0.97f}, GetTexture("stone_resource.png"));
+    RenderTextOnScreen(PlayerStonesStr.c_str(), vec2{0.8f, 0.92f}, GOLD);
 
-
-//     // TODO(insolence): Check enemy collisions as well !!!
-//     for (int i = 0; i < World->Objects.Enemies.size(); i++)
-//     {
-//         float AbsXDiff = Abs(World->Objects.Enemies[i].TargetPos.X - World->Objects.Enemies[i].Pos.X);
-//         float AbsYDiff = Abs(World->Objects.Enemies[i].TargetPos.Y - World->Objects.Enemies[i].Pos.Y);
-
-//         if (AbsXDiff <= 0.05f && AbsYDiff <= 0.05f)
-//         {
-//            World->Objects.Enemies[i].Velocity = vec2{0.f, 0.f};
-//            World->Objects.Enemies[i].Pos = World->Objects.Enemies[i].TargetPos;
-//         }
-//         else
-//             World->Objects.Enemies[i].Pos += World->Objects.Enemies[i].Velocity * World->Objects.Enemies[i].Speed * DeltaTime;
-
-//         UpdateAABB(&World->Objects.Enemies[i].Collider, World->Objects.Enemies[i].Pos, World->Objects.Enemies[i].Size);
-//     }
-
-//     // NOTE(insolence): Updating buildings, so rename a function
-//     for (int i = 0; i < World->Objects.Buildings.size(); i++)
-//     {
-//         if (World->Objects.Buildings[i].InProduction)
-//         {
-//             World->Objects.Buildings[i].ProductionTimeLeft -= DeltaTime;
-//             if (World->Objects.Buildings[i].ProductionTimeLeft <= 0.f)
-//             {
-//                 World->Objects.Buildings[i].InProduction = false;
-//                 World->Player.UnitsNum++;
-
-//                 unit Unit;
-
-//                 Unit.Pos = vec2{World->Objects.Buildings[i].Pos.X - 1.f, World->Objects.Buildings[i].Pos.Y - 1.f};
-//                 Unit.Power = 32;
-//                 Unit.Size = 1.f;
-//                 Unit.Speed = 2.f;
-//                 UpdateAABB(&Unit.Collider, Unit.Pos, Unit.Size);
-//                 Unit.Texture = "archer.png";
-
-//                 World->Player.Units.push_back(Unit);
-//             }
-//         }
-//     }
-
-// }
-
-// NOTE(insolence): Range is -1,1 -1,1
-// void
-// RenderGlobalMapGui(game_world *World)
-// {
-//     DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{1.f, -0.4f}, GetTexture("mist.jpg"));
-
-//     if (World->Player.UnitChosen != NO_UNIT)
-//     {
-//         DrawRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, SILVER);
-//         DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, GetTexture("frame.png"));
-//         DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f}, GetTexture(World->Player.Units[World->Player.UnitChosen].Texture));
-//     }
-
-//     for (int BuildingIndex = 0; BuildingIndex < World->Objects.Buildings.size(); BuildingIndex++)
-//     {
-//         if (World->Objects.Buildings[BuildingIndex].Chosen)
-//         {
-//             DrawRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, SILVER);
-//             DrawTexturedRectangleOnScreen(vec2{-1.f, -1.f}, vec2{-0.6f, -0.4f}, GetTexture("frame.png"));
-//             DrawTexturedRectangleOnScreen(vec2{-0.9f, -0.9f}, vec2{-0.7f, -0.5f}, GetTexture(World->Objects.Buildings[BuildingIndex].Texture));
-//         }
-//     }
-
-//     // NOTE(insolence): Display player resources
-//     std::string PlayerStonesStr = std::to_string(World->Player.Stone);
-//     std::string PlayerSapphiresStr = std::to_string(World->Player.Sapphires);
-
-//     DrawTexturedRectangleOnScreen(vec2{0.72f, 0.9f}, vec2{0.79f, 0.97f}, GetTexture("stone_resource.png"));
-//     RenderTextOnScreen(PlayerStonesStr.c_str(), vec2{0.8f, 0.92f}, GOLD);
-
-//     DrawTexturedRectangleOnScreen(vec2{0.87f, 0.9f}, vec2{0.94f, 0.97f}, GetTexture("sapphire_resource.png"));
-//     RenderTextOnScreen(PlayerSapphiresStr.c_str(), vec2{0.95f, 0.92f}, GOLD);
-// }
+    DrawTexturedRectangleOnScreen(vec2{0.87f, 0.9f}, vec2{0.94f, 0.97f}, GetTexture("sapphire_resource.png"));
+    RenderTextOnScreen(PlayerSapphiresStr.c_str(), vec2{0.95f, 0.92f}, GOLD);
+}
 
 void
 RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights)
@@ -505,76 +364,14 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
         }
     }
 
-    DisplayDrawables(World->Components.Transforms, World->Components.Drawables,
+    DisplayDrawables(World->Components.Transforms, World->Components.Drawables, World->Components.Targetables,
                      DirLights, PointLights, SpotLights, Camera);
 
-    // for (int i = 0; i < World->Objects.Enemies.size(); i++)
-    // {
-    //     enemy Enemy = World->Objects.Enemies[i];
-    //     DrawRectangleTextured(Camera, Transform(vec2{Enemy.Pos.X, Enemy.Pos.Y}, 0.f, Enemy.Size/2.f),
-    //                           GetTexture(Enemy.Texture), GetNormalFromTexture(Enemy.Texture), DirLights, PointLights, SpotLights);
-    //     std::string EnemyPowerStr = std::to_string(World->Objects.Enemies[i].Power);
-    //     RenderText(Camera, EnemyPowerStr.c_str(), World->Objects.Enemies[i].Pos.X + 0.05f, World->Objects.Enemies[i].Pos.Y + 0.05f, 1.5f, RED);
+    DisplayAttackerPowers(World->Components.Transforms, World->Components.Attackers, Camera);
 
-    // }
-    // for (int i = 0; i < World->Objects.Obstacles.size(); i++)
-    // {
-    //     obstacle Obstacle = World->Objects.Obstacles[i];
-    //     DrawRectangleTextured(Camera, Transform(vec2{Obstacle.Pos.X, Obstacle.Pos.Y}, 0.f, Obstacle.Size/2.f),
-    //                           GetTexture(Obstacle.Texture), GetNormalFromTexture(Obstacle.Texture), DirLights, PointLights, SpotLights);
-    // }
-    // for (int i = 0; i < World->Objects.Chests.size(); i++)
-    // {
-    //     chest Chest = World->Objects.Chests[i];
-    //     DrawRectangleTextured(Camera, Transform(vec2{Chest.Pos.X, Chest.Pos.Y}, 0.f, Chest.Size/2.f),
-    //                           GetTexture(Chest.Texture), GetNormalFromTexture(Chest.Texture), DirLights, PointLights, SpotLights);
-    //     std::string ChestValueStr = std::to_string(World->Objects.Chests[i].Value);
-    //     RenderText(Camera, ChestValueStr.c_str(), World->Objects.Chests[i].Pos.X + 0.05f, World->Objects.Chests[i].Pos.Y + 0.05f, 1.5f, RED);
-    // }
-    // for (int i = 0; i < World->Objects.Resources.size(); i++)
-    // {
-    //     resource Resource = World->Objects.Resources[i];
-    //     if (Resource.Type == STONE)
-    //     {
-    //         DrawRectangleTextured(Camera, Transform(vec2{Resource.Pos.X, Resource.Pos.Y}, 0.f, Resource.Size/2.f),
-    //                           GetTexture("stone_minable.png"), GetNormal("stone_minable_normal.png"), DirLights, PointLights, SpotLights);
-    //     }
-    //     else if (Resource.Type == SAPPHIRE)
-    //     {
-    //         DrawRectangleTextured(Camera, Transform(vec2{Resource.Pos.X, Resource.Pos.Y}, 0.f, Resource.Size/2.f),
-    //                           GetTexture("sapphire_minable.png"), GetNormal("sapphire_minable_normal.png"), DirLights, PointLights, SpotLights);
-    //     }
-    // }
-    // for (int i = 0; i < World->Objects.Buildings.size(); i++)
-    // {
-    //     building Building = World->Objects.Buildings[i];
-    //     DrawRectangleTextured(Camera, Transform(vec2{Building.Pos.X, Building.Pos.Y}, 0.f, Building.Size/2.f),
-    //                           GetTexture(Building.Texture), GetNormalFromTexture(Building.Texture), DirLights, PointLights, SpotLights);
+    DisplayProductionTime(World->Components.Transforms, World->Components.Buildings, Camera);
 
-    //     if (World->Objects.Buildings[i].InProduction)
-    //     {
-    //         std::string ProductionTimeLeftStr = std::to_string(Building.ProductionTimeLeft);
-    //         RenderText(Camera, ProductionTimeLeftStr.c_str(), Building.Pos.X - 0.3f, Building.Pos.Y - 0.3f, 1.5f, BLUE);
-    //     }
-    // }
-
-    // for (int i = 0; i < World->Player.UnitsNum; i++)
-    // {
-    //     if (World->Player.UnitChosen == i)
-    //     {
-    //         DrawRectangleTextured(Camera, Transform(vec2{World->Player.Units[i].Pos.X, World->Player.Units[i].Pos.Y}, 0.f, World->Player.Units[i].Size/2.f),
-    //                           GetTexture(World->Player.Units[i].Texture), GetNormalFromTexture(World->Player.Units[i].Texture), DirLights, PointLights, SpotLights, color{0.15f, 0, 0});
-    //     }
-    //     else
-    //     {
-    //         DrawRectangleTextured(Camera, Transform(vec2{World->Player.Units[i].Pos.X, World->Player.Units[i].Pos.Y}, 0.f, World->Player.Units[i].Size/2.f),
-    //                           GetTexture(World->Player.Units[i].Texture), GetNormalFromTexture(World->Player.Units[i].Texture), DirLights, PointLights, SpotLights);
-    //     }
-    //     std::string PlayerPowerStr = std::to_string(World->Player.Units[i].Power);
-    //     RenderText(Camera, PlayerPowerStr.c_str(), World->Player.Units[i].Pos.X + 0.05f, World->Player.Units[i].Pos.Y + 0.05f, 1.5f, RED);
-    // }
-
-    // RenderGlobalMapGui(World);
+    RenderGlobalMapGui(World);
 }
 
 void
@@ -627,109 +424,38 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
     game_world World = {};
     World.Mode = MENU;
 
-    transform EnemyTransform = transform{ vec2{1, 1}, 1.f };
-    motion EnemyMotion = motion{ EnemyTransform.Pos, vec2{0, 0}, 1};
-    World.Entities.push_back(AddEnemy(0, &World.Components, EnemyTransform, EnemyMotion, "monster.png", 20, 40));
+    World.Player.Stone = 100;
+    World.Player.Sapphires = 30;
 
-    // for (int i = 0; i < World.Player.UnitsNum; i++)
-    // {
-    //     unit Unit;
-    //     Unit.Pos = vec2{(float)i + 0.05f, 0.f};
-    //     Unit.Velocity = vec2{0.f, 0.f};
-    //     Unit.Size = 1.f;
-    //     Unit.Speed = 2.f;
-    //     Unit.Type = (i % 2) ? WORKER : ARCHER;
-    //     Unit.Power = (Unit.Type == WORKER) ? 5 : 32;
+    for (int i = 0; i < 3; i++)
+    {
+        World.Entities.push_back(AddUnit(i, &World.Components, transform{vec2{(float)i, 0}, 1.f},
+                                         motion{vec2{-1, -1}, vec2{0, 0}, 1}, "archer.png", ARCHER, 50, 35));
+    }
 
-    //     if (Unit.Type == WORKER)
-    //     {
-    //         Unit.Texture = "worker.png";
-    //     }
-    //     else if (Unit.Type == ARCHER)
-    //     {
-    //         Unit.Texture = "archer.png";
-    //     }
-    //     UpdateAABB(&Unit.Collider, Unit.Pos, Unit.Size);
+    World.Entities.push_back(AddEnemy(3, &World.Components, transform{vec2{6, 3}, 1.f},
+                             motion{ vec2{-1, -1}, vec2{0, 0}, 1}, "monster.png", 20, 40));
 
-    //     World.Player.Units.push_back(Unit);
-    // }
-    // World.Player.UnitChosen = NO_UNIT;
 
-    // World.Player.Stone = 100;
-    // World.Player.Sapphires = 30;
+    World.Entities.push_back(AddBuilding(4, &World.Components, transform{vec2{5, 5}, 2.f}, "barracks.png", barracks, 10));
 
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     enemy Enemy;
-    //     Enemy.Pos = vec2{GetRandomFloat(0, 50), GetRandomFloat(0, 50)};
-    //     Enemy.TargetPos = Enemy.Pos;
-    //     Enemy.Velocity = vec2{0.f, 0.f};
-    //     Enemy.Power = 25;
-    //     Enemy.Size = 1.f;
-    //     Enemy.Speed = 2.f;
-    //     Enemy.Texture = "monster.png";
-    //     UpdateAABB(&Enemy.Collider, Enemy.Pos, Enemy.Size);
-    //     World.Objects.Enemies.push_back(Enemy);
-    // }
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     chest Chest;
-    //     Chest.Pos = vec2{GetRandomFloat(0, 50), GetRandomFloat(0, 50)};
-    //     Chest.Size = 1.f;
-    //     Chest.Value = 5;
-    //     Chest.Texture = "treasure.png";
-    //     UpdateAABB(&Chest.Collider, Chest.Pos, Chest.Size);
-    //     World.Objects.Chests.push_back(Chest);
-    // }
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     obstacle Obstacle;
-    //     Obstacle.Pos = vec2{GetRandomFloat(0, 50), GetRandomFloat(0, 50)};
-    //     Obstacle.Size = 1.f;
-    //     Obstacle.Texture = "rocks.png";
-    //     UpdateAABB(&Obstacle.Collider, Obstacle.Pos, Obstacle.Size);
-    //     World.Objects.Obstacles.push_back(Obstacle);
-    // }
+    for (int i = 5; i < 25; i++)
+    {
+        World.Entities.push_back(AddObstacle(i, &World.Components, transform{vec2{GetRandomFloat(2, 25), GetRandomFloat(2, 25)}, 1}, "rocks.png"));
+    }
 
-    // for (int X = 0; X < 10; X++)
-    // {
-    //     obstacle Obstacle;
-    //     Obstacle.Pos = vec2{(float)X, 10};
-    //     Obstacle.Size = 1.f;
-    //     Obstacle.Texture = "tree.png";
-    //     UpdateAABB(&Obstacle.Collider, Obstacle.Pos, Obstacle.Size);
-    //     World.Objects.Obstacles.push_back(Obstacle);
-    // }
-    // for (int Y = 0; Y < 10; Y++)
-    // {
-    //     obstacle Obstacle;
-    //     Obstacle.Pos = vec2{13, (float)Y};
-    //     Obstacle.Size = 1.f;
-    //     Obstacle.Texture = "tree.png";
-    //     UpdateAABB(&Obstacle.Collider, Obstacle.Pos, Obstacle.Size);
-    //     World.Objects.Obstacles.push_back(Obstacle);
-    // }
+    for (int i = 25; i < 35; i++)
+    {
+        resource_type Type = i % 2 ? stone : sapphires;
+        World.Entities.push_back(AddResource(i, &World.Components, transform{vec2{GetRandomFloat(1, 30), GetRandomFloat(3, 30)}, 1},
+                                 (Type == stone ? "stone_minable.png" : "sapphire_minable.png"), Type, (Type == stone ? 10 : 5)));
+    }
 
-    // for (int i = 0; i < 60; i++)
-    // {
-    //     resource Resource;
-    //     Resource.Pos = vec2{GetRandomFloat(5, 100), GetRandomFloat(5, 100)};
-    //     Resource.Size = 1.f;
-    //     Resource.Type = i % 2;
-    //     Resource.Amount = (Resource.Type == STONE) ? 10 : 5;
-    //     UpdateAABB(&Resource.Collider, Resource.Pos, Resource.Size);
-    //     World.Objects.Resources.push_back(Resource);
-    // }
-
-    // building Building;
-    // Building.Pos = vec2{7, 7};
-    // Building.Size = 2.f;
-    // Building.InProduction = false;
-    // Building.ProductionTimeLeft = 15.f;
-    // Building.Type = barracks;
-    // Building.Texture = "barracks.png";
-    // UpdateAABB(&Building.Collider, Building.Pos, Building.Size);
-    // World.Objects.Buildings.push_back(Building);
+    for (int i = 36; i < 45; i++)
+    {
+        World.Entities.push_back(AddChest(i, &World.Components, transform{vec2{GetRandomFloat(4, 20),
+                                 GetRandomFloat(8, 25)}, 1}, "treasure.png", 5));
+    }
 
     std::vector<dir_light> DirLights;
     std::vector<point_light> PointLights;
@@ -764,8 +490,6 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.01f, 0.01f, 0.01f, 1.f);
 
-        //UpdatePositions(&World, DeltaTime);
-
         if (World.Mode == GLOBAL)
         {
             if (!MusicSwitched)
@@ -776,6 +500,17 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
             }
 
             RecalculateViewMatrix(Camera);
+
+            bool UnitToBeProduced = UpdateBuildingsProduction(World.Components.Buildings, DeltaTime);
+            if (UnitToBeProduced)
+            {
+                // World.Entities.push_back(AddUnit(46, &World.Components, transform{vec2{World->Objects.Buildings[i].Pos.X - 1.f, World->Objects.Buildings[i].Pos.Y - 1.f}}, 1.f},
+                //                          motion{vec2{-1, -1}, vec2{0, 0}, 1}, "archer.png", ARCHER, 50, 35));
+                World.Entities.push_back(AddUnit(46, &World.Components, transform{vec2{1.f, 1.f}, 1.f},
+                                         motion{vec2{-1, -1}, vec2{0, 0}, 1}, "archer.png", ARCHER, 50, 35));
+            }
+            MoveEntities(World.Components.Transforms, World.Components.Motions, World.Components.Colliders, DeltaTime);
+
             RenderGlobalMap(&World, Camera, DirLights, PointLights, SpotLights);
         }
         else if (World.Mode == BATTLE)
