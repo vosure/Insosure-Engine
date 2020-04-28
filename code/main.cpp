@@ -8,6 +8,7 @@
 #include <irrKlang/include/irrKlang.h>
 
 //#include "utils/string.cpp"
+#include "utils/timer.h"
 #include "utils/file_utils.h"
 #include "math/math.h"
 #include "random/random.h"
@@ -31,8 +32,6 @@
 
 #include "ecs.cpp"
 
-global_variable bool MusicSwitched = false;
-
 global_variable orthographic_camera GlobalCamera;
 
 vec2 GetCursorWorldPos(GLFWwindow *Window, orthographic_camera *Camera)
@@ -52,6 +51,9 @@ global_variable bool PlayerMoved = false;
 void
 ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World, float Dt)
 {
+    //timer Timer;
+    //Start(Timer, "ProcessInput");
+
     // NOTE(insolence): Fullscreen
     // TODO(vosure): Change glfw key names to custom
     if (IsKeyPressed(GLFW_KEY_F12) && !IsKeyProcessed(GLFW_KEY_F12))
@@ -224,102 +226,9 @@ ProcessInput(GLFWwindow *Window, orthographic_camera *Camera, game_world *World,
             KeyboardInput.KeysProcessed[GLFW_KEY_D] = true;
         }
     }
+
+    //TimePassed(Timer);
 }
-
-battlefield
-CreateBattlefield(vec2 BattleLocation)
-{
-    battlefield Battlefield;
-    Battlefield.BattleLocation = BattleLocation;
-    Battlefield.PlayerPos = {10.f + XOFFSET, 7.f + YOFFSET};
-    Battlefield.OldPlayerPos = {10.f + XOFFSET, 7.f + YOFFSET};
-
-    float ZoomLevel = 8.f;
-    Battlefield.BattleCamera.ZoomLevel = ZoomLevel;
-    SetViewProjection(&Battlefield.BattleCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel);
-    Battlefield.BattleCamera.Position = vec3{-12.7f - XOFFSET, -7.3f - YOFFSET, 0};
-
-    return Battlefield;
-}
-
-// bool
-// CheckUnitCollisions(game_world *World, int UnitIndex)
-// {
-//     unit *Unit = &World->Player.Units[UnitIndex];
-
-//     for (int UnitIndex = 0; UnitIndex < World->Player.UnitsNum; UnitIndex++)
-//     {
-//         if (Unit != &World->Player.Units[UnitIndex])
-//         {
-//             if (Intersect(World->Player.Units[UnitIndex].Collider, Unit->Collider))
-//             {
-//                 World->Player.Units[UnitIndex].TargetPos = World->Player.Units[UnitIndex].Pos;
-//                 return true;
-//             }
-//         }
-//     }
-
-//     for (int EnemyIndex = 0; EnemyIndex < World->Objects.Enemies.size(); EnemyIndex++)
-//     {
-//         if (World->Objects.Enemies[EnemyIndex].Pos != NULL_POS && Intersect(Unit->Collider, World->Objects.Enemies[EnemyIndex].Collider))
-//         {
-//             battlefield NewBattlefield = CreateBattlefield(Unit->Pos);
-//             World->ActiveBattlefields.push_back(NewBattlefield);
-//             World->ActiveBattleNum = World->ActiveBattlefields.size() - 1;
-//             World->Mode = BATTLE;
-//             MusicSwitched = false;
-//             NullifyEnemy(&World->Objects.Enemies[EnemyIndex]);
-//             return true;
-//         }
-//     }
-//     for (int ObstacleIndex = 0; ObstacleIndex < World->Objects.Obstacles.size(); ObstacleIndex++)
-//     {
-//         if (Intersect(Unit->Collider, World->Objects.Obstacles[ObstacleIndex].Collider))
-//         {
-//             return true;
-//         }
-//     }
-//     for (int ChestIndex = 0; ChestIndex < World->Objects.Chests.size(); ChestIndex++)
-//     {
-//         if (World->Objects.Chests[ChestIndex].Pos != NULL_POS && Intersect(Unit->Collider, World->Objects.Chests[ChestIndex].Collider))
-//         {
-//             Unit->Power += World->Objects.Chests[ChestIndex].Value;
-//             World->Objects.Chests[ChestIndex].Pos = NULL_POS;
-//             return true;
-//         }
-//     }
-//     for (int BuildingIndex = 0; BuildingIndex < World->Objects.Buildings.size(); BuildingIndex++)
-//     {
-//         if (Intersect(Unit->Collider, World->Objects.Buildings[BuildingIndex].Collider))
-//         {
-//             return true;
-//         }
-//     }
-//     for (int ResourceIndex = 0; ResourceIndex < World->Objects.Resources.size(); ResourceIndex++)
-//     {
-//         if (World->Objects.Resources[ResourceIndex].Pos != NULL_POS && Intersect(Unit->Collider, World->Objects.Resources[ResourceIndex].Collider))
-//         {
-//             if (Unit->Type == WORKER)
-//             {
-//                 if (World->Objects.Resources[ResourceIndex].Type == STONE)
-//                 {
-//                     World->Player.Stone += World->Objects.Resources[ResourceIndex].Amount;
-//                 }
-//                 else if (World->Objects.Resources[ResourceIndex].Type == SAPPHIRE)
-//                 {
-//                     World->Player.Sapphires += World->Objects.Resources[ResourceIndex].Amount;
-//                 }
-//                 World->Objects.Resources[ResourceIndex].Pos = NULL_POS;
-//             }
-//             else
-//             {
-//                 return true;
-//             }
-//         }
-//     }
-
-//     return false;
-// }
 
 // NOTE(insolence): Range is from{-1,1} to{-1,1}
 void
@@ -349,6 +258,9 @@ RenderGlobalMapGui(game_world *World)
 void
 RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_light> DirLights, std::vector<point_light> PointLights, std::vector<spotlight_light> SpotLights)
 {
+    //timer Timer;
+    //Start(Timer, "RenderGlobalMap");
+
     vec2 CurrentTilePos = { -Camera->Position.X, -Camera->Position.Y};
 
     // NOTE(insolence): Rendering the ground around the player depending on camera pos
@@ -372,6 +284,8 @@ RenderGlobalMap(game_world *World, orthographic_camera *Camera, std::vector<dir_
     DisplayProductionTime(World->Components.Transforms, World->Components.Buildings, Camera);
 
     RenderGlobalMapGui(World);
+
+    //TimePassed(Timer);
 }
 
 void
@@ -433,7 +347,9 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
                                          motion{vec2{-1, -1}, vec2{0, 0}, 1}, "archer.png", ARCHER, 50, 35));
     }
 
-    World.Entities.push_back(AddEnemy(3, &World.Components, transform{vec2{6, 3}, 1.f},
+    World.Entities.push_back(AddEnemy(3, &World.Components, transform{vec2{6, 2}, 1.f},
+                             motion{ vec2{-1, -1}, vec2{0, 0}, 1}, "monster.png", 20, 40));
+    World.Entities.push_back(AddEnemy(3, &World.Components, transform{vec2{8, 10}, 1.f},
                              motion{ vec2{-1, -1}, vec2{0, 0}, 1}, "monster.png", 20, 40));
 
 
@@ -441,14 +357,14 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
 
     for (int i = 5; i < 25; i++)
     {
-        World.Entities.push_back(AddObstacle(i, &World.Components, transform{vec2{GetRandomFloat(2, 25), GetRandomFloat(2, 25)}, 1}, "rocks.png"));
+       World.Entities.push_back(AddObstacle(i, &World.Components, transform{vec2{GetRandomFloat(2, 25), GetRandomFloat(2, 25)}, 1}, "rocks.png"));
     }
 
     for (int i = 25; i < 35; i++)
     {
-        resource_type Type = i % 2 ? stone : sapphires;
-        World.Entities.push_back(AddResource(i, &World.Components, transform{vec2{GetRandomFloat(1, 30), GetRandomFloat(3, 30)}, 1},
-                                 (Type == stone ? "stone_minable.png" : "sapphire_minable.png"), Type, (Type == stone ? 10 : 5)));
+       resource_type Type = i % 2 ? stone : sapphires;
+       World.Entities.push_back(AddResource(i, &World.Components, transform{vec2{GetRandomFloat(1, 30), GetRandomFloat(3, 30)}, 1},
+                                (Type == stone ? "stone_minable.png" : "sapphire_minable.png"), Type, (Type == stone ? 10 : 5)));
     }
 
     for (int i = 36; i < 45; i++)
@@ -509,7 +425,8 @@ UpdateAndRender(GLFWwindow *Window, orthographic_camera *Camera)
                 World.Entities.push_back(AddUnit(46, &World.Components, transform{vec2{1.f, 1.f}, 1.f},
                                          motion{vec2{-1, -1}, vec2{0, 0}, 1}, "archer.png", ARCHER, 50, 35));
             }
-            MoveEntities(World.Components.Transforms, World.Components.Motions, World.Components.Colliders, DeltaTime);
+            MoveEntities(World, DeltaTime);
+            UpdatePatrolRoutes(World.Components.Patrols, World.Components.Motions, World.Components.Transforms, World.Components.Units);
 
             RenderGlobalMap(&World, Camera, DirLights, PointLights, SpotLights);
         }

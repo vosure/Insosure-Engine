@@ -12,6 +12,8 @@
 //#define component_map(type)  std::unordered_map<int, type>
 //component_map(transform) Transforms;
 
+struct game_world;
+
 struct components
 {
     // component_map<transform> Transforms;
@@ -26,6 +28,7 @@ struct components
     std::unordered_map<int, attacker> Attackers;
     std::unordered_map<int, unit> Units;
     std::unordered_map<int, chest> Chests;
+    std::unordered_map<int, patrol> Patrols;
 };
 
 // NOTE(insolence): Enemies, units and buildings are targetable by default
@@ -49,6 +52,9 @@ entity
 AddBuilding(int EntityId, components *Components, transform Transform, std::string Texture, building_type Type, float ProductionTime);
 
 void
+RemoveEntity(components *Components, int EntityIndex);
+
+void
 StartUnitProduction(std::unordered_map<int, building> &Buildings, std::unordered_map<int, targetable> Targetables);
 
 void
@@ -57,13 +63,18 @@ StopUnitProduction(std::unordered_map<int, building> &Buildings);
 void
 UpdateCollider(transform Transform, collider &Collider);
 
+void
+UnitOnCollision(game_world &World, int UnitIndex, int CollisionObjIndex);
+
 bool
 CurrentCollides(int CurrentIndex, std::unordered_map<int, collider> Colliders);
 
 void
-MoveEntities(std::unordered_map<int, transform> &Transforms,
-             std::unordered_map<int, motion>    &Motions,
-             std::unordered_map<int, collider>  &Colliders);
+MoveEntities(game_world &World, float DeltaTime);
+
+void
+UpdatePatrolRoutes(std::unordered_map<int, patrol> Patrols, std::unordered_map<int, motion> &Motions,
+                   std::unordered_map<int, transform> Transforms, std::unordered_map<int, unit> Units);
 
 bool
 UpdateBuildingsProduction(std::unordered_map<int, building> &Buildings,

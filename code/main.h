@@ -58,118 +58,6 @@ struct postprocessing_effects
     bool Blur;
 };
 
-// // NOTE(insolence): Same as unit, mb unite somehow, make sprites
-// struct enemy
-// {
-//     vec2 Pos;
-//     vec2 TargetPos;
-//     vec2 Velocity;
-//     float Speed;
-//     aabb Collider;
-
-//     int Power;
-//     float Size;
-
-//     std::string Texture;
-// };
-
-// struct obstacle
-// {
-//     vec2 Pos;
-//     float Size;
-//     aabb Collider;
-
-//     std::string Texture;
-// };
-
-// struct chest
-// {
-//     vec2 Pos;
-//     aabb Collider;
-//     float Size;
-//     int Value;
-
-//     std::string Texture;
-// };
-
-// #define STONE 0
-// #define SAPPHIRE 1
-// struct resource
-// {
-//     vec2 Pos;
-//     aabb Collider;
-//     float Size;
-
-//     int Type; // NOTE(insolence): Stone or sapphire
-//     int Amount;
-// };
-
-// enum building_type
-// {
-//     barracks, base
-// };
-
-// struct building
-// {
-//     vec2 Pos;
-//     aabb Collider;
-//     float Size;
-
-//     bool InProduction;
-//     float ProductionTimeLeft;
-//     //float ProductuonTime;
-
-//     building_type Type;
-
-//     std::string Texture;
-
-//     bool Chosen;
-// };
-
-// struct entity_system
-// {
-//     std::vector<enemy> Enemies;
-//     std::vector<obstacle> Obstacles;
-//     std::vector<resource> Resources;
-//     std::vector<chest> Chests;
-//     std::vector<building> Buildings;
-// };
-
-// enum unit_type
-// {
-//     WORKER = 0,
-//     ARCHER = 1,
-//     MELEE = 2,
-// };
-
-// struct unit
-// {
-
-//     vec2 Pos;
-//     aabb Collider;
-//     vec2 TargetPos;
-//     vec2 Velocity;
-//     float Speed;
-
-//     unit_type Type;
-
-//     int Power;
-//     float Size;
-
-//     std::string Texture;
-// };
-
-// struct player
-// {
-//     int UnitsNum = 1;
-//     std::vector<unit> Units;
-//     int UnitChosen; // NOTE(insolence): Which unit we currently control, if -1 then no unit chosen
-
-//     int Stone;
-//     int Sapphires;
-// };
-// #define NO_UNIT -1
-
 struct tile
 {
     int Value;
@@ -245,3 +133,5 @@ global_variable const int WORLD_HEIGHT = 300;
 global_variable bool IsFullscreen = false;
 
 postprocessing_effects Effects;
+
+global_variable bool MusicSwitched = false;

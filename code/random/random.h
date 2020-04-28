@@ -2,7 +2,7 @@
 
 #include "../math/math.h"
 
-inline float 
+inline float
 GetRandom(void) //NOTE(vosure) XorShift Algorithm
 {
 
@@ -11,9 +11,9 @@ GetRandom(void) //NOTE(vosure) XorShift Algorithm
     static unsigned int z = 521288629;
     static unsigned int w = 88675123;
     unsigned int t;
-    t = x ^ (x << 11);   
-    x = y; 
-    y = z; 
+    t = x ^ (x << 11);
+    x = y;
+    y = z;
     z = w;
     w = w ^ (w >> 19) ^ (t ^ (t >> 8));
     return (float)w /  0xFFFFFFFF;
@@ -35,4 +35,13 @@ GetRandomFloat(float min, float max)
     Value = min + Value * (max - min);
 
     return Value;
+}
+
+inline vec2
+GetRandomPointInCircle(vec2 Centre, float Radius)
+{
+    vec2 Result =
+        vec2{ GetRandomFloat(Centre.X - Radius, Centre.X + Radius), GetRandomFloat(Centre.Y - Radius, Centre.Y + Radius) };
+
+    return Result;
 }

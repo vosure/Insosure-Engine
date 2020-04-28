@@ -86,4 +86,13 @@ struct chest
     int Value;
 };
 
+struct patrol
+{
+    vec2 InitialPos;
+    float Radius;
+    int ChasingEntity;
+};
+
+// probably make an enemy component
+
 

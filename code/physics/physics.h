@@ -14,24 +14,31 @@ struct aabb
 {
     vec2 Min;
     vec2 Max;
-    //vec2 Velocity;
 };
 
 struct bounding_circle
 {
     point Center;
     float Radius;
-    //vec2 Velocity;
 };
 
 // FIXME(insolence): This 0.1f is probably wrong
+// void
+// UpdateAABB(aabb *Box, vec2 NewPos, float Size)
+// {
+//     Box->Min = NewPos + vec2{0.1f, 0.1f};
+//     Box->Max.X = NewPos.X + Size - 0.1f;
+//     Box->Max.Y = NewPos.Y + Size - 0.1f;
+// }
+
 void
 UpdateAABB(aabb *Box, vec2 NewPos, float Size)
 {
-    Box->Min = NewPos + vec2{0.1f, 0.1f};
-    Box->Max.X = NewPos.X + Size - 0.1f;
-    Box->Max.Y = NewPos.Y + Size - 0.1f;
+    Box->Min = NewPos;
+    Box->Max.X = NewPos.X + Size;
+    Box->Max.Y = NewPos.Y + Size;
 }
+
 
 bool
 IsPointInsideAABB(point Point, aabb Box)
@@ -119,14 +126,12 @@ struct aabb_3D
 {
     point3D Min;
     point3D Max;
-    vec3 Velocity;
 };
 
 struct bounding_sphere
 {
     point3D Center;
     float Radius;
-    vec3 Velocity;
 };
 
 bool

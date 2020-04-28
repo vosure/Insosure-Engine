@@ -10,6 +10,7 @@ collider MakeCollider(transform Transform)
     return ColliderComponent;
 }
 
+// NOTE(insolence): For now patrol radius is hardcoded
 entity
 AddEnemy(int EntityId, components *Components, transform Transform, motion Motion, std::string Texture, int Power, int Health)
 {
@@ -22,6 +23,7 @@ AddEnemy(int EntityId, components *Components, transform Transform, motion Motio
     Components->Attackers[EntityId] = attacker { Power };
     Components->Targetables[EntityId] = targetable{false};
     Components->Colliders[EntityId] = MakeCollider(Transform);
+    Components->Patrols[EntityId] = patrol { Transform.Pos, 3, -1};
 
     return NewEntity;
 }
@@ -101,6 +103,23 @@ AddBuilding(int EntityId, components *Components, transform Transform, std::stri
     return NewEntity;
 }
 
+// NOTE(insolence): Probably revise
+void
+RemoveEntity(components *Components, int EntityIndex)
+{
+    Components->Transforms.erase(EntityIndex);
+    Components->Motions.erase(EntityIndex);
+    Components->Colliders.erase(EntityIndex);
+    Components->Drawables.erase(EntityIndex);
+    Components->Resources.erase(EntityIndex);
+    Components->Buildings.erase(EntityIndex);
+    Components->Targetables.erase(EntityIndex);
+    Components->Healths.erase(EntityIndex);
+    Components->Attackers.erase(EntityIndex);
+    Components->Units.erase(EntityIndex);
+    Components->Chests.erase(EntityIndex);
+}
+
 // NOTE(insolence): We update the building production time and if it must produce a unit we return true
 bool
 UpdateBuildingsProduction(std::unordered_map<int, building> &Buildings,
@@ -162,7 +181,7 @@ UpdateCollider(transform Transform, collider &Collider)
 }
 
 // NOTE(insolence): We check collisions between an entity that has just been moved and other colliders
-bool
+int
 CurrentCollides(collider Current, int CurrentIndex, std::unordered_map<int, collider> Colliders)
 {
     for (std::pair<int, collider> Collider : Colliders)
@@ -172,47 +191,116 @@ CurrentCollides(collider Current, int CurrentIndex, std::unordered_map<int, coll
 
         if (Intersect(Current.Collider, Collider.second.Collider))
         {
-            return true;
+            return Collider.first;
         }
     }
 
-    return false;
+    return -1;
 }
 
-// TODO(insolence): Now check what a unit collides with
-void
-MoveEntities(std::unordered_map<int, transform> &Transforms,
-             std::unordered_map<int, motion>    &Motions,
-             std::unordered_map<int, collider>  &Colliders, float DeltaTime)
+battlefield
+CreateBattlefield(vec2 BattleLocation)
 {
-    for (std::pair<int, motion> Motion : Motions)
+    battlefield Battlefield;
+    Battlefield.BattleLocation = BattleLocation;
+    Battlefield.PlayerPos = {10.f + XOFFSET, 7.f + YOFFSET};
+    Battlefield.OldPlayerPos = {10.f + XOFFSET, 7.f + YOFFSET};
+
+    float ZoomLevel = 8.f;
+    Battlefield.BattleCamera.ZoomLevel = ZoomLevel;
+    SetViewProjection(&Battlefield.BattleCamera, -ZoomLevel * RESOLUTION, ZoomLevel * RESOLUTION, -ZoomLevel, ZoomLevel);
+    Battlefield.BattleCamera.Position = vec3{-12.7f - XOFFSET, -7.3f - YOFFSET, 0};
+
+    return Battlefield;
+}
+
+void
+UnitOnCollision(game_world &World, int UnitIndex, int CollisionObjIndex)
+{
+    if (World.Components.Chests.find(CollisionObjIndex) != World.Components.Chests.end())
+    {
+        World.Components.Attackers[UnitIndex].Power += World.Components.Chests[CollisionObjIndex].Value;
+        RemoveEntity(&World.Components, CollisionObjIndex);
+    }
+
+    else if (World.Components.Attackers.find(CollisionObjIndex) != World.Components.Attackers.end() &&
+        World.Components.Units.find(CollisionObjIndex) == World.Components.Units.end())
+    {
+        World.Mode = BATTLE;
+        battlefield NewBattlefield = CreateBattlefield(World.Components.Transforms[UnitIndex].Pos);
+        World.ActiveBattlefields.push_back(NewBattlefield);
+        World.ActiveBattleNum = World.ActiveBattlefields.size() - 1;
+        MusicSwitched = false;
+        RemoveEntity(&World.Components, CollisionObjIndex);
+    }
+}
+
+void
+MoveEntities(game_world &World, float DeltaTime)
+{
+    components *Components = &World.Components;
+
+    for (std::pair<int, motion> Motion : Components->Motions)
     {
         int EntityIndex = Motion.first;
 
-        float AbsXDiff = Abs(Motion.second.TargetPos.X - Transforms[Motion.first].Pos.X);
-        float AbsYDiff = Abs(Motion.second.TargetPos.Y - Transforms[Motion.first].Pos.Y);
+        float AbsXDiff = Abs(Motion.second.TargetPos.X - Components->Transforms[Motion.first].Pos.X);
+        float AbsYDiff = Abs(Motion.second.TargetPos.Y - Components->Transforms[Motion.first].Pos.Y);
 
         if (AbsXDiff <= 0.02f && AbsYDiff <= 0.02f)
         {
-            Transforms[EntityIndex].Pos = Motions[EntityIndex].TargetPos;
-            Motions[EntityIndex].TargetPos = Transforms[EntityIndex].Pos;
-            Motions[EntityIndex].Velocity = vec2{0, 0};
+            Components->Transforms[EntityIndex].Pos = Components->Motions[EntityIndex].TargetPos;
+            Components->Motions[EntityIndex].TargetPos = Components->Transforms[EntityIndex].Pos;
+            Components->Motions[EntityIndex].Velocity = vec2{0, 0};
         }
         else
         {
             // NOTE(insolence): Now check collisions and, if any, don't move the object
-            transform NewTransform = Transforms[EntityIndex];
-            NewTransform.Pos = Transforms[EntityIndex].Pos + Motions[EntityIndex].Velocity * DeltaTime;
+            transform NewTransform = Components->Transforms[EntityIndex];
+            NewTransform.Pos = Components->Transforms[EntityIndex].Pos + Components->Motions[EntityIndex].Velocity * DeltaTime;
             collider NewCollider;
             UpdateCollider(NewTransform, NewCollider);
 
-            if (CurrentCollides(NewCollider, EntityIndex, Colliders))
+            int CurrentCollisionEntity = CurrentCollides(NewCollider, EntityIndex, Components->Colliders);
+            if (CurrentCollisionEntity != -1)
             {
-                return;
+                if (Components->Units.find(EntityIndex) != Components->Units.end())
+                {
+                    UnitOnCollision(World, EntityIndex, CurrentCollisionEntity);
+                }
+                continue;
             }
 
-            Transforms[EntityIndex] = NewTransform;
-            UpdateCollider(Transforms[EntityIndex], Colliders[EntityIndex]);
+            Components->Transforms[EntityIndex] = NewTransform;
+            UpdateCollider(Components->Transforms[EntityIndex], Components->Colliders[EntityIndex]);
+        }
+    }
+}
+
+void
+UpdatePatrolRoutes(std::unordered_map<int, patrol> Patrols, std::unordered_map<int, motion> &Motions,
+                   std::unordered_map<int, transform> Transforms, std::unordered_map<int, unit> Units)
+{
+    for (std::pair<int, patrol> Patrol : Patrols)
+    {
+        int Index = Patrol.first;
+
+        for (std::pair<int, unit> Unit : Units)
+        {
+            int UnitIndex = Unit.first;
+            if (Patrols[Index].ChasingEntity == -1 &&
+                IsPointInsideCircle(Transforms[UnitIndex].Pos, bounding_circle{Transforms[Index].Pos, Patrols[Index].Radius}))
+            {
+                Motions[Index].TargetPos = Transforms[UnitIndex].Pos;
+                Motions[Index].Velocity = Normalize(Motions[Index].TargetPos - Transforms[Index].Pos) * Motions[Index].Speed;
+                Patrols[Index].ChasingEntity = UnitIndex;
+            }
+        }
+
+        if (Patrols[Index].ChasingEntity == -1 && Transforms[Index].Pos == Motions[Index].TargetPos || Motions[Index].TargetPos == vec2{-1, -1})
+        {
+            Motions[Index].TargetPos = GetRandomPointInCircle(Patrol.second.InitialPos, Patrol.second.Radius);
+            Motions[Index].Velocity = Normalize(Motions[Index].TargetPos - Transforms[Index].Pos) * Motions[Index].Speed;
         }
     }
 }
@@ -234,7 +322,6 @@ SetUntargetableAll(std::unordered_map<int, targetable> &Targetables)
 {
     for (std::pair<int, targetable> Targetable : Targetables)
     {
-        // TODO(insolence): Probably revise the syntax, try to get the pair as a reference
         Targetables[Targetable.first].IsTargeted = false;
     }
 }
